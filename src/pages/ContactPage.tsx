@@ -1,0 +1,62 @@
+import React from 'react';
+import { R as Reveal, E as Eyebrow, G as Button, b as getMailtoLink, w as getWhatsAppLink, C as contactInfo, Link } from '../components/Reveal';
+
+export const ContactPage: React.FC = () => {
+  return (
+    <section className="relative px-5 py-24 sm:px-8 sm:py-28">
+      <Reveal className="mx-auto max-w-3xl text-center">
+        <Eyebrow>Contact</Eyebrow>
+        
+        <h1 className="font-display mt-6 text-balance text-3.5xl leading-[1.05] text-foreground sm:text-5.5xl font-semibold">
+          Start the conversation. <br />
+          <span className="text-platinum">Remove the ceiling.</span>
+        </h1>
+        
+        <p className="mx-auto mt-5 max-w-xl text-sm text-muted-foreground leading-relaxed">
+          Tell us about your business. We'll respond with a clear, honest assessment of where the opportunity is.
+        </p>
+
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Button as="a" href={getMailtoLink()}>
+            Email Us
+          </Button>
+          <Button as="a" href={getWhatsAppLink()} variant="ghost">
+            WhatsApp
+          </Button>
+        </div>
+
+        {/* Contact details grid */}
+        <div className="mt-12 sm:mt-14 grid gap-6 border-t border-border pt-10 text-left sm:grid-cols-2">
+          <div>
+            <p className="text-eyebrow">Email</p>
+            <p className="mt-2 text-foreground font-medium selection:bg-foreground selection:text-background text-glow">
+              {contactInfo.email}
+            </p>
+          </div>
+          
+          <div>
+            <p className="text-eyebrow">WhatsApp</p>
+            <p className="mt-2 text-foreground font-medium selection:bg-foreground selection:text-background text-glow">
+              +{contactInfo.whatsapp}
+            </p>
+          </div>
+        </div>
+
+        {/* Focused secondary links */}
+        <div className="mt-12 pt-8 border-t border-border/40 text-center">
+          <div className="flex flex-wrap justify-center items-center gap-6 text-xs font-medium text-muted-foreground">
+            <Link to="/pricing" className="text-foreground/80 hover:text-foreground hover:text-glow underline underline-offset-4 decoration-border hover:decoration-foreground">
+              Pricing Packages →
+            </Link>
+            <span>•</span>
+            <Link to="/faq" className="text-foreground/80 hover:text-foreground hover:text-glow underline underline-offset-4 decoration-border hover:decoration-foreground">
+              Frequently Asked Questions →
+            </Link>
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+};
+
+export default ContactPage;

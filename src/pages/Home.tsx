@@ -1,0 +1,755 @@
+import React, { useEffect, Suspense, lazy } from 'react';
+import { R as Reveal, E as Eyebrow, G as Button, s as scrollToSection, b as getMailtoLink, cn, useAppRouter, Link } from '../components/Reveal';
+import { Ring } from '../components/FinalCta';
+import { FAQItem, IndustryItem, ProcessStep } from '../types';
+import { Pricing } from '../components/Pricing';
+
+const Faq = lazy(() => import('../components/Faq').then(m => ({ default: m.Faq })));
+const FinalCta = lazy(() => import('../components/FinalCta').then(m => ({ default: m.FinalCta })));
+
+// ==========================================
+// PREMIUM REFINE: SEE GROWTH CAPACITY GLASS BUTTON
+// ==========================================
+function SeeGrowthCapacityButton() {
+  return (
+    <div className="relative inline-flex items-center justify-center py-6">
+      {/* Extremely subtle spotlight directly underneath the button to ground it in black space */}
+      <div 
+        className="absolute w-[220px] h-[20px] bg-white/4 rounded-full blur-[14px] -bottom-1 pointer-events-none" 
+      />
+
+      {/* The main interactive button */}
+      <button
+        onClick={() => scrollToSection("pricing")}
+        className="group relative inline-flex items-center justify-center gap-3 rounded-full px-11 py-4 text-[15.5px] sm:text-base font-semibold tracking-wide text-white bg-black cursor-pointer select-none overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:border-white active:scale-[0.97]"
+        style={{
+          // Precise, thin high-end white border with luxurious soft outer shadow and subtle purple reflection
+          border: "1.5px solid rgba(255, 255, 255, 0.65)",
+          boxShadow: "0 0 6px rgba(255, 255, 255, 0.08), 0 0 3px rgba(139, 92, 246, 0.05), inset 0 0 4px rgba(255, 255, 255, 0.15), 0 4px 16px rgba(0, 0, 0, 0.95)",
+        }}
+      >
+        {/* Subtle grey metallic inner rim (Grey 2%) */}
+        <span className="absolute inset-[1px] rounded-full border border-white/8 pointer-events-none z-10" />
+
+        {/* Soft, beautiful radial sweep across the button */}
+        <div className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
+          <div 
+            className="absolute inset-0 w-[200%] h-full bg-[linear-gradient(110deg,transparent_35%,rgba(255,255,255,0.08)_48%,rgba(255,255,255,0.18)_50%,rgba(255,255,255,0.08)_52%,transparent_65%)] -skew-x-12 transition-transform duration-1000 -translate-x-full group-hover:translate-x-full"
+          />
+        </div>
+
+        {/* Clean, premium high-contrast typography without over-the-top text glowing */}
+        <span 
+          className="relative z-20 flex items-center justify-center gap-2 text-white font-medium"
+          style={{
+            textShadow: "0 1px 2px rgba(0, 0, 0, 0.6), 0 0 4px rgba(255, 255, 255, 0.08)"
+          }}
+        >
+          <span>See Growth Capacity</span>
+          
+          {/* Arrow icon moving dynamically on hover */}
+          <span className="inline-block transition-transform duration-300 group-hover:translate-x-1.5 font-sans font-normal text-white">
+            →
+          </span>
+        </span>
+      </button>
+    </div>
+  );
+}
+
+// ==========================================
+// SECTION 01: HERO SECTION
+// ==========================================
+function HeroSection() {
+  const { navigate } = useAppRouter();
+  return (
+    <section className="relative overflow-hidden px-5 pb-[clamp(4.5rem,10vw,8rem)] pt-[clamp(5rem,10vw,9rem)] sm:px-8 bg-black">
+      {/* Background Drawing Ring - set to z-0 so it lies behind text but above section background */}
+      <div className="pointer-events-none absolute left-1/2 top-[58%] z-0 -translate-x-1/2 -translate-y-1/2 opacity-20">
+        <Ring size={700} progress={0.55} />
+      </div>
+
+      {/* Hero Content Container - explicitly z-10 so it overlays above the background */}
+      <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center text-center">
+        <Reveal>
+          <Eyebrow>The Invisible Ceiling</Eyebrow>
+        </Reveal>
+        
+        <Reveal delay={100}>
+          {/* Premium Animated Orbital Arc (Planetary Horizon / Rising Celestial Pathway) */}
+          <div className="relative mx-auto mt-4 -mb-4 h-12 w-full max-w-lg overflow-visible pointer-events-none select-none">
+            <svg 
+              viewBox="0 0 800 100" 
+              className="w-full h-full overflow-visible" 
+              aria-hidden="true"
+            >
+              <defs>
+                {/* Thin background arc gradient, blending in beautifully with the page style */}
+                <linearGradient id="orbital-base-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(244, 241, 234, 0)" />
+                  <stop offset="15%" stopColor="rgba(244, 241, 234, 0.05)" />
+                  <stop offset="50%" stopColor="rgba(244, 241, 234, 0.16)" />
+                  <stop offset="85%" stopColor="rgba(244, 241, 234, 0.05)" />
+                  <stop offset="100%" stopColor="rgba(244, 241, 234, 0)" />
+                </linearGradient>
+
+                {/* Highly subtle, premium light pulse travelling across the sky */}
+                <linearGradient id="orbital-pulse-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
+                  <stop offset="35%" stopColor="rgba(255, 255, 255, 0.02)" />
+                  <stop offset="50%" stopColor="rgba(244, 241, 234, 0.65)" />
+                  <stop offset="65%" stopColor="rgba(255, 255, 255, 0.02)" />
+                  <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+                </linearGradient>
+                <clipPath id="orbit-clip">
+                  <rect 
+                    x="0" 
+                    y="0" 
+                    width="180" 
+                    height="120" 
+                    className="animate-orbit-clip"
+                  />
+                </clipPath>
+              </defs>
+
+              {/* Underlying thin celestial path */}
+              <path 
+                d="M 50,85 Q 400,20 750,85" 
+                fill="none" 
+                stroke="url(#orbital-base-grad)" 
+                strokeWidth="1.0" 
+              />
+
+              {/* Animated soft travelling pulse (GPU-composited via clipPath transform) */}
+              <g clipPath="url(#orbit-clip)">
+                <path 
+                  d="M 50,85 Q 400,20 750,85" 
+                  fill="none" 
+                  stroke="url(#orbital-pulse-grad)" 
+                  strokeWidth="1.5" 
+                  style={{
+                    strokeLinecap: "round"
+                  }}
+                />
+              </g>
+            </svg>
+          </div>
+
+          <h1 className="font-display mt-6 text-balance text-[clamp(1.85rem,6.8vw,5.25rem)] leading-[1.1] sm:leading-[1.05] text-foreground text-glow-strong font-bold">
+            Your Business Isn't Small.<br />
+            <span className="text-platinum">Its Visibility Is.</span>
+          </h1>
+        </Reveal>
+
+        <Reveal delay={200}>
+          <p className="mt-6 sm:mt-8 max-w-2xl text-balance text-sm sm:text-lg leading-relaxed text-muted-foreground px-2 sm:px-0">
+            The businesses getting chosen are not always the best.<br className="hidden sm:inline" />
+            {" "}They're often the easiest to notice.
+          </p>
+        </Reveal>
+
+        <Reveal delay={300}>
+          <p className="font-display mt-8 sm:mt-12 max-w-xl text-balance text-base sm:text-xl leading-snug text-foreground/75 px-2 sm:px-0">
+            The ceiling you can't see<br />
+            is the one limiting your growth.
+          </p>
+        </Reveal>
+
+        <Reveal delay={400} className="mt-8 sm:mt-10 flex flex-col items-center gap-3 sm:flex-row">
+          <SeeGrowthCapacityButton />
+        </Reveal>
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-background" />
+    </section>
+  );
+}
+
+// ==========================================
+// SECTION 02: THE INVISIBLE CEILING
+// ==========================================
+function CeilingSection() {
+  return (
+    <section className="relative overflow-hidden px-4 py-[clamp(3.5rem,8vw,8rem)] sm:px-8">
+      <div className="mx-auto grid max-w-6xl items-center gap-10 lg:gap-16 lg:grid-cols-[1.1fr_1fr]">
+        <Reveal>
+          <Eyebrow>02 — The Invisible Ceiling</Eyebrow>
+          <h2 className="font-display mt-5 sm:mt-6 text-balance text-[clamp(1.75rem,4.8vw,3.9rem)] leading-[1.08] sm:leading-[1.02] text-foreground text-glow font-bold">
+            The Ceiling You Can't See<br className="hidden sm:inline" />
+            <span className="text-platinum"> Is The One Limiting Your Growth.</span>
+          </h2>
+          <p className="mt-5 sm:mt-6 max-w-lg text-sm sm:text-base leading-relaxed text-muted-foreground">
+            Most businesses do not lose because they lack skill.
+          </p>
+          <p className="mt-3 sm:mt-4 max-w-lg text-sm sm:text-base leading-relaxed text-muted-foreground">
+            They lose because potential customers never see the value that already exists.
+          </p>
+        </Reveal>
+
+        <Reveal delay={150} className="flex justify-center py-4 sm:py-0">
+          <div className="relative max-w-full flex items-center justify-center">
+            <Ring size={290} className="sm:hidden" progress={0.42} completeOnView={true} />
+            <Ring size={410} className="hidden sm:block" progress={0.42} completeOnView={true} />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <span className="text-eyebrow opacity-60 text-xs sm:text-sm">Unseen Opportunity</span>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
+// SECTION 03: THE SILENT DECISION
+// ==========================================
+const Slogans = ["Compared.", "Researched.", "Considered.", "Chosen."];
+
+function SilentDecisionSection() {
+  return (
+    <section className="lazy-section relative overflow-hidden px-4 py-[clamp(3.5rem,8vw,8rem)] sm:px-8">
+      <div className="mx-auto max-w-5xl">
+        <Reveal>
+          <Eyebrow>03 — The Silent Decision</Eyebrow>
+          <h2 className="font-display mt-6 sm:mt-8 text-balance text-[clamp(1.75rem,4.8vw,3.9rem)] leading-[1.08] sm:leading-[1.02] text-foreground text-glow font-bold">
+            While You're Serving Customers,<br className="hidden sm:inline" />
+            <span className="text-platinum"> Someone Else Is Being Chosen.</span>
+          </h2>
+        </Reveal>
+
+        <Reveal delay={120} className="mt-6 sm:mt-8 max-w-2xl space-y-3 sm:space-y-4 text-sm sm:text-base leading-relaxed text-muted-foreground">
+          <p>Every day, potential customers compare businesses online.</p>
+          <p>Most never tell you why they chose someone else.</p>
+          <p>They simply disappear.</p>
+        </Reveal>
+
+        <div className="mt-12 sm:mt-20 space-y-2 sm:space-y-4">
+          {Slogans.map((term, i) => (
+            <Reveal key={term} delay={i * 180}>
+              <p 
+                className="font-display text-[clamp(1.85rem,8vw,6.75rem)] leading-[0.98] sm:leading-[0.95] text-foreground/85 text-glow-strong"
+                style={{ opacity: 1 - i * 0.08 }}
+              >
+                <span className="hidden sm:inline-block" style={{ width: `${i * 5}%` }} />
+                <span className="inline-block sm:hidden" style={{ width: `${i * 2.5}%` }} />
+                {term}
+              </p>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal delay={300} className="mt-12 sm:mt-20">
+          <p className="font-display max-w-2xl text-balance text-lg sm:text-2xl leading-snug text-foreground/80">
+            The decision is often made<br />
+            <span className="text-platinum">before the first conversation begins.</span>
+          </p>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
+// SECTION 04: THE GROWTH ENGINE
+// ==========================================
+const engineSteps = [
+  { label: "Visibility", angle: -90 },
+  { label: "Attention", angle: -30 },
+  { label: "Trust", angle: 30 },
+  { label: "Leads", angle: 90 },
+  { label: "Growth", angle: 210 }
+];
+
+function GrowthEngineSection() {
+  return (
+    <section className="lazy-section relative overflow-hidden px-4 py-[clamp(3.5rem,8vw,8rem)] sm:px-8 bg-black">
+      <div className="mx-auto max-w-5xl text-center">
+        <Reveal>
+          <Eyebrow>04 — The Growth Engine</Eyebrow>
+          <h2 className="font-display mt-6 sm:mt-8 text-balance text-[clamp(1.75rem,4.8vw,3.9rem)] leading-[1.08] sm:leading-[1.02] text-foreground text-glow font-bold">
+            Growth Doesn't Start With Sales.<br className="hidden sm:inline" />
+            <span className="text-platinum"> It Starts With Attention.</span>
+          </h2>
+        </Reveal>
+
+        <Reveal delay={120} className="mx-auto mt-6 sm:mt-8 max-w-2xl">
+          <p className="text-sm sm:text-base leading-relaxed text-muted-foreground px-2 sm:px-0">
+            Visibility creates attention. Attention creates trust. Trust creates leads. Leads create growth. Growth creates more visibility.
+            <span className="text-foreground/85"> The system compounds.</span>
+          </p>
+        </Reveal>
+      </div>
+
+      <Reveal delay={200} className="mx-auto mt-10 sm:mt-16 flex justify-center">
+        <div className="relative w-[84vw] max-w-[320px] xs:max-w-[360px] sm:max-w-[512px] aspect-square mx-auto">
+          <svg viewBox="0 0 512 512" className="absolute inset-0 h-full w-full" aria-hidden="true">
+            <defs>
+              <radialGradient id="engine-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.08)" />
+                <stop offset="70%" stopColor="rgba(255,255,255,0)" />
+              </radialGradient>
+              <linearGradient id="engine-stroke" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="rgba(244,241,234,0.5)" />
+                <stop offset="100%" stopColor="rgba(244,241,234,0.15)" />
+              </linearGradient>
+            </defs>
+
+            {/* Inner background glow */}
+            <circle cx={256} cy={256} r={220} fill="url(#engine-glow)" />
+
+            {/* Main connecting circular boundary */}
+            <circle 
+              cx={256} 
+              cy={256} 
+              r={200} 
+              fill="none" 
+              stroke="url(#engine-stroke)" 
+              strokeWidth={1} 
+              style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.15))" }}
+            />
+
+            {/* Animated revolving micro dot */}
+            <circle r="3" fill="#F4F1EA">
+              <animateMotion
+                dur="9s"
+                repeatCount="indefinite"
+                path="M 456,256 A 200,200 0 1 1 56,256 A 200,200 0 1 1 456,256"
+              />
+            </circle>
+
+            {/* Ring milestone indicators */}
+            {engineSteps.map(step => {
+              const rad = (step.angle * Math.PI) / 180;
+              const cx = 256 + 200 * Math.cos(rad);
+              const cy = 256 + 200 * Math.sin(rad);
+
+              return (
+                <g key={step.label}>
+                  <circle cx={cx} cy={cy} r={4} fill="#F4F1EA" />
+                  <circle cx={cx} cy={cy} r={10} fill="none" stroke="rgba(244,241,234,0.25)" strokeWidth={1} />
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Positioning HTML labels on the circle boundary */}
+          {engineSteps.map(step => {
+            const rad = (step.angle * Math.PI) / 180;
+            const left = 50 + (232 / 512) * 100 * Math.cos(rad);
+            const top = 50 + (232 / 512) * 100 * Math.sin(rad);
+
+            return (
+              <span
+                key={step.label}
+                className="font-display absolute -translate-x-1/2 -translate-y-1/2 text-[10px] xs:text-xs tracking-wide text-foreground/85 sm:text-sm font-medium whitespace-nowrap bg-black/60 sm:bg-transparent px-1 py-0.5 rounded"
+                style={{ left: `${left}%`, top: `${top}%` }}
+              >
+                {step.label}
+              </span>
+            );
+          })}
+
+          {/* Center Title Card */}
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+            <p className="text-eyebrow text-[10px] sm:text-xs">CodeFuser</p>
+            <p className="font-display mt-1 text-base sm:text-xl text-foreground text-glow font-semibold">
+              Growth Engine
+            </p>
+          </div>
+        </div>
+      </Reveal>
+
+      <Reveal delay={300} className="mx-auto mt-12 sm:mt-20 max-w-2xl text-center">
+        <p className="font-display text-balance text-lg sm:text-2xl leading-snug text-foreground/80">
+          The fastest-growing businesses don't rely on luck.<br />
+          <span className="text-platinum">They rely on systems.</span>
+        </p>
+      </Reveal>
+    </section>
+  );
+}
+
+// ==========================================
+// SECTION 06: THE FUSION METHOD™
+// ==========================================
+const fusionMethodSteps: ProcessStep[] = [
+  { n: "01", title: "Discover", body: "Understand business, audience and positioning." },
+  { n: "02", title: "Build", body: "Create a website engineered for trust." },
+  { n: "03", title: "Connect", body: "Fuse messaging, systems and lead flow." },
+  { n: "04", title: "Activate", body: "Launch and optimize." },
+  { n: "05", title: "Compound", body: "Turn visibility into long-term growth." }
+];
+
+function FusionMethodSection() {
+  return (
+    <section className="lazy-section relative overflow-hidden px-5 py-[clamp(4.5rem,10vw,8rem)] sm:px-8">
+      <div className="mx-auto max-w-5xl">
+        <Reveal>
+          <Eyebrow>06 — The Fusion Method™</Eyebrow>
+          <h2 className="font-display mt-8 text-balance text-[clamp(2.2rem,4.8vw,3.9rem)] leading-[1.02] text-foreground text-glow font-bold">
+            Growth Becomes Predictable<br />
+            <span className="text-platinum">When The System Is Connected.</span>
+          </h2>
+        </Reveal>
+
+        <ol className="relative mt-14 sm:mt-16">
+          {/* Vertical Track gold wire */}
+          <span 
+            aria-hidden="true" 
+            className="absolute left-[2.75rem] top-2 h-[calc(100%-3rem)] w-px sm:left-[3.5rem]" 
+            style={{ 
+              background: "linear-gradient(to bottom, transparent, rgba(244,241,234,0.3) 15%, rgba(244,241,234,0.3) 85%, transparent)", 
+              boxShadow: "0 0 12px rgba(255,255,255,0.12)" 
+            }} 
+          />
+
+          {fusionMethodSteps.map((step, index) => (
+            <Reveal 
+              key={step.n} 
+              delay={index * 100}
+              as="li"
+              className="relative grid grid-cols-[5rem_1fr] gap-6 pb-10 sm:grid-cols-[6.5rem_1fr] sm:gap-10"
+            >
+              <div className="relative flex justify-center">
+                <span className="font-display text-3.5xl text-foreground/85 text-glow sm:text-4.5xl font-bold">
+                  {step.n}
+                </span>
+              </div>
+              <div className="pt-2">
+                <h3 className="font-display text-xl text-foreground sm:text-2xl font-medium">
+                  {step.title}
+                </h3>
+                <p className="mt-2.5 max-w-md text-sm leading-relaxed text-muted-foreground">
+                  {step.body}
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </ol>
+
+        <Reveal delay={200} className="mt-6 max-w-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <p className="text-base leading-relaxed text-foreground/80">
+            Disconnected tools create friction.<br />
+            <span className="text-platinum">Connected systems create momentum.</span>
+          </p>
+          <Link to="/process" className="inline-flex items-center text-xs font-mono uppercase tracking-widest text-foreground hover:text-glow underline underline-offset-4 decoration-border shrink-0 hover:decoration-foreground transition-all">
+            See how we build →
+          </Link>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
+// SECTION 07: WHY CODEFUSER CONNECTIVITY
+// ==========================================
+const networkNodes = [
+  { x: 12, y: 22 },
+  { x: 80, y: 18 },
+  { x: 38, y: 52 },
+  { x: 70, y: 62 },
+  { x: 22, y: 78 },
+  { x: 88, y: 80 }
+];
+const networkEdges = [
+  [0, 2],
+  [1, 2],
+  [2, 3],
+  [2, 4],
+  [3, 5],
+  [4, 5],
+  [1, 3]
+];
+
+function WhyCodeFuserSection() {
+  return (
+    <section className="lazy-section relative overflow-hidden px-5 py-[clamp(4.5rem,10vw,8rem)] sm:px-8 bg-black">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:gap-14 lg:grid-cols-2">
+        <Reveal>
+          <Eyebrow>07 — Why CodeFuser</Eyebrow>
+          <h2 className="font-display mt-8 text-balance text-[clamp(2.2rem,4.8vw,3.9rem)] leading-[1.02] text-foreground text-glow font-bold">
+            Most Agencies Build Websites.<br />
+            <span className="text-platinum">We Build Growth Infrastructure.</span>
+          </h2>
+          <div className="mt-8 space-y-3.5 text-base leading-relaxed text-muted-foreground">
+            <p>A website alone is not a system.</p>
+            <p>Traffic alone is not a strategy.</p>
+            <p>Leads alone are not growth.</p>
+            <p className="text-foreground/85">Everything must work together.</p>
+          </div>
+          <p className="font-display mt-10 max-w-md text-balance text-lg leading-snug text-foreground/80 sm:text-xl">
+            The strongest businesses aren't built from more effort.<br />
+            <span className="text-platinum">They're built from better connections.</span>
+          </p>
+        </Reveal>
+
+        <Reveal delay={150} className="relative aspect-square w-full">
+          <svg viewBox="0 0 100 100" className="h-full w-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <defs>
+              <linearGradient id="fuse-line" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="rgba(244,241,234,0.55)" />
+                <stop offset="100%" stopColor="rgba(244,241,234,0.05)" />
+              </linearGradient>
+            </defs>
+
+            {/* Connecting lines edges with stroke animations */}
+            {networkEdges.map(([i, x], lIndex) => {
+              const nodeA = networkNodes[i];
+              const nodeB = networkNodes[x];
+
+              return (
+                <line 
+                  key={lIndex}
+                  x1={nodeA.x}
+                  y1={nodeA.y}
+                  x2={nodeB.x}
+                  y2={nodeB.y}
+                  stroke="url(#fuse-line)"
+                  strokeWidth={0.2}
+                  strokeDasharray={60}
+                  strokeDashoffset={60}
+                  style={{
+                    animation: `ring-draw 1.4s cubic-bezier(0.22,1,0.36,1) ${0.4 + lIndex * 0.18}s forwards`,
+                    "--ring-final": "0"
+                  } as React.CSSProperties}
+                />
+              );
+            })}
+
+            {/* Node indicators with pulsing effects */}
+            {networkNodes.map((node, iIndex) => (
+              <g key={iIndex}>
+                <circle cx={node.x} cy={node.y} r={2.4} fill="rgba(244,241,234,0.15)" />
+                <circle 
+                  cx={node.x} 
+                  cy={node.y} 
+                  r={1} 
+                  fill="#F4F1EA" 
+                  className="animate-pulse-soft"
+                  style={{ animationDelay: `${iIndex * 0.4}s` }}
+                />
+              </g>
+            ))}
+          </svg>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
+// SECTION 08: TARGET INDUSTRIES
+// ==========================================
+const targetIndustries: IndustryItem[] = [
+  { title: "Restaurants & Cafes", outcome: "Turn hungry local diners into direct online reservations and walk-ins." },
+  { title: "Dental & Medical Clinics", outcome: "Earn patient trust and enable instant 24/7 online appointment booking." },
+  { title: "Salons, Spas & Gyms", outcome: "Showcase client transformations and turn first-time visitors into loyal members." },
+  { title: "Photo Studios & Creatives", outcome: "Transform your visual portfolio into high-value direct client bookings." },
+  { title: "Architects & Real Estate", outcome: "Capture serious property buyers and clients early in their online search." },
+  { title: "Lawyers & Professional Firms", outcome: "Establish instant local market authority and win high-trust consultations." },
+  { title: "Coaching Centres & Schools", outcome: "Become the obvious, trusted choice for researching parents and students." },
+  { title: "Local Service Businesses", outcome: "Build digital foundations that reliably attract local enquiries in Chennai and across India." }
+];
+
+function IndustriesSection() {
+  return (
+    <section className="lazy-section relative overflow-hidden px-5 py-[clamp(4.5rem,10vw,8rem)] sm:px-8">
+      <div className="mx-auto max-w-5xl text-center">
+        <Reveal>
+          <Eyebrow>08 — Industries We Serve</Eyebrow>
+          <h2 className="font-display mt-8 text-balance text-[clamp(2.2rem,4.8vw,3.9rem)] leading-[1.02] text-foreground text-glow font-bold">
+            Built For Businesses<br />
+            <span className="text-platinum">That Deserve To Be Found &amp; Trusted.</span>
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+            Thousands of exceptional local businesses remain invisible online. We build digital foundations across Chennai, Tamil Nadu, and India to ensure you are easy to discover and choose.
+          </p>
+        </Reveal>
+      </div>
+
+      <div className="mx-auto mt-14 sm:mt-16 grid max-w-6xl gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+        {targetIndustries.map((item, i) => (
+          <Reveal key={item.title} delay={i * 50}>
+            <article className="group relative h-full bg-background p-6 sm:p-7 transition-colors duration-500 hover:bg-card/40 flex flex-col justify-between">
+              <div>
+                <p className="text-eyebrow">
+                  {String(i + 1).padStart(2, "0")}
+                </p>
+                <h3 className="font-display mt-4 text-lg text-foreground sm:text-xl font-semibold">
+                  {item.title}
+                </h3>
+                <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                  {item.outcome}
+                </p>
+              </div>
+              <span 
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-px scale-x-0 origin-left hairline transition-transform duration-700 group-hover:scale-x-100" 
+                aria-hidden="true" 
+              />
+            </article>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
+// SECTION 08.5: BRAND KNOWLEDGE ARCHITECTURE (AI SEARCH & EEAT)
+// ==========================================
+function BrandKnowledgeSection() {
+  return (
+    <section className="lazy-section relative overflow-hidden px-5 py-[clamp(4rem,8vw,6.5rem)] sm:px-8 bg-neutral-950/60 border-y border-border/40">
+      <div className="mx-auto max-w-5xl">
+        <Reveal>
+          <Eyebrow>Brand Knowledge &amp; Philosophy</Eyebrow>
+          <h2 className="font-display mt-6 text-balance text-2.5xl leading-[1.1] text-foreground sm:text-3.5xl font-bold">
+            Understanding CodeFuser:<br />
+            <span className="text-platinum">Why We Exist &amp; How We Help Local Businesses Grow.</span>
+          </h2>
+        </Reveal>
+
+        <div className="mt-10 grid gap-6 sm:grid-cols-2">
+          <Reveal delay={100}>
+            <div className="rounded-2xl border border-border/60 bg-background/80 p-6 sm:p-7 h-full space-y-3">
+              <h3 className="font-display text-lg text-foreground font-semibold text-glow">
+                What is CodeFuser?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                CodeFuser is a growth-focused digital agency based in Chennai, Tamil Nadu. We build professional web foundations and AI workflows that help local businesses break their invisible growth ceiling by improving online visibility, building customer trust, and driving sustainable business growth.
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={150}>
+            <div className="rounded-2xl border border-border/60 bg-background/80 p-6 sm:p-7 h-full space-y-3">
+              <h3 className="font-display text-lg text-foreground font-semibold text-glow">
+                Who is CodeFuser built for?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We build specifically for local service businesses and growing brands—including restaurants, medical clinics, dental practices, salons, spas, gyms, photo studios, architects, real estate firms, coaching centres, and small businesses across Chennai, Tamil Nadu, and India.
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={200}>
+            <div className="rounded-2xl border border-border/60 bg-background/80 p-6 sm:p-7 h-full space-y-3">
+              <h3 className="font-display text-lg text-foreground font-semibold text-glow">
+                Why does CodeFuser exist?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                CodeFuser exists because thousands of excellent small businesses remain invisible online. Our core philosophy is simple: <strong className="text-foreground/90">"The problem isn't that your business is small. The problem is that people can't find it."</strong> We solve this problem by turning digital invisibility into active customer confidence.
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={250}>
+            <div className="rounded-2xl border border-border/60 bg-background/80 p-6 sm:p-7 h-full space-y-3">
+              <h3 className="font-display text-lg text-foreground font-semibold text-glow">
+                What makes CodeFuser different?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Traditional agencies build static websites. CodeFuser builds long-term digital growth foundations centered around a compounding framework: <strong className="text-foreground/90">Visibility → Trust → Customer Confidence → Business Growth</strong>. We focus strictly on real business outcomes like online bookings, automated customer enquiries, and growth systems.
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
+// SECTION 09: PROCESS STAGES / RESULTS
+// ==========================================
+const stages = ["Invisible", "Trusted", "Chosen", "Growing"];
+
+function ResultsSection() {
+  return (
+    <section className="lazy-section relative overflow-hidden px-5 py-[clamp(4.5rem,10vw,8rem)] sm:px-8 bg-black">
+      <div className="mx-auto max-w-5xl">
+        <Reveal>
+          <Eyebrow>09 — Results</Eyebrow>
+          <h2 className="font-display mt-8 text-balance text-[clamp(2.2rem,4.8vw,3.9rem)] leading-[1.02] text-foreground text-glow font-bold">
+            Before Visibility,<br />
+            There Is Friction.<br />
+            <span className="text-platinum">After Visibility, There Is Momentum.</span>
+          </h2>
+        </Reveal>
+
+        <Reveal delay={150} className="mt-14 sm:mt-16">
+          <div className="relative">
+            {/* Horizontal timeline segment */}
+            <span 
+              aria-hidden="true" 
+              className="absolute left-0 right-0 top-1/2 hidden h-px -translate-y-1/2 sm:block" 
+              style={{ 
+                background: "linear-gradient(to right, transparent, rgba(244,241,234,0.4), rgba(244,241,234,0.4), transparent)", 
+                boxShadow: "0 0 10px rgba(255,255,255,0.12)" 
+              }} 
+            />
+
+            <ol className="grid gap-8 sm:grid-cols-4">
+              {stages.map((stage, i) => (
+                <li key={stage} className="relative flex flex-col items-center text-center">
+                  <span className="relative z-10 mb-5 inline-flex h-3 w-3 items-center justify-center rounded-full bg-foreground shadow-glow">
+                    <span className="absolute h-7 w-7 rounded-full border border-foreground/20" />
+                  </span>
+                  
+                  <p className="text-eyebrow">
+                    Stage {String(i + 1).padStart(2, "0")}
+                  </p>
+                  
+                  <p className="font-display mt-2.5 text-2xl text-foreground sm:text-3xl text-glow font-bold">
+                    {stage}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </Reveal>
+
+        <Reveal delay={250} className="mx-auto mt-16 sm:mt-20 max-w-2xl text-center">
+          <p className="font-display text-balance text-lg leading-snug text-foreground/80 sm:text-xl font-semibold">
+            The difference between being ignored<br />
+            <span className="text-platinum">and being chosen is often smaller than people think.</span>
+          </p>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
+// EXPOSED COMPONENT BUNDLING HOMEPAGE
+// ==========================================
+export const Home: React.FC = () => {
+  console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 11. Homepage rendered`);
+  useEffect(() => {
+    console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 11. Homepage mounted`);
+  }, []);
+
+  return (
+    <>
+      <HeroSection />
+      <CeilingSection />
+      <SilentDecisionSection />
+      <GrowthEngineSection />
+      <Pricing />
+      <FusionMethodSection />
+      <WhyCodeFuserSection />
+      <IndustriesSection />
+      <BrandKnowledgeSection />
+      <ResultsSection />
+      <Suspense fallback={<div className="min-h-[300px] bg-black" />}>
+        <Faq />
+      </Suspense>
+      <Suspense fallback={<div className="min-h-[300px] bg-black" />}>
+        <FinalCta />
+      </Suspense>
+    </>
+  );
+};
+
+export default Home;

@@ -1,0 +1,416 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Regular.woff2') format('woff2');
+  font-weight: 300 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-Regular.woff2') format('woff2');
+  font-weight: 300 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-Medium.woff2') format('woff2');
+  font-weight: 500 600;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+@theme {
+  --font-sans: "Satoshi", "Inter", system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  
+  --color-background: #000000;
+  --color-foreground: #F2E7FF;
+  --color-platinum: #DFCDFF;
+  --color-border: rgba(242, 231, 255, 0.28);
+  --color-card: #0A0A0A;
+  
+  --shadow-glow: 0 0 18px rgba(242, 231, 255, 0.22), 0 0 8px rgba(139, 92, 246, 0.08);
+  --shadow-glow-soft: 0 0 12px rgba(242, 231, 255, 0.12);
+}
+
+@utility text-glow {
+  text-shadow: 0 0 20px rgba(242, 231, 255, 0.16), 0 0 8px rgba(139, 92, 246, 0.12);
+}
+
+@utility text-glow-strong {
+  text-shadow: 0 0 32px rgba(242, 231, 255, 0.28), 0 0 14px rgba(139, 92, 246, 0.18);
+}
+
+@utility text-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: rgba(242, 231, 255, 0.55);
+}
+
+@utility hairline {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(242, 231, 255, 0.2) 20%, rgba(242, 231, 255, 0.2) 80%, transparent);
+}
+
+.card-lift {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-4px);
+  border-color: rgba(242, 231, 255, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.btn-pressure {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-pressure:active {
+  transform: scale(0.96);
+}
+
+/* Custom Scroll Reveal & Smooth Entrance Animation Classes */
+.reveal,
+.reveal-title,
+.reveal-card {
+  opacity: 0;
+  transform: translateY(28px) scale(0.985);
+  transition: 
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible,
+.reveal-title.is-visible,
+.reveal-card.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Stagger delay support for grid items and cards */
+.reveal-card:nth-child(1) { transition-delay: 0ms; }
+.reveal-card:nth-child(2) { transition-delay: 75ms; }
+.reveal-card:nth-child(3) { transition-delay: 150ms; }
+.reveal-card:nth-child(4) { transition-delay: 225ms; }
+.reveal-card:nth-child(5) { transition-delay: 300ms; }
+.reveal-card:nth-child(6) { transition-delay: 375ms; }
+.reveal-card:nth-child(7) { transition-delay: 450ms; }
+.reveal-card:nth-child(8) { transition-delay: 525ms; }
+
+/* Preserve lift hover effect smoothly after card becomes visible */
+.card-lift {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.4s ease, box-shadow 0.4s ease, opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-card.is-visible.card-lift:hover,
+.reveal.is-visible.card-lift:hover {
+  transform: translateY(-4px) scale(1) !important;
+}
+
+/* Dot rotation ring animation */
+@keyframes ring-draw {
+  from {
+    stroke-dashoffset: 60;
+  }
+  to {
+    stroke-dashoffset: var(--ring-final, 0);
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* Custom styles for page scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(242, 231, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(242, 231, 255, 0.3);
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #000000;
+  color: var(--color-foreground);
+}
+body {
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  background: #000000;
+}
+
+/* Premium orbital arc travel effect (GPU-composited via clip-path transform) */
+@keyframes orbit-clip {
+  0% {
+    transform: translateX(-180px);
+  }
+  100% {
+    transform: translateX(800px);
+  }
+}
+
+.animate-orbit-clip {
+  animation: orbit-clip 8s linear infinite;
+  will-change: transform;
+}
+
+/* Premium collectible cards sweep-reflection effect */
+@keyframes card-sweep {
+  0% {
+    transform: translate(-100%, -100%) rotate(25deg);
+  }
+  30% {
+    transform: translate(100%, 100%) rotate(25deg);
+  }
+  100% {
+    transform: translate(100%, 100%) rotate(25deg);
+  }
+}
+
+.animate-card-sweep {
+  animation: card-sweep 7s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+/* 1. Obsidian breathing & signal beacon animations */
+@keyframes beacon-breath {
+  0%, 100% {
+    opacity: 0.32;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes beacon-ripple {
+  0% {
+    transform: scale(0.5) translate(-50%, -50%);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.8) translate(-50%, -50%);
+    opacity: 0;
+  }
+}
+
+.animate-beacon-breath {
+  animation: beacon-breath 4s ease-in-out infinite;
+}
+
+.animate-beacon-ripple {
+  animation: beacon-ripple 3.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+/* 2. Titanium connected nodes travel-pulse animation */
+@keyframes travel-pulse {
+  0% {
+    stroke-dashoffset: 160;
+  }
+  100% {
+    stroke-dashoffset: -160;
+  }
+}
+
+.animate-travel-pulse {
+  animation: travel-pulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* 3. White Gold multi-orbital compounding rotation */
+@keyframes orbit-cw {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit-ccw {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+.animate-orbit-cw {
+  animation: orbit-cw 25s linear infinite;
+}
+
+.animate-orbit-ccw {
+  animation: orbit-ccw 35s linear infinite;
+}
+
+@keyframes premium-breathe {
+  0%, 100% {
+    opacity: 0.98;
+    transform: scale(0.995);
+    filter: brightness(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.005);
+    filter: brightness(1.02);
+  }
+}
+
+.animate-premium-breathe {
+  animation: premium-breathe 7s ease-in-out infinite;
+}
+
+@keyframes ambient-breathe {
+  0%, 100% {
+    opacity: 0.02;
+    transform: scale(1) translate(0px, 0px) rotate(0deg);
+  }
+  50% {
+    opacity: 0.04;
+    transform: scale(1.08) translate(6px, -6px) rotate(3deg);
+  }
+}
+
+.animate-ambient-breathe {
+  animation: ambient-breathe 10s ease-in-out infinite;
+}
+
+/* Optimize rendering performance of offscreen content and SVGs */
+.lazy-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* Add hardware acceleration to active loops */
+.animate-orbit-clip,
+.animate-orbit-cw,
+.animate-orbit-ccw,
+.animate-premium-breathe,
+.animate-ambient-breathe {
+  will-change: transform;
+}
+
+/* Accessibility: Support prefers-reduced-motion system preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* High-contrast visible borders for all input fields, textareas, selects, and cards across the website */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="url"],
+input[type="search"],
+textarea,
+select {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="tel"]:hover,
+input[type="number"]:hover,
+input[type="url"]:hover,
+input[type="search"]:hover,
+textarea:hover,
+select:hover {
+  border-color: rgba(255, 255, 255, 0.48) !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(168, 85, 247, 0.85) !important;
+  box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.5), 0 0 14px rgba(168, 85, 247, 0.25) !important;
+}
+
+/* Upgrade faint utility classes across cards, input containers, and option boxes */
+.border-white\/\[0\.08\],
+.border-white\/\[0\.06\],
+.border-white\/\[0\.04\],
+.border-white\/5,
+.border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.24) !important;
+}
+
+.hover\:border-white\/20:hover,
+.hover\:border-white\/15:hover {
+  border-color: rgba(255, 255, 255, 0.48) !important;
+}
+
+
+
+
+
+
+
