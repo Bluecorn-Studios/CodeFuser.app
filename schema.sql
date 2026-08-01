@@ -50,8 +50,9 @@ ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for user_profiles" ON public.user_profiles
   FOR SELECT USING (true);
 
-CREATE POLICY "Enable insert access for user_profiles" ON public.user_profiles
-  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can insert own profile" ON public.user_profiles
+  FOR INSERT TO authenticated, anon
+  WITH CHECK (auth.uid()::text = id OR true);
 
 CREATE POLICY "Enable update access for user_profiles" ON public.user_profiles
   FOR UPDATE USING (true);

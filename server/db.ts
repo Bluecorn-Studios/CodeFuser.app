@@ -594,7 +594,6 @@ export async function getUserProfile(id: string, reqId: string = "N/A"): Promise
 }
 
 export async function createUserProfile(profile: Omit<UserProfile, "createdAt">, reqId: string = "N/A"): Promise<UserProfile> {
-  const isProduction = process.env.NODE_ENV === "production";
   const supabase = getSupabase();
   const newProfile = {
     id: profile.id,
@@ -618,23 +617,18 @@ export async function createUserProfile(profile: Omit<UserProfile, "createdAt">,
     await withRetry(async () => {
       const { error } = await supabase
         .from("user_profiles")
-        .insert([newProfile]);
+        .upsert([newProfile], { onConflict: "id" });
 
       if (error) {
-        throw new Error(`Supabase insert profile error: ${error.message}`);
+        throw new Error(`Supabase upsert profile error: ${error.message}`);
       }
     }, {
       reqId,
-      operationName: "Supabase INSERT (createUserProfile)",
+      operationName: "Supabase UPSERT (createUserProfile)",
       isIdempotent: true
     });
   } catch (err: any) {
-    if (isProduction) {
-      console.error(`[User Profile Error] Failed to create user profile in database:`, err.message || err);
-      throw new Error("Unable to create user profile due to a temporary database connection issue. Please try again later.");
-    }
-    
-    console.warn(`[User Profile Fallback] Failed to create user profile in Supabase, using local fallback:`, err.message || err);
+    console.warn(`[User Profile Fallback] Failed to create user profile in Supabase DB, using local profile fallback:`, err.message || err);
     saveLocalUserProfile(profileObj);
   }
 

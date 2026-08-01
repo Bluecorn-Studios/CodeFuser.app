@@ -1,0 +1,42 @@
+[
+  {
+    "id": "f68b0ea3-c743-4f5d-80dd-6c4ad2b4bc5e",
+    "email": "test_log_1785594286872@gmail.com",
+    "role": "client",
+    "fullName": "Test User",
+    "businessName": "Test Business",
+    "createdAt": "2026-08-01T14:24:48.088Z"
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "email": "test_direct_insert@example.com",
+    "role": "client",
+    "fullName": "Direct Test",
+    "businessName": "Direct Biz",
+    "createdAt": "2026-08-01T14:24:53.333Z"
+  },
+  {
+    "id": "61843eb3-97f3-494d-867e-45ec65237c36",
+    "email": "real_user_1785594299403@gmail.com",
+    "role": "client",
+    "fullName": "Real Test",
+    "businessName": "Real Biz",
+    "createdAt": "2026-08-01T14:24:59.712Z"
+  },
+  {
+    "id": "0aa8112d-8003-4550-abdc-cc37f473d9df",
+    "email": "debug_user_1785594870203@gmail.com",
+    "role": "client",
+    "fullName": "Debug User",
+    "businessName": "Debug Biz",
+    "createdAt": "2026-08-01T14:34:31.253Z"
+  },
+  {
+    "id": "97c9ed4c-17a5-4deb-a159-16c6edb8c068",
+    "email": "persist_false_test_1785594938032@gmail.com",
+    "role": "client",
+    "fullName": "Persist False Test",
+    "businessName": "Persist False Biz",
+    "createdAt": "2026-08-01T14:35:38.383Z"
+  }
+]

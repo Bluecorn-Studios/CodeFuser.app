@@ -21,7 +21,21 @@ export function getSupabase() {
     if (!url || !key) {
       throw new Error("Supabase credentials are not configured in environment (missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY).");
     }
-    supabaseClient = createClient(url, key);
+    const headers: Record<string, string> = {};
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      headers["Authorization"] = `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`;
+    }
+
+    supabaseClient = createClient(url, key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+      global: {
+        headers,
+      },
+    });
   }
   return supabaseClient;
 }

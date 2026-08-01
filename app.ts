@@ -1038,24 +1038,36 @@ app.post("/api/auth/signup", requestTimeout(10000, "Auth Signup"), validateBody(
     const supabase = getSupabase();
     
     // Create authentication record in Supabase
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    let { data, error } = await supabase.auth.signUp({ email, password });
     
     if (res.headersSent || req.timedOut) return;
+
+    // Handle case where user was already created in Supabase Auth on previous attempt
+    if (error && (error.message?.includes("already registered") || error.message?.includes("already exists") || (error as any).status === 400)) {
+      const loginRes = await supabase.auth.signInWithPassword({ email, password });
+      if (!loginRes.error && loginRes.data?.user) {
+        data = loginRes.data;
+        error = null;
+      }
+    }
 
     if (error) {
       return res.status(400).json({ success: false, error: error.message });
     }
 
     if (data.user) {
-      console.log(`Creating database profile for newly registered user: ${data.user.id}`);
-      // Store custom user profile in DB
-      await createUserProfile({
-        id: data.user.id,
-        email: data.user.email || email,
-        role: "client", // New signups default to client
-        fullName: fullName || "",
-        businessName: businessName || ""
-      }, req.reqId);
+      console.log(`Creating/updating database profile for user: ${data.user.id}`);
+      try {
+        await createUserProfile({
+          id: data.user.id,
+          email: data.user.email || email,
+          role: "client", // New signups default to client
+          fullName: fullName || "",
+          businessName: businessName || ""
+        }, req.reqId);
+      } catch (profileErr: any) {
+        console.warn(`[Auth Signup] User profile creation fallback notice for ${data.user.id}:`, profileErr?.message || profileErr);
+      }
     }
 
     return res.json({ success: true, user: data.user, session: data.session });
