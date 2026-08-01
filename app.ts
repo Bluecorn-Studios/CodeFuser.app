@@ -529,12 +529,12 @@ app.use("/uploads", express.static(uploadsDir));
 // API: Validate Step 1 uniqueness
 app.post("/api/projects/validate-step1", projectsRateLimiter, async (req: any, res) => {
   try {
-    const { email, whatsapp, userId } = req.body;
+    const { email, whatsapp, userId, currentProjectId } = req.body;
     
     // Check validation cache to prevent repeated database lookup overhead
     const normalizedEmail = String(email || "").trim().toLowerCase();
     const normalizedWhatsapp = String(whatsapp || "").trim().replace(/\s+/g, "");
-    const cacheKey = `validate:step1:${normalizedEmail}:${normalizedWhatsapp}:${String(userId || "")}`;
+    const cacheKey = `validate:step1:${normalizedEmail}:${normalizedWhatsapp}:${String(userId || "")}:${String(currentProjectId || "")}`;
     
     const cachedResult = await cache.get(cacheKey);
     if (cachedResult) {
@@ -548,28 +548,32 @@ app.post("/api/projects/validate-step1", projectsRateLimiter, async (req: any, r
     if (userId && typeof userId === "string" && userId !== "admin-bypass" && userId.trim() !== "") {
       const { data: userMatch } = await supabase
         .from("projects")
-        .select("id, business_name, client_name, email, whatsapp, selected_package, status")
+        .select("id, business_name, client_name, email, whatsapp, selected_package, status, created_at")
         .eq("user_id", userId);
 
       if (userMatch && userMatch.length > 0) {
-        const result = {
-          duplicate: false,
-          hasMatch: true,
-          noticeType: "registered_client",
-          message: "Welcome back! You have active project(s) in your CodeFuser account.",
-          existingCount: userMatch.length,
-          draftProject: userMatch[userMatch.length - 1] ? {
-            id: userMatch[userMatch.length - 1].id,
-            businessName: userMatch[userMatch.length - 1].business_name,
-            clientName: userMatch[userMatch.length - 1].client_name,
-            email: userMatch[userMatch.length - 1].email,
-            whatsapp: userMatch[userMatch.length - 1].whatsapp,
-            selectedPackage: userMatch[userMatch.length - 1].selected_package,
-            createdAt: userMatch[userMatch.length - 1].created_at || new Date().toISOString()
-          } : null
-        };
-        await cache.set(cacheKey, JSON.stringify(result), 30);
-        return res.json(result);
+        // Exclude current project if user is editing their current active draft
+        const filteredUserMatches = userMatch.filter(p => p.id !== currentProjectId);
+        if (filteredUserMatches.length > 0) {
+          const result = {
+            duplicate: false,
+            hasMatch: true,
+            noticeType: "registered_client",
+            message: "Welcome back! You have active project(s) in your CodeFuser account.",
+            existingCount: filteredUserMatches.length,
+            draftProject: filteredUserMatches[filteredUserMatches.length - 1] ? {
+              id: filteredUserMatches[filteredUserMatches.length - 1].id,
+              businessName: filteredUserMatches[filteredUserMatches.length - 1].business_name,
+              clientName: filteredUserMatches[filteredUserMatches.length - 1].client_name,
+              email: filteredUserMatches[filteredUserMatches.length - 1].email,
+              whatsapp: filteredUserMatches[filteredUserMatches.length - 1].whatsapp,
+              selectedPackage: filteredUserMatches[filteredUserMatches.length - 1].selected_package,
+              createdAt: filteredUserMatches[filteredUserMatches.length - 1].created_at || new Date().toISOString()
+            } : null
+          };
+          await cache.set(cacheKey, JSON.stringify(result), 30);
+          return res.json(result);
+        }
       }
     }
 
@@ -600,6 +604,23 @@ app.post("/api/projects/validate-step1", projectsRateLimiter, async (req: any, r
         }
       }
     }
+
+    // Exclude current project ID that was just created/saved in this session
+    if (currentProjectId) {
+      matchedProjects = matchedProjects.filter(p => p.id !== currentProjectId);
+    }
+
+    // Exclude drafts created in the last 10 minutes (which belong to the current auto-save filling session)
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    matchedProjects = matchedProjects.filter(p => {
+      if (p.status === 'draft' && p.created_at) {
+        const createdDate = new Date(p.created_at);
+        if (createdDate > tenMinutesAgo) {
+          return false; // Ignore very fresh auto-saved drafts from the current form session
+        }
+      }
+      return true;
+    });
 
     if (matchedProjects.length > 0) {
       const latest = matchedProjects[matchedProjects.length - 1];
@@ -1037,13 +1058,14 @@ app.post("/api/auth/signup", requestTimeout(10000, "Auth Signup"), validateBody(
     checkAbort(req);
     const supabase = getSupabase();
     
-    // Create authentication record in Supabase
+    console.log("=== STEP 1: signUp() START ===");
     let { data, error } = await supabase.auth.signUp({ email, password });
+    console.log("=== STEP 1: signUp() END ===", { hasUser: !!data?.user, error: error?.message });
     
     if (res.headersSent || req.timedOut) return;
 
-    // Handle case where user was already created in Supabase Auth on previous attempt
     if (error && (error.message?.includes("already registered") || error.message?.includes("already exists") || (error as any).status === 400)) {
+      console.log("=== STEP 1b: signInWithPassword fallback ===");
       const loginRes = await supabase.auth.signInWithPassword({ email, password });
       if (!loginRes.error && loginRes.data?.user) {
         data = loginRes.data;
@@ -1052,29 +1074,39 @@ app.post("/api/auth/signup", requestTimeout(10000, "Auth Signup"), validateBody(
     }
 
     if (error) {
+      console.log("=== STEP 1: signUp() FAILED ===", error);
       return res.status(400).json({ success: false, error: error.message });
     }
 
     if (data.user) {
-      console.log(`Creating/updating database profile for user: ${data.user.id}`);
+      console.log("=== STEP 2: createUserProfile() START ===");
       try {
         await createUserProfile({
           id: data.user.id,
           email: data.user.email || email,
-          role: "client", // New signups default to client
+          role: "client",
           fullName: fullName || "",
           businessName: businessName || ""
         }, req.reqId);
+        console.log("=== STEP 2: createUserProfile() END ===");
       } catch (profileErr: any) {
         console.warn(`[Auth Signup] User profile creation fallback notice for ${data.user.id}:`, profileErr?.message || profileErr);
       }
     }
 
+    console.log("=== STEP 3: project linking ===");
+    // project linking if any
+
+    console.log("=== STEP 4: response ===");
     return res.json({ success: true, user: data.user, session: data.session });
-  } catch (error: any) {
+  } catch (err: any) {
     if (res.headersSent) return;
-    console.error("Auth Signup error:", error);
-    return res.status(500).json({ success: false, error: error.message || "Failed to sign up." });
+    console.error("=== SIGNUP EXCEPTION CAUGHT ===");
+    console.error(err);
+    console.error(err?.stack);
+    console.error(err?.message);
+    console.error(err?.cause);
+    return res.status(500).json({ success: false, error: err?.message || "Failed to sign up." });
   }
 });
 

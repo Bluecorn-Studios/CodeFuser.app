@@ -614,19 +614,17 @@ export async function createUserProfile(profile: Omit<UserProfile, "createdAt">,
   };
 
   try {
-    await withRetry(async () => {
-      const { error } = await supabase
-        .from("user_profiles")
-        .upsert([newProfile], { onConflict: "id" });
+    console.log("Before insert");
 
-      if (error) {
-        throw new Error(`Supabase upsert profile error: ${error.message}`);
-      }
-    }, {
-      reqId,
-      operationName: "Supabase UPSERT (createUserProfile)",
-      isIdempotent: true
-    });
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .insert([newProfile])
+      .select();
+
+    console.log("After insert");
+    console.log({ data, error });
+
+    if (error) throw error;
   } catch (err: any) {
     console.warn(`[User Profile Fallback] Failed to create user profile in Supabase DB, using local profile fallback:`, err.message || err);
     saveLocalUserProfile(profileObj);

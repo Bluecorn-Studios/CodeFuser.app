@@ -1071,7 +1071,8 @@ export const StartProjectPage: React.FC = () => {
           body: JSON.stringify({
             email: formData.email,
             whatsapp: formData.whatsapp,
-            userId: getAuthUser()?.id || ""
+            userId: getAuthUser()?.id || "",
+            currentProjectId: createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || ""
           })
         });
 
@@ -1562,6 +1563,8 @@ ${formData.ownerName}
                                     <button
                                       type="button"
                                       onClick={() => {
+                                        setCreatedProjectId(null);
+                                        safeLocalStorage.removeItem('fuser_client_project_id');
                                         setStep1Notice(null);
                                         setStep(2);
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
