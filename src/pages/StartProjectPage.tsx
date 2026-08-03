@@ -41,6 +41,7 @@ import { getAuthUser, getAuthToken, setAuthSession, clearAuthSession } from '../
 import { getInitialPlusPackagePrice } from '../utils/pricingUtils';
 import { supabase } from '../lib/supabase';
 import { safeLocalStorage } from '../utils/safeStorage';
+import { PaymentSimulationPanel } from '../components/PaymentSimulationPanel';
 
 interface StartProjectData {
   businessName: string;
@@ -4013,6 +4014,24 @@ That's enough. We'll help with the rest.`}
                   )}
                 </button>
               </div>
+
+              {/* Dev Simulation Panel */}
+              <PaymentSimulationPanel
+                projectId={createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || ''}
+                term={selectedPaymentTerm}
+                getAuthToken={getAuthToken}
+                onSuccess={(updatedProject) => {
+                  setOnboardingStage('calendly');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onStatusChange={(status, msg) => {
+                  if (status === 'failed' || status === 'cancelled') {
+                    setPaymentErrorMsg(msg);
+                  } else {
+                    setPaymentErrorMsg(null);
+                  }
+                }}
+              />
             </motion.div>
           ) : onboardingStage === 'calendly' ? (
             <motion.div
@@ -4416,7 +4435,7 @@ function getOnboardingFallbackUpgrades(
       {
         id: "current",
         name: "⚡ Ignite",
-        price: "₹7,999",
+        price: "₹9,999",
         headline: "Show your work online and help local customers find you easily.",
         benefits: baseBenefits,
         rationale: "Ignite already gives you great value with key business features included."

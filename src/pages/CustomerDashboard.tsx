@@ -32,6 +32,7 @@ import { safeLocalStorage } from "../utils/safeStorage";
 import { useAuth } from "../context/AuthContext";
 import { useProject } from "../context/ProjectContext";
 import { apiClient } from "../lib/apiClient";
+import { PaymentSimulationPanel } from "../components/PaymentSimulationPanel";
 
 interface ProjectRecord {
   id: string;
@@ -538,7 +539,7 @@ export default function CustomerDashboard() {
   const getPlanDetails = (packageId: string) => {
     const p = packageId?.toLowerCase() || "";
     if (p.includes("ignite") || p.includes("foundation")) {
-      return { name: "Ignite Package", price: 7999, originalPrice: 7999, timeline: "5-7 days after asset submission" };
+      return { name: "Ignite Package", price: 9999, originalPrice: 9999, timeline: "5-7 days after asset submission" };
     }
     if (p.includes("growth") || p.includes("fusion")) {
       return { name: "Fusion Package", price: 19999, originalPrice: 19999, timeline: "10-14 days after asset submission" };
@@ -1184,7 +1185,7 @@ export default function CustomerDashboard() {
         )}
 
         {/* 1. WELCOME HERO SECTION (IMMEDIATELY ANSWERS 5 CORE QUESTIONS) */}
-        <section id="welcome-hero-card" className="bg-gradient-to-br from-[#0c0c0c] to-[#040404] border border-neutral-900 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
+        <section id="welcome-hero-card" className="bg-black border border-neutral-900 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
           <div className="absolute right-0 top-0 w-32 h-32 bg-gradient-to-bl from-amber-500/[0.04] to-transparent pointer-events-none" />
           
           <div className="flex items-center justify-between">
@@ -1692,6 +1693,24 @@ export default function CustomerDashboard() {
                           </>
                         )}
                       </button>
+
+                      <PaymentSimulationPanel
+                        projectId={projectId || ''}
+                        term="final"
+                        getAuthToken={getAuthToken}
+                        onSuccess={async () => {
+                          await refreshProject();
+                          setSuccessIndicator("Milestone payment simulated successfully!");
+                          setTimeout(() => setSuccessIndicator(null), 5000);
+                        }}
+                        onStatusChange={(status, msg) => {
+                          if (status === 'failed' || status === 'cancelled') {
+                            setPaymentError(msg);
+                          } else {
+                            setPaymentError(null);
+                          }
+                        }}
+                      />
                     </div>
                   )}
 
@@ -1735,6 +1754,24 @@ export default function CustomerDashboard() {
                         Reset Quote
                       </button>
                     </div>
+
+                    <PaymentSimulationPanel
+                      projectId={projectId || ''}
+                      term="upfront"
+                      getAuthToken={getAuthToken}
+                      onSuccess={async () => {
+                        await refreshProject();
+                        setSuccessIndicator("Quotation payment simulated successfully!");
+                        setTimeout(() => setSuccessIndicator(null), 5000);
+                      }}
+                      onStatusChange={(status, msg) => {
+                        if (status === 'failed' || status === 'cancelled') {
+                          setPaymentError(msg);
+                        } else {
+                          setPaymentError(null);
+                        }
+                      }}
+                    />
                   </div>
                 </section>
               )

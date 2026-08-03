@@ -11,7 +11,8 @@ import {
   uploadAssetSchema,
   adminVerifySchema,
   recommendationSchema,
-  packageUpgradeSchema
+  packageUpgradeSchema,
+  simulatePaymentSchema
 } from "./server/validator.js";
 
 interface TestCase {
@@ -32,7 +33,8 @@ const endpoints = [
   { name: "POST /api/projects/:id/upload", schema: uploadAssetSchema },
   { name: "POST /api/admin/verify", schema: adminVerifySchema },
   { name: "POST /api/recommendation", schema: recommendationSchema },
-  { name: "POST /api/start-project/package-upgrade-options", schema: packageUpgradeSchema }
+  { name: "POST /api/start-project/package-upgrade-options", schema: packageUpgradeSchema },
+  { name: "POST /api/projects/:id/simulate-payment", schema: simulatePaymentSchema }
 ];
 
 console.log("=====================================================");

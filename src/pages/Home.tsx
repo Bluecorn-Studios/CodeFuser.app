@@ -135,7 +135,7 @@ function HeroSection() {
             </svg>
           </div>
 
-          <h1 className="font-display mt-6 text-balance text-[clamp(1.85rem,6.8vw,5.25rem)] leading-[1.1] sm:leading-[1.05] text-foreground text-glow-strong font-bold">
+          <h1 className="font-display mt-6 text-balance text-[clamp(1.85rem,6.8vw,5.25rem)] leading-[1.1] sm:leading-[1.05] text-foreground text-glow-18 font-bold">
             Your Business Isn't Small.<br />
             <span className="text-platinum">Its Visibility Is.</span>
           </h1>

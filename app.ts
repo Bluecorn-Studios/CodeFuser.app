@@ -31,6 +31,7 @@ import {
   saveQuoteSchema,
   createOrderSchema,
   verifyPaymentSchema,
+  simulatePaymentSchema,
   uploadAssetSchema,
   adminVerifySchema,
   recommendationSchema,
@@ -1875,11 +1876,21 @@ app.get("/api/projects/:id/assets/:assetId/download-url", requestTimeout(10000, 
   }
 });
 
-// API: Expose Razorpay Public Key ID
+// API: Expose Razorpay Public Key ID & Development Simulation status
 app.get("/api/config/razorpay", (req, res) => {
+  const isDevSimulation = process.env.NODE_ENV !== "production" && process.env.RAZORPAY_VERIFICATION_MODE !== "live";
   return res.json({
     keyId: process.env.RAZORPAY_KEY_ID || "",
-    verificationModeActive: false
+    verificationModeActive: false,
+    isDevSimulation
+  });
+});
+
+app.get("/api/config/dev-simulation", (req, res) => {
+  const isDevSimulation = process.env.NODE_ENV !== "production" && process.env.RAZORPAY_VERIFICATION_MODE !== "live";
+  return res.json({
+    enabled: isDevSimulation,
+    environment: process.env.NODE_ENV || "development"
   });
 });
 
@@ -1909,7 +1920,7 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
           // If discount was already applied when locking quote (e.g., price is 7199, discount is 800)
           amountInRupees = Math.round(totalPrice);
         } else {
-          // If price stored is the base price (e.g., 7999), apply 10% upfront discount
+          // If price stored is the base price (e.g., 9999), apply 10% upfront discount
           amountInRupees = Math.round(totalPrice * 0.9);
         }
       } else {
@@ -1921,7 +1932,7 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
       // Fallback manual price calculation if quote is missing
       const packageId = project.selectedPackage || "growth";
       let basePrice = 19999;
-      if (packageId === "foundation") basePrice = 7999;
+      if (packageId === "foundation") basePrice = 9999;
       if (packageId === "dominance") basePrice = 39999;
       
       if (term === "upfront") {
@@ -1931,16 +1942,12 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
       }
     }
 
-    // Override for Ignite plan live verification testing: ensure Ignite order amount sent to Razorpay is exactly ₹1 (100 paise)
+    // Ignite plan order amount calculation
     const isIgnitePlan = 
       project.selectedPackage === "foundation" ||
       (project.selectedPackage && project.selectedPackage.toLowerCase().includes("ignite")) ||
       (planName && planName.toLowerCase().includes("ignite")) ||
       (extra?.quote?.packageName && extra.quote.packageName.toLowerCase().includes("ignite"));
-
-    if (isIgnitePlan) {
-      amountInRupees = 1;
-    }
 
     const amountInPaise = amountInRupees * 100;
 
@@ -2002,6 +2009,117 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
   }
 });
 
+// Helper: Shared Payment Success Processing Logic (Reused by Razorpay verification, Webhook & Simulation)
+async function processPaymentSuccessCore({
+  id,
+  req,
+  project,
+  term,
+  razorpay_order_id,
+  razorpay_payment_id,
+  provider = "razorpay",
+  isSimulated = false
+}: {
+  id: string;
+  req: any;
+  project: any;
+  term: string;
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  provider?: string;
+  isSimulated?: boolean;
+}) {
+  const extra = await getExtraData(id);
+  const planName = extra?.quote?.packageName || "Standard Package";
+
+  const portalAccessSource = project.portalAccessSource || "automatic";
+  const shouldGrantAccess = portalAccessSource === "manual" ? project.portalAccess : true;
+
+  const isFinalMilestone = term === "final";
+  const nextPaymentStatus = (term === "upfront" || isFinalMilestone) ? "paid" : "partially_paid";
+  const planDetailString = isFinalMilestone ? `${planName} (fully paid milestone)` : `${planName} (${term || "milestone"})${isSimulated ? " [SIMULATED]" : ""}`;
+
+  const updates = {
+    paymentStatus: nextPaymentStatus,
+    portalAccess: shouldGrantAccess,
+    paymentProvider: provider,
+    paymentId: razorpay_payment_id,
+    orderId: razorpay_order_id,
+    purchasedPlan: planDetailString,
+    purchaseDate: new Date().toISOString(),
+    portalAccessSource
+  };
+
+  const updatedProject = await updateProject(id, updates, req.reqId);
+
+  // Track event in Audit Trail
+  await logAuditEvent({
+    projectId: id,
+    eventType: isSimulated ? "Payment Verified (Simulated)" : "Payment Verified",
+    requestId: req.reqId,
+    actor: isSimulated ? "System" : "Client",
+    status: "Success",
+    notes: `Verified payment of plan: ${updates.purchasedPlan}. Ref: ${razorpay_payment_id}`
+  });
+
+  if (shouldGrantAccess) {
+    await logAuditEvent({
+      projectId: id,
+      eventType: "Portal Activated",
+      requestId: req.reqId,
+      actor: "System",
+      status: "Success",
+      notes: isSimulated ? "Portal access automatically granted upon simulated payment." : "Portal access automatically granted upon successful payment."
+    });
+  }
+
+  // Send Receipt Email Notification
+  const devUrl = process.env.DEV_APP_URL || "http://localhost:3000";
+  const portalUrl = `${devUrl}/login`;
+  const calcReceiptAmount = (extraData: any, pTerm: string) => {
+    if (extraData?.quote?.price) {
+      const qPrice = extraData.quote.price;
+      const qDiscount = Number(extraData.quote.discount || 0);
+      if (pTerm === "upfront") {
+        return "Rs. " + (qDiscount > 0 ? qPrice : Math.round(qPrice * 0.9));
+      } else {
+        const baseP = qDiscount > 0 ? (qPrice + qDiscount) : qPrice;
+        return "Rs. " + Math.round(baseP * 0.5);
+      }
+    }
+    return pTerm === "upfront" ? "Rs. 13,499" : "Rs. 7,499";
+  };
+  const formattedAmount = calcReceiptAmount(extra, term);
+  const emailHtml = getPaymentSuccessTemplate(
+    updatedProject.clientName,
+    updatedProject.businessName,
+    updates.purchasedPlan,
+    razorpay_order_id,
+    formattedAmount,
+    portalUrl
+  );
+  sendEmailAsync(updatedProject.email, `${isSimulated ? "[SIMULATED] " : ""}Payment Confirmed - ${updatedProject.businessName}`, emailHtml);
+
+  // Dispatch Internal Admin Alert
+  triggerAdminNotification(
+    isSimulated ? "Payment Verified (Simulated)" : "Payment Verified",
+    `Successful checkout transaction has been completed and verified for project ${updatedProject.businessName}.${isSimulated ? " (Development Simulation Mode)" : ""}`,
+    {
+      "Project ID": id,
+      "Client Name": updatedProject.clientName,
+      "Business Name": updatedProject.businessName,
+      "Plan Purchased": updates.purchasedPlan,
+      "Payment Ref": razorpay_payment_id,
+      "Order Ref": razorpay_order_id,
+      "Amount Verified": formattedAmount,
+      "Simulation Mode": isSimulated ? "Active" : "Disabled"
+    },
+    req.reqId
+  );
+
+  return updatedProject;
+}
+
 // API: Verify Razorpay Payment Signature (Client-side fast checkout verification)
 app.post("/api/projects/:id/verify-payment", requestTimeout(15000, "Verify Razorpay Payment"), validateProjectIdParam, requireAuth, verifyProjectOwnership, paymentVerificationRateLimiter, validateBody(verifyPaymentSchema), async (req: any, res) => {
   try {
@@ -2020,9 +2138,6 @@ app.post("/api/projects/:id/verify-payment", requestTimeout(15000, "Verify Razor
     // Retrieve project by ID from request context
     const project = req.project;
 
-    const extra = await getExtraData(id);
-    const planName = extra?.quote?.packageName || "Standard Package";
-    
     // Check if project was already updated
     if ((project.paymentStatus === "paid" || project.paymentStatus === "partially_paid") && project.paymentId === razorpay_payment_id) {
       return res.json({
@@ -2032,92 +2147,16 @@ app.post("/api/projects/:id/verify-payment", requestTimeout(15000, "Verify Razor
       });
     }
 
-    const portalAccessSource = project.portalAccessSource || "automatic";
-    const shouldGrantAccess = portalAccessSource === "manual" ? project.portalAccess : true;
-
-    // Update project state in Supabase & Extra store supporting dual-milestone states
-    const isFinalMilestone = term === "final";
-    const nextPaymentStatus = (term === "upfront" || isFinalMilestone) ? "paid" : "partially_paid";
-    const planDetailString = isFinalMilestone ? `${planName} (fully paid milestone)` : `${planName} (${term || "milestone"})`;
-
-    const updates = {
-      paymentStatus: nextPaymentStatus,
-      portalAccess: shouldGrantAccess,
-      paymentProvider: "razorpay",
-      paymentId: razorpay_payment_id,
-      orderId: razorpay_order_id,
-      purchasedPlan: planDetailString,
-      purchaseDate: new Date().toISOString(),
-      portalAccessSource
-    };
-
-    checkAbort(req);
-
-    const updatedProject = await updateProject(id, updates, req.reqId);
-
-    // Track event in Audit Trail
-    await logAuditEvent({
-      projectId: id,
-      eventType: "Payment Verified",
-      requestId: req.reqId,
-      actor: "Client",
-      status: "Success",
-      notes: `Verified payment of plan: ${updates.purchasedPlan}. Ref: ${razorpay_payment_id}`
-    });
-
-    if (shouldGrantAccess) {
-      await logAuditEvent({
-        projectId: id,
-        eventType: "Portal Activated",
-        requestId: req.reqId,
-        actor: "System",
-        status: "Success",
-        notes: "Portal access automatically granted upon successful payment."
-      });
-    }
-
-    // Send Receipt Email Notification
-    const devUrl = process.env.DEV_APP_URL || "http://localhost:3000";
-    const portalUrl = `${devUrl}/login`;
-    const calcReceiptAmount = (extraData: any, pTerm: string) => {
-      if (extraData?.quote?.price) {
-        const qPrice = extraData.quote.price;
-        const qDiscount = Number(extraData.quote.discount || 0);
-        if (pTerm === "upfront") {
-          return "Rs. " + (qDiscount > 0 ? qPrice : Math.round(qPrice * 0.9));
-        } else {
-          const baseP = qDiscount > 0 ? (qPrice + qDiscount) : qPrice;
-          return "Rs. " + Math.round(baseP * 0.5);
-        }
-      }
-      return pTerm === "upfront" ? "Rs. 13,499" : "Rs. 7,499";
-    };
-    const formattedAmount = calcReceiptAmount(extra, term);
-    const emailHtml = getPaymentSuccessTemplate(
-      updatedProject.clientName,
-      updatedProject.businessName,
-      updates.purchasedPlan,
+    const updatedProject = await processPaymentSuccessCore({
+      id,
+      req,
+      project,
+      term,
       razorpay_order_id,
-      formattedAmount,
-      portalUrl
-    );
-    sendEmailAsync(updatedProject.email, `Payment Confirmed - ${updatedProject.businessName}`, emailHtml);
-
-    // Dispatch Internal Admin Alert
-    triggerAdminNotification(
-      "Payment Verified",
-      `Successful checkout transaction has been completed and verified for project ${updatedProject.businessName}.`,
-      {
-        "Project ID": id,
-        "Client Name": updatedProject.clientName,
-        "Business Name": updatedProject.businessName,
-        "Plan Purchased": updates.purchasedPlan,
-        "Payment Ref": razorpay_payment_id,
-        "Order Ref": razorpay_order_id,
-        "Amount Verified": formattedAmount
-      },
-      req.reqId
-    );
+      razorpay_payment_id,
+      provider: "razorpay",
+      isSimulated: false
+    });
 
     if (res.headersSent || req.timedOut) return;
 
@@ -2130,6 +2169,112 @@ app.post("/api/projects/:id/verify-payment", requestTimeout(15000, "Verify Razor
     if (res.headersSent) return;
     console.error("Failed to verify payment:", error);
     return res.status(500).json({ success: false, error: error.message || "Failed to verify payment." });
+  }
+});
+
+// API: Development Payment Simulation Endpoint (Reuses exact core payment success flow)
+app.post("/api/projects/:id/simulate-payment", requestTimeout(15000, "Simulate Payment"), validateProjectIdParam, requireAuth, verifyProjectOwnership, validateBody(simulatePaymentSchema), async (req: any, res) => {
+  try {
+    // PRODUCTION SAFETY GUARD: MUST NEVER execution in production environments
+    if (process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live") {
+      return res.status(403).json({
+        success: false,
+        error: "Payment simulation is disabled in production environments."
+      });
+    }
+
+    const { id } = req.params;
+    const { term = "upfront", action = "success" } = req.body;
+    const project = req.project;
+
+    checkAbort(req);
+
+    if (action === "success") {
+      const simOrderId = "sim_order_" + Date.now();
+      const simPaymentId = "sim_pay_" + Date.now();
+
+      const updatedProject = await processPaymentSuccessCore({
+        id,
+        req,
+        project,
+        term: term || "upfront",
+        razorpay_order_id: simOrderId,
+        razorpay_payment_id: simPaymentId,
+        provider: "simulated_razorpay",
+        isSimulated: true
+      });
+
+      if (res.headersSent || req.timedOut) return;
+
+      return res.json({
+        success: true,
+        message: "Payment simulation successful. Client portal unlocked.",
+        project: updatedProject
+      });
+    } else if (action === "failed") {
+      const updatedProject = await updateProject(id, { paymentStatus: "failed" }, req.reqId);
+      await logAuditEvent({
+        projectId: id,
+        eventType: "Payment Failed (Simulated)",
+        requestId: req.reqId,
+        actor: "System",
+        status: "Failed",
+        notes: `Simulated transaction failure for term: ${term}`
+      });
+
+      triggerAdminNotification(
+        "Payment Failed (Simulated)",
+        `Simulated payment failure triggered for project ${project.businessName}.`,
+        { "Project ID": id, "Term": term },
+        req.reqId
+      );
+
+      return res.json({
+        success: true,
+        message: "Simulated payment failure processed.",
+        project: updatedProject,
+        paymentStatus: "failed"
+      });
+    } else if (action === "cancelled") {
+      const updatedProject = await updateProject(id, { paymentStatus: "cancelled" }, req.reqId);
+      await logAuditEvent({
+        projectId: id,
+        eventType: "Payment Cancelled (Simulated)",
+        requestId: req.reqId,
+        actor: "System",
+        status: "Failed",
+        notes: `Simulated transaction cancellation for term: ${term}`
+      });
+
+      return res.json({
+        success: true,
+        message: "Simulated payment cancellation processed.",
+        project: updatedProject,
+        paymentStatus: "cancelled"
+      });
+    } else if (action === "pending") {
+      const updatedProject = await updateProject(id, { paymentStatus: "pending" }, req.reqId);
+      await logAuditEvent({
+        projectId: id,
+        eventType: "Payment Pending (Simulated)",
+        requestId: req.reqId,
+        actor: "System",
+        status: "Pending",
+        notes: `Simulated pending transaction for term: ${term}`
+      });
+
+      return res.json({
+        success: true,
+        message: "Simulated pending payment processed.",
+        project: updatedProject
+      });
+    } else {
+      return res.status(400).json({ success: false, error: `Invalid simulation action: ${action}` });
+    }
+  } catch (error: any) {
+    if (res.headersSent) return;
+    console.error("Failed to process payment simulation:", error);
+    return res.status(500).json({ success: false, error: error.message || "Simulation failed." });
   }
 });
 
@@ -2467,7 +2612,7 @@ app.post("/api/recommendation", requestTimeout(45000, "AI Recommendation"), vali
     const systemPrompt = `You are CodeFuser's expert IT and Business Growth Advisor.
 Analyze the user's business diagnostics audit and generate personalized website package recommendations.
 CodeFuser offers three precise and distinct tiered packages:
-1. Ignite (id: "foundation", Price: "₹7,999", level: 1): Premium visual one-page identity hub. Best for micro-businesses, SaaS validate-tests, simple services, and direct local landing pages.
+1. Ignite (id: "foundation", Price: "₹9,999", level: 1): Premium visual one-page identity hub. Best for micro-businesses, SaaS validate-tests, simple services, and direct local landing pages.
 2. Fusion (id: "growth", Price: "₹19,999", level: 2): Full-scale multi-section business growth core. Best for local businesses desiring advanced lead forms, review showcases, interactive FAQs, and automated scheduler booking grids.
 3. Catalyst (id: "dominance", Price: "₹39,999", level: 3): Immersive automated custom application. Ideal for complex digital agencies, CRM lead-pipelines, dynamic showcases, client accounts, or customized logic flows.
 
@@ -2534,7 +2679,7 @@ Ensure absolutely ZERO developer-jargon, confidence scores, technical metrics, A
                         },
                         price: { 
                           type: Type.STRING, 
-                          description: "List the correct price: ₹7,999 for foundation, ₹19,999 for growth, and ₹39,999 for dominance" 
+                          description: "List the correct price: ₹9,999 for foundation, ₹19,999 for growth, and ₹39,999 for dominance" 
                         },
                         bullets: {
                           type: Type.ARRAY,
@@ -2619,7 +2764,7 @@ app.post("/api/start-project/package-upgrade-options", requestTimeout(45000, "AI
     }
 
     const PLUS_PREDEFINED_PRICES: Record<string, string[]> = {
-      foundation: ["₹8,450", "₹9,250", "₹9,999", "₹10,250", "₹11,500"],
+      foundation: ["₹10,450", "₹11,250", "₹11,999", "₹12,250", "₹13,500"],
       growth: ["₹20,250", "₹20,999", "₹21,500", "₹22,250", "₹22,900"],
       dominance: ["₹41,500", "₹43,250", "₹44,999", "₹46,800", "₹48,250"]
     };
@@ -2644,7 +2789,7 @@ app.post("/api/start-project/package-upgrade-options", requestTimeout(45000, "AI
 
     if (packageId === "foundation") {
       baseName = "⚡ Ignite";
-      basePrice = "₹7,999";
+      basePrice = "₹9,999";
       baseFeatures = [
         "Premium launch experience",
         "Better overall customer experience",
@@ -2777,13 +2922,13 @@ PRIORITY HIERARCHY FOR RECOMMENDATIONS:
    - Step 6 is an AI Consultation for the client's package.
    - Card 1 (id: "current"):
      * name: "${baseName}" (e.g. "Ignite", "Fusion", or "Catalyst").
-     * price: "${basePrice}" (e.g. "₹7,999", "₹19,999", or "₹39,999").
+     * price: "${basePrice}" (e.g. "₹9,999", "₹19,999", or "₹39,999").
      * headline: 1 short sentence describing what is included in this package for their business.
      * benefits: Array of 3-4 simple features included in this base package (e.g. ["✓ Portfolio Gallery", "✓ Price Packages", "✓ Contact Form", "✓ Google Map"]).
      * rationale: 1 short sentence explaining why this package fits their business goals.
    - Card 2 (id: "upgrade_1"):
      * name: "${baseName} + [Single Add-on Feature Name]" (e.g. "Ignite + Online Booking", "Fusion + WhatsApp Booking", "Catalyst + Client Portal").
-     * price: AI Recommended Plus price (MUST be one of these predefined prices: For Ignite: ₹8,450, ₹9,250, ₹9,999, ₹10,250, or ₹11,500. For Fusion: ₹20,250, ₹20,999, ₹21,500, ₹22,250, or ₹22,900. For Catalyst: ₹41,500, ₹43,250, ₹44,999, ₹46,800, or ₹48,250).
+     * price: AI Recommended Plus price (MUST be one of these predefined prices: For Ignite: ₹10,450, ₹11,250, ₹11,999, ₹12,250, or ₹13,500. For Fusion: ₹20,250, ₹20,999, ₹21,500, ₹22,250, or ₹22,900. For Catalyst: ₹41,500, ₹43,250, ₹44,999, ₹46,800, or ₹48,250).
      * headline: 1 short sentence describing the benefit of adding this single optional feature.
      * benefits: Array containing ONLY the single optional add-on feature (e.g. ["✓ Online Booking"]).
      * rationale: 1 short sentence explaining why adding this single feature gives extra value to their business.
@@ -3198,7 +3343,7 @@ function getFallbackUpgrades(
     recReason = "Makes it easier for buyers to ask about properties.";
   }
 
-  const fPrices = ["₹8,450", "₹9,250", "₹9,999", "₹10,250", "₹11,500"];
+  const fPrices = ["₹10,450", "₹11,250", "₹11,999", "₹12,250", "₹13,500"];
   const gPrices = ["₹20,250", "₹20,999", "₹21,500", "₹22,250", "₹22,900"];
   const dPrices = ["₹41,500", "₹43,250", "₹44,999", "₹46,800", "₹48,250"];
 
@@ -3208,7 +3353,7 @@ function getFallbackUpgrades(
       {
         id: "current",
         name: "⚡ Ignite",
-        price: "₹7,999",
+        price: "₹9,999",
         headline: "Show your work online and help local customers find you easily.",
         benefits: getDynamicIndustryBenefits(industry, 'base'),
         rationale: "Ignite already gives you great value with key business features included."
@@ -3350,7 +3495,7 @@ function getDeterministicRecommendation(formData: any) {
   } else if (!needsBooking && !needsFeatures) {
     bestMatchId = 'foundation';
     bestMatchName = '⚡ Ignite';
-    bestMatchPrice = '₹7,999';
+    bestMatchPrice = '₹9,999';
     bestMatchTagline = 'High-velocity showcase to validate your visual identity with minimal latency.';
   } else {
     bestMatchId = 'dominance';
@@ -3377,7 +3522,7 @@ function getDeterministicRecommendation(formData: any) {
       planName: "⚡ Ignite",
       tag: "💰 Best Value",
       tagline: "Unlocks high-impact conversion metrics with lightweight overhead.",
-      price: "₹7,999",
+      price: "₹9,999",
       bullets: [
         "Provides an elegant single-page presentation optimized specifically for mobile responsiveness.",
         "Perfect entry point for capturing new digital leads without secondary maintenance overhead.",

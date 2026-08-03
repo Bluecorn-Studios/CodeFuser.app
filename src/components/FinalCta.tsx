@@ -96,74 +96,76 @@ export const Ring: React.FC<RingProps> = ({
 export const FinalCta: React.FC = () => {
   const { currentPath, navigate } = useAppRouter();
   return (
-    <section className="relative overflow-hidden px-4 py-20 sm:py-36 sm:px-8">
-      {/* Centered drawing ring */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-        <Ring size={310} className="sm:hidden" progress={0.55} completeOnView={true} />
-        <Ring size={680} className="hidden sm:block" progress={0.55} completeOnView={true} />
-      </div>
-
+    <section className="relative overflow-hidden px-4 py-20 sm:py-32 sm:px-8">
       <div className="mx-auto max-w-4xl text-center">
-        <Reveal>
-          <Eyebrow>11 — Final Step</Eyebrow>
-          
-          <h2 className="font-display mt-6 sm:mt-8 text-balance text-[clamp(1.85rem,5.8vw,4.8rem)] leading-[1.08] sm:leading-[1.0] text-foreground text-glow-strong font-bold">
-            Ready To Break<br className="hidden sm:inline" />
-            <span className="text-platinum"> The Invisible Ceiling?</span>
-          </h2>
-
-          <div className="mx-auto mt-8 max-w-xl space-y-2 text-base text-muted-foreground leading-relaxed">
-            <p>The opportunity already exists.</p>
-            <p>The question is whether people can see it.</p>
+        {/* Main CTA Container with its own centered Background Drawing Ring */}
+        <div className="relative py-6 sm:py-10">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+            <Ring size={320} className="sm:hidden" progress={0.55} completeOnView={true} />
+            <Ring size={680} className="hidden sm:block" progress={0.55} completeOnView={true} />
           </div>
 
-          <div className="mt-12 max-w-md mx-auto">
-            {/* Start Project */}
-            <div className="relative group p-6 rounded-2xl bg-[#050505]/60 border border-neutral-900 shadow-[0_10px_30px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.03)] hover:border-neutral-800/80 hover:bg-[#070707] transition-all duration-300 flex flex-col justify-between">
-              <div className="pt-2">
-                <div className="flex justify-center">
-                  <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-neutral-950 border border-neutral-900 text-neutral-500 mb-4 group-hover:text-foreground group-hover:border-neutral-800 transition-colors">
-                    <Sparkles size={18} />
-                  </span>
+          <Reveal>
+            <Eyebrow>11 — Final Step</Eyebrow>
+            
+            <h2 className="font-display mt-6 sm:mt-8 text-balance text-[clamp(1.85rem,5.8vw,4.8rem)] leading-[1.08] sm:leading-[1.0] text-foreground text-glow-strong font-bold">
+              Ready To Break<br className="hidden sm:inline" />
+              <span className="text-platinum"> The Invisible Ceiling?</span>
+            </h2>
+
+            <div className="mx-auto mt-8 max-w-xl space-y-2 text-base text-muted-foreground leading-relaxed">
+              <p>The opportunity already exists.</p>
+              <p>The question is whether people can see it.</p>
+            </div>
+
+            <div className="mt-12 max-w-md mx-auto">
+              {/* Start Project */}
+              <div className="relative group p-6 rounded-2xl bg-[#050505]/80 border border-neutral-900 shadow-[0_10px_30px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.03)] hover:border-neutral-800/80 hover:bg-[#070707] transition-all duration-300 flex flex-col justify-between">
+                <div className="pt-2">
+                  <div className="flex justify-center">
+                    <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-neutral-950 border border-neutral-900 text-neutral-500 mb-4 group-hover:text-foreground group-hover:border-neutral-800 transition-colors">
+                      <Sparkles size={18} />
+                    </span>
+                  </div>
+                  <h3 className="font-display text-lg text-white font-medium text-glow-soft text-center">
+                    Start Project
+                  </h3>
+                  <p className="mt-2 text-xs text-muted-foreground leading-relaxed text-center">
+                    Ready to launch your digital business? Let's begin building your premium project.
+                  </p>
                 </div>
-                <h3 className="font-display text-lg text-white font-medium text-glow-soft text-center">
-                  Start Project
-                </h3>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed text-center">
-                  Ready to launch your digital business? Let's begin building your premium project.
-                </p>
-              </div>
-              <div className="mt-6">
-                <Button 
-                  onClick={() => {
-                    scrollToSection('pricing');
-                  }}
-                  className="w-full justify-center text-xs py-2.5 cursor-pointer"
-                >
-                  Start Project
-                </Button>
+                <div className="mt-6">
+                  <Button 
+                    onClick={() => {
+                      scrollToSection('pricing');
+                    }}
+                    className="w-full justify-center text-xs py-2.5 cursor-pointer"
+                  >
+                    Start Project
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-8 flex justify-center">
-            <a 
-              href={getWhatsAppLink()} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-xs text-muted-foreground hover:text-foreground font-semibold tracking-wide transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              Have quick questions? Message us on WhatsApp →
-            </a>
-          </div>
-        </Reveal>
+            <div className="mt-8 flex justify-center">
+              <a 
+                href={getWhatsAppLink()} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-xs text-muted-foreground hover:text-foreground font-semibold tracking-wide transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                Have quick questions? Message us on WhatsApp →
+              </a>
+            </div>
+          </Reveal>
+        </div>
 
-        {/* Closing philosophical quote */}
-        <Reveal delay={250} className="mt-16 sm:mt-20">
-          <p className="font-display text-balance text-lg leading-snug text-foreground/85 sm:text-xl">
+        {/* Closing philosophical quote cleanly positioned below the Ring */}
+        <Reveal delay={250} className="mt-20 sm:mt-28">
+          <p className="font-display text-balance text-lg leading-snug text-foreground/85 sm:text-2xl">
             Visibility changes attention.<br />
             Attention changes decisions.<br />
-            <span className="text-platinum">Decisions change businesses.</span>
+            <span className="text-platinum font-semibold">Decisions change businesses.</span>
           </p>
         </Reveal>
       </div>

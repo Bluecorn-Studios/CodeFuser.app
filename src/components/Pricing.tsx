@@ -2,13 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { R as Reveal, E as Eyebrow, G as Button, b as getMailtoLink, cn, useAppRouter, Link } from './Reveal';
 import { PricingPlan } from '../types';
-import { X, Sparkles, MessageSquare, Gift, Globe, Check } from 'lucide-react';
+import { X, Sparkles, MessageSquare, Gift, Globe, Check, Lock, ShieldCheck, Tag } from 'lucide-react';
 
 export const pricingPlans: PricingPlan[] = [
   {
     id: "foundation",
     name: "⚡ Ignite",
-    price: "₹7,999",
+    price: "₹9,999",
     tagline: "Get your business online and build trust.",
     level: 1,
     capacity: "■■□□□",
@@ -671,29 +671,35 @@ Looking forward to discussing my project.`;
             Select the right digital setup for your stage. 100% clear pricing with zero unexpected charges.
           </p>
 
-          {/* Trust Guarantee Micro-Cards */}
-          <div className="mt-8 mx-auto max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.025] border border-white/10 backdrop-blur-md hover:border-amber-500/30 transition-all text-left">
-              <span className="text-lg shrink-0">🔒</span>
+          {/* Trust Guarantee Micro-Cards in CodeFuser Theme */}
+          <div className="mt-8 mx-auto max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="group flex items-center gap-3.5 px-4 py-3.5 rounded-2xl bg-[#050505]/80 border border-neutral-800/80 hover:border-amber-500/40 hover:bg-[#080808] transition-all duration-300 text-left shadow-[0_8px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+                <Lock size={18} />
+              </div>
               <div>
-                <div className="text-xs sm:text-sm font-bold text-white tracking-wide">50% Advance</div>
-                <div className="text-[11px] text-neutral-400">To start your setup</div>
+                <div className="text-xs sm:text-sm font-bold text-white tracking-wide font-display group-hover:text-amber-300 transition-colors">50% Advance</div>
+                <div className="text-[11px] text-neutral-400 font-sans mt-0.5">To start your setup</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.025] border border-white/10 backdrop-blur-md hover:border-amber-500/30 transition-all text-left">
-              <span className="text-lg shrink-0">✅</span>
+            <div className="group flex items-center gap-3.5 px-4 py-3.5 rounded-2xl bg-[#050505]/80 border border-neutral-800/80 hover:border-emerald-500/40 hover:bg-[#080808] transition-all duration-300 text-left shadow-[0_8px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 group-hover:scale-105 transition-transform shrink-0">
+                <ShieldCheck size={18} />
+              </div>
               <div>
-                <div className="text-xs sm:text-sm font-bold text-white tracking-wide">50% On Handover</div>
-                <div className="text-[11px] text-neutral-400">Pay after final approval</div>
+                <div className="text-xs sm:text-sm font-bold text-white tracking-wide font-display group-hover:text-emerald-300 transition-colors">50% On Handover</div>
+                <div className="text-[11px] text-neutral-400 font-sans mt-0.5">Pay after final approval</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.025] border border-white/10 backdrop-blur-md hover:border-amber-500/30 transition-all text-left">
-              <span className="text-lg shrink-0">🏷️</span>
+            <div className="group flex items-center gap-3.5 px-4 py-3.5 rounded-2xl bg-[#050505]/80 border border-neutral-800/80 hover:border-purple-500/40 hover:bg-[#080808] transition-all duration-300 text-left shadow-[0_8px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+              <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-300 group-hover:scale-105 transition-transform shrink-0">
+                <Tag size={18} />
+              </div>
               <div>
-                <div className="text-xs sm:text-sm font-bold text-white tracking-wide">Fixed Price</div>
-                <div className="text-[11px] text-neutral-400">Zero hidden development fees</div>
+                <div className="text-xs sm:text-sm font-bold text-white tracking-wide font-display group-hover:text-purple-200 transition-colors">Fixed Price</div>
+                <div className="text-[11px] text-neutral-400 font-sans mt-0.5">Zero hidden development fees</div>
               </div>
             </div>
           </div>

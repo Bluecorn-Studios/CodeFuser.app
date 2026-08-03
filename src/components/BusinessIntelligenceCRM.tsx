@@ -251,7 +251,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
 
     // Default package price fallbacks if no quote is set
     let basePkgPrice = 19999; // growth/Fusion default
-    if (p.selectedPackage === "foundation") basePkgPrice = 7999;
+    if (p.selectedPackage === "foundation") basePkgPrice = 9999;
     if (p.selectedPackage === "dominance") basePkgPrice = 39999;
 
     if (p.purchasedPlan?.toLowerCase().includes("upfront")) {
@@ -273,7 +273,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
 
     // Else add prospective package value
     let basePkgPrice = 19999;
-    if (p.selectedPackage === "foundation") basePkgPrice = 7999;
+    if (p.selectedPackage === "foundation") basePkgPrice = 9999;
     if (p.selectedPackage === "dominance") basePkgPrice = 39999;
     return acc + basePkgPrice;
   }, 0);
@@ -293,7 +293,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
   }, {} as Record<string, number>);
 
   const packagePopularity = [
-    { id: "foundation", name: "Ignite (₹7,999)", count: pkgCounts["foundation"] || 0, color: "bg-amber-500" },
+    { id: "foundation", name: "Ignite (₹9,999)", count: pkgCounts["foundation"] || 0, color: "bg-amber-500" },
     { id: "growth", name: "Fusion (₹19,999)", count: pkgCounts["growth"] || 0, color: "bg-blue-500" },
     { id: "dominance", name: "Catalyst (₹39,999)", count: pkgCounts["dominance"] || 0, color: "bg-red-500" }
   ];
@@ -431,7 +431,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
             const stagePotentialVal = stage.projectsList.reduce((acc, p) => {
               if (p.quote && p.quote.price) return acc + (p.quote.price - (p.quote.discount || 0));
               let fallbackPrice = 19999;
-              if (p.selectedPackage === "foundation") fallbackPrice = 7999;
+              if (p.selectedPackage === "foundation") fallbackPrice = 9999;
               if (p.selectedPackage === "dominance") fallbackPrice = 39999;
               return acc + fallbackPrice;
             }, 0);

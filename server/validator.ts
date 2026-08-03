@@ -393,6 +393,12 @@ export const verifyPaymentSchema: Schema = {
   term: { type: "string", required: false, allowedValues: ["milestone", "upfront", "final", ""] }
 };
 
+// 7b. POST /api/projects/:id/simulate-payment
+export const simulatePaymentSchema: Schema = {
+  term: { type: "string", required: false, allowedValues: ["milestone", "upfront", "final", ""] },
+  action: { type: "string", required: false, allowedValues: ["success", "failed", "cancelled", "pending", ""] }
+};
+
 // 8. POST /api/projects/:id/upload
 export const uploadAssetSchema: Schema = {
   name: { type: "string", required: true, max: 200 },

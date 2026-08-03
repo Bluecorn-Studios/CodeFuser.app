@@ -445,7 +445,7 @@ export const MissionControl: React.FC = () => {
 
   const formatPlanName = (id: string) => {
     switch (id) {
-      case "foundation": return "⚡ Ignite (₹7,999)";
+      case "foundation": return "⚡ Ignite (₹9,999)";
       case "growth": return "✦ Fusion (₹19,999)";
       case "dominance": return "⬢ Catalyst (₹39,999)";
       default: return id;
@@ -560,7 +560,7 @@ export const MissionControl: React.FC = () => {
             <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-850">
               <div className="text-[10px] font-mono text-neutral-400 uppercase">Gross Revenue</div>
               <div className="text-base font-extrabold text-emerald-400 font-mono mt-1">
-                ₹{projects.reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 7999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 0), 0).toLocaleString("en-IN")}
+                ₹{projects.reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 9999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 0), 0).toLocaleString("en-IN")}
               </div>
             </div>
             <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-850">
@@ -573,7 +573,7 @@ export const MissionControl: React.FC = () => {
             <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-850">
               <div className="text-[10px] font-mono text-neutral-400 uppercase">Estimated Net Profit</div>
               <div className="text-base font-extrabold text-white font-mono mt-1">
-                ₹{Math.max(0, projects.reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 7999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 0), 0) - (projects.length * 1200)).toLocaleString("en-IN")}
+                ₹{Math.max(0, projects.reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 9999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 0), 0) - (projects.length * 1200)).toLocaleString("en-IN")}
               </div>
             </div>
             <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-850">
@@ -649,7 +649,7 @@ export const MissionControl: React.FC = () => {
               className="border border-border bg-[#050505] rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-amber-500/50 min-w-[140px]"
             >
               <option value="all">All Packages</option>
-              <option value="foundation">⚡ Ignite (₹7,999)</option>
+              <option value="foundation">⚡ Ignite (₹9,999)</option>
               <option value="growth">✦ Fusion (₹19,999)</option>
               <option value="dominance">⬢ Catalyst (₹39,999)</option>
             </select>
@@ -1150,7 +1150,7 @@ export const MissionControl: React.FC = () => {
                                       <input 
                                         type="number" 
                                         name="price" 
-                                        defaultValue={extraProjectMap[proj.id]?.quote?.price || (proj.selectedPackage.includes("ignite") || proj.selectedPackage.includes("foundation") ? 7999 : proj.selectedPackage.includes("catalyst") || proj.selectedPackage.includes("dominance") ? 39999 : 19999)} 
+                                        defaultValue={extraProjectMap[proj.id]?.quote?.price || (proj.selectedPackage.includes("ignite") || proj.selectedPackage.includes("foundation") ? 9999 : proj.selectedPackage.includes("catalyst") || proj.selectedPackage.includes("dominance") ? 39999 : 19999)} 
                                         className="w-full bg-neutral-900 border border-neutral-800 text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-amber-500 text-white font-mono"
                                         required
                                       />
@@ -2116,7 +2116,7 @@ export const MissionControl: React.FC = () => {
                                       <p className="text-[10px] text-neutral-400">Switch package tier instantly:</p>
                                       <div className="flex flex-wrap gap-1.5">
                                         {[
-                                          { name: "Ignite (₹7.9k)", key: "foundation" },
+                                          { name: "Ignite (₹10k)", key: "foundation" },
                                           { name: "Fusion (₹20k)", key: "growth" },
                                           { name: "Catalyst (₹40k)", key: "dominance" },
                                         ].map((pkg) => (
