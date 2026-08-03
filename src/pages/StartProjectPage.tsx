@@ -32,7 +32,12 @@ import {
   LayoutDashboard,
   LogIn,
   Eye,
-  EyeOff
+  EyeOff,
+  AlertCircle,
+  TrendingUp,
+  DollarSign,
+  CheckCircle2,
+  Star
 } from 'lucide-react';
 import { useAppRouter, b as getMailtoLink, w as getWhatsAppLink, cn } from '../components/Reveal';
 import { PagePath, PricingPlan } from '../types';
@@ -3334,7 +3339,7 @@ That's enough. We'll help with the rest.`}
                       let badgeStyle = "bg-zinc-800 text-zinc-300 border-zinc-700";
                       
                       if (card.id === 'upgrade_1' || card.id === 'upgrade_2') {
-                        badge = "Popular Optional Add-on";
+                        badge = "Recommended AI Upgrade";
                         badgeStyle = "bg-purple-500/15 text-purple-300 border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)]";
                       }
 
@@ -3375,8 +3380,8 @@ That's enough. We'll help with the rest.`}
                                   Base Configuration
                                 </p>
                               ) : (
-                                <p className="text-[10px] font-mono font-bold tracking-[0.12em] text-purple-400 mb-0.5 uppercase">
-                                  Plus Configuration
+                                <p className="text-[10px] font-mono font-bold tracking-[0.12em] text-purple-400 mb-0.5 uppercase flex items-center gap-1">
+                                  <Sparkles className="h-3 w-3" /> Recommended AI Upgrade
                                 </p>
                               )}
                               <h4 className="font-display text-2xl font-black text-white tracking-tight">
@@ -3389,44 +3394,57 @@ That's enough. We'll help with the rest.`}
                                 </span>
                                 {card.id !== 'current' && (
                                   <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/25 animate-pulse">
-                                    {getDiffText(card) || "Optional Add-on"}
+                                    {getDiffText(card) || "+₹5,000 Complete Pack Upgrade"}
                                   </span>
                                 )}
                               </div>
                             </div>
 
-                            <p className="text-xs font-sans font-medium text-zinc-300 leading-relaxed min-h-[36px] mb-5">
+                            <p className="text-xs font-sans font-medium text-zinc-300 leading-relaxed min-h-[36px] mb-2">
                               {card.headline}
                             </p>
 
-                            <div className="border-t border-white/[0.08] my-4" />
+                             <div className="border-t border-white/[0.08] my-4" />
 
                             {/* Section Checklist */}
                             <p className="text-[9px] font-mono text-purple-300/90 uppercase tracking-widest block mb-3 font-bold">
-                              {card.id === 'current' ? '✓ Standard Features Included' : '⚡ Single Optional Add-on'}
+                              {card.id === 'current' ? 'Included In Base Package' : 'Included In This Upgrade'}
                             </p>
                             
-                            <ul className="space-y-3 text-xs mb-6 font-sans">
+                            <ul className="space-y-2 text-xs mb-5 font-sans">
                               {card.benefits && card.benefits.map((benefit: string, bIdx: number) => {
-                                const trimmedBenefit = benefit.replace(/^✓\s*/, "");
+                                const isHero = benefit.startsWith("⭐") || (card.id !== 'current' && bIdx === 0 && !benefit.startsWith("✓"));
+                                const text = benefit.replace(/^[⭐✓]\s*/, "");
+
+                                if (isHero) {
+                                  return (
+                                    <li key={bIdx} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-200 font-semibold shadow-sm">
+                                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-300">
+                                        <Star className="h-3.5 w-3.5 fill-amber-300" />
+                                      </span>
+                                      <span className="text-sm tracking-tight text-white">{text}</span>
+                                    </li>
+                                  );
+                                }
+
                                 return (
-                                  <li key={bIdx} className="flex items-start gap-2.5 leading-relaxed text-zinc-200">
-                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/10 border border-purple-500/25 text-purple-300 mt-0.5">
-                                      <Check className="h-3.5 w-3.5 stroke-[3]" />
+                                  <li key={bIdx} className="flex items-center gap-2.5 px-1.5 py-1 text-zinc-300">
+                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
+                                      <Check className="h-3.5 w-3.5 stroke-[2.5]" />
                                     </span>
-                                    <span className="font-medium">{trimmedBenefit}</span>
+                                    <span className="font-medium text-xs text-zinc-200">{text}</span>
                                   </li>
                                 );
                               })}
                             </ul>
                           </div>
 
-                          {/* Rationale Bottom Block */}
-                          <div className="mt-auto border-t border-white/[0.08] pt-3.5">
-                            <p className="text-[11px] italic leading-relaxed text-zinc-400 font-sans">
-                              <span className="font-bold uppercase tracking-wider text-amber-400 not-italic block mb-0.5 text-[9px] font-mono">
-                                Why We Recommend This:
-                              </span>
+                          {/* Why We Recommend This */}
+                          <div className="mt-auto border-t border-white/[0.08] pt-4">
+                            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-purple-300 mb-1.5">
+                              {card.id === 'current' ? 'Package Focus' : 'Why We Recommend This'}
+                            </p>
+                            <p className="text-xs leading-relaxed text-zinc-300 font-sans">
                               {card.rationale}
                             </p>
                           </div>
@@ -4357,142 +4375,136 @@ function getOnboardingFallbackUpgrades(
   goal: string = ""
 ) {
   const bName = businessName || "Your Business";
-  
   const ind = (industry || "").toLowerCase();
 
-  let featureName = "Online Booking";
-  let recAddons = ["✓ Online Booking"];
-  let addOnPriceDelta = 1249;
-  let recReason = "Customers can book your services anytime.";
+  const PLUS_PREDEFINED_PRICES: Record<string, string[]> = {
+    foundation: ["₹10,450", "₹11,250", "₹11,999", "₹12,250", "₹13,500"],
+    growth: ["₹20,250", "₹20,999", "₹21,500", "₹22,250", "₹22,900"],
+    dominance: ["₹41,500", "₹43,250", "₹44,999", "₹46,800", "₹48,250"]
+  };
 
-  let baseBenefits = [
-    "✓ Services Section",
-    "✓ Customer Reviews",
-    "✓ Contact Form",
-    "✓ Portfolio Gallery"
-  ];
-
-  if (ind.includes("food") || ind.includes("restaurant") || ind.includes("cafe")) {
-    featureName = "Table Reservation";
-    recAddons = ["✓ Table Reservation"];
-    addOnPriceDelta = 1249;
-    recReason = "Lets customers reserve a table online.";
-    baseBenefits = [
-      "✓ Digital Menu",
-      "✓ Google Reviews",
-      "✓ Customer Reviews",
-      "✓ Services Section"
-    ];
-  } else if (ind.includes("medical") || ind.includes("clinic") || ind.includes("doctor") || ind.includes("dental")) {
-    featureName = "Online Booking";
-    recAddons = ["✓ Online Booking"];
-    addOnPriceDelta = 1499;
-    recReason = "Patients can book appointments online anytime.";
-    baseBenefits = [
-      "✓ Doctor Profiles",
-      "✓ Services Section",
-      "✓ Customer Reviews",
-      "✓ Google Reviews"
-    ];
-  } else if (ind.includes("gym") || ind.includes("fitness")) {
-    featureName = "Trial Pass Form";
-    recAddons = ["✓ Trial Pass Form"];
-    addOnPriceDelta = 749;
-    recReason = "Lets interested members request trial passes easily.";
-    baseBenefits = [
-      "✓ Services Section",
-      "✓ Customer Reviews",
-      "✓ Trainer Profiles",
-      "✓ Google Reviews"
-    ];
-  } else if (ind.includes("salon") || ind.includes("spa") || ind.includes("beauty")) {
-    featureName = "WhatsApp Booking";
-    recAddons = ["✓ WhatsApp Booking"];
-    addOnPriceDelta = 599;
-    recReason = "Clients can request salon bookings directly via WhatsApp.";
-    baseBenefits = [
-      "✓ Price Packages",
-      "✓ Services Section",
-      "✓ Customer Reviews",
-      "✓ Google Reviews"
-    ];
-  } else if (ind.includes("photo") || ind.includes("studio") || ind.includes("design")) {
-    featureName = "Online Booking";
-    recAddons = ["✓ Online Booking"];
-    addOnPriceDelta = 1249;
-    recReason = "Customers can book photo sessions anytime.";
-    baseBenefits = [
-      "✓ Portfolio Gallery",
-      "✓ Customer Gallery",
-      "✓ Customer Reviews",
-      "✓ Google Reviews"
-    ];
-  }
+  let baseName = "✦ Fusion";
+  let basePrice = "₹19,999";
+  const pkgKey = packageId === "foundation" ? "foundation" : packageId === "dominance" ? "dominance" : "growth";
+  const allowedPrices = PLUS_PREDEFINED_PRICES[pkgKey];
+  const upgradePrice = allowedPrices[Math.floor(Math.random() * allowedPrices.length)];
 
   if (packageId === "foundation") {
-    const upgradeVal = getInitialPlusPackagePrice("foundation");
-    return [
-      {
-        id: "current",
-        name: "⚡ Ignite",
-        price: "₹9,999",
-        headline: "Show your work online and help local customers find you easily.",
-        benefits: baseBenefits,
-        rationale: "Ignite already gives you great value with key business features included."
-      },
-      {
-        id: "upgrade_1",
-        name: `⚡ Ignite + ${featureName}`,
-        price: upgradeVal,
-        headline: "A simple addition to help your business grow.",
-        benefits: recAddons,
-        rationale: recReason
-      }
-    ];
+    baseName = "⚡ Ignite";
+    basePrice = "₹9,999";
+  } else if (packageId === "dominance") {
+    baseName = "⬢ Catalyst";
+    basePrice = "₹39,999";
   }
 
-  if (packageId === "dominance") {
-    const upgradeVal = getInitialPlusPackagePrice("dominance");
-    return [
-      {
-        id: "current",
-        name: "⬢ Catalyst",
-        price: "₹39,999",
-        headline: "Complete custom business setup with full support.",
-        benefits: baseBenefits,
-        rationale: "Catalyst includes custom strategy, logic, and full project support."
-      },
-      {
-        id: "upgrade_1",
-        name: "⬢ Catalyst + Customer Portal",
-        price: upgradeVal,
-        headline: "An optional client management portal.",
-        benefits: ["✓ Customer Portal"],
-        rationale: "Lets customers log in and manage account details anytime."
-      }
-    ];
-  }
+  // Base card configuration
+  const baseCard = {
+    id: "current",
+    name: baseName,
+    price: basePrice,
+    headline: `Clean, modern website setup designed to validate ${bName}'s online brand presence.`,
+    benefits: [
+      "✓ Mobile-Responsive Web Design",
+      "✓ Direct Business Contact Form",
+      "✓ Core Services Overview",
+      "✓ Google Maps Pin & Hours"
+    ],
+    rationale: `${baseName} delivers essential online visibility for early-stage local businesses.`
+  };
 
-  // Default / Fusion
-  const upgradeVal = getInitialPlusPackagePrice("growth");
-  return [
-    {
-      id: "current",
-      name: "✦ Fusion",
-      price: "₹19,999",
-      headline: "Everything included to show your work and get new customers.",
-      benefits: baseBenefits,
-      rationale: "Fusion provides great business value with custom pages and customer contact tools."
-    },
-    {
-      id: "upgrade_1",
-      name: `✦ Fusion + ${featureName}`,
-      price: upgradeVal,
-      headline: "A simple addition to help your business grow.",
-      benefits: recAddons,
-      rationale: recReason
-    }
+  // Determine Micro Solution Pack based on industry category
+  let packTitle = "Client Acquisition Pack";
+  let headline = `24/7 automated lead capture and customer inquiry management for ${bName}.`;
+  let benefits = [
+    "⭐ Online Booking",
+    "✓ Calendar Scheduling",
+    "✓ Email Confirmation",
+    "✓ Booking Management"
   ];
+  let rationale = `Most customers want to check availability before reaching out. This upgrade lets visitors book sessions directly and helps reduce missed inquiries.`;
+
+  if (ind.includes("photo") || ind.includes("studio") || ind.includes("photography") || ind.includes("designer")) {
+    packTitle = "Premium Booking Pack";
+    headline = `Instant session booking, proofing gallery, and scheduling portal for ${bName}.`;
+    benefits = [
+      "⭐ Online Booking",
+      "✓ Calendar Scheduling",
+      "✓ Email Confirmation",
+      "✓ Booking Management"
+    ];
+    rationale = `Most customers first want to check availability before calling. This upgrade lets visitors book sessions instantly and helps reduce missed inquiries.`;
+  } else if (ind.includes("food") || ind.includes("restaurant") || ind.includes("cafe") || ind.includes("bakery") || ind.includes("dining")) {
+    packTitle = "Online Ordering Pack";
+    headline = `Direct digital food menu and WhatsApp ordering system for ${bName}.`;
+    benefits = [
+      "⭐ WhatsApp Ordering",
+      "✓ Digital Menu",
+      "✓ Order Request Form",
+      "✓ Business Hours"
+    ];
+    rationale = `Allows customers to view your full menu and send direct orders via WhatsApp. Eliminates phone queue confusion during rush dinner hours.`;
+  } else if (ind.includes("medical") || ind.includes("clinic") || ind.includes("doctor") || ind.includes("dental") || ind.includes("hospital") || ind.includes("health")) {
+    packTitle = "Patient Booking Pack";
+    headline = `24/7 automated patient appointment booking and reminder system for ${bName}.`;
+    benefits = [
+      "⭐ Appointment Booking",
+      "✓ Doctor Profiles",
+      "✓ WhatsApp Reminder",
+      "✓ Time Slot Manager"
+    ];
+    rationale = `Gives patients a fast 24/7 online booking system with automated reminders. Cuts down on reception desk phone queues and prevents missed consultations.`;
+  } else if (ind.includes("gym") || ind.includes("fitness") || ind.includes("yoga") || ind.includes("crossfit") || ind.includes("workout")) {
+    packTitle = "Membership Growth Pack";
+    headline = `Trial pass registration and class booking system for ${bName}.`;
+    benefits = [
+      "⭐ Free Trial Registration",
+      "✓ Trainer Profiles",
+      "✓ Class Timetable",
+      "✓ Membership Enquiry"
+    ];
+    rationale = `Local fitness seekers prefer trying a class first. This pack captures trial pass signups directly from your website and converts them into active members.`;
+  } else if (ind.includes("salon") || ind.includes("spa") || ind.includes("beauty") || ind.includes("parlour") || ind.includes("hair")) {
+    packTitle = "Smart Booking Pack";
+    headline = `One-click WhatsApp booking and treatment service menu for ${bName}.`;
+    benefits = [
+      "⭐ Appointment Booking",
+      "✓ Service Catalogue",
+      "✓ Before & After Gallery",
+      "✓ WhatsApp Booking"
+    ];
+    rationale = `Clients love browsing treatment prices before booking. This pack makes it easy for visitors to choose a service and lock in their appointment.`;
+  } else if (ind.includes("estate") || ind.includes("real") || ind.includes("property") || ind.includes("realty") || ind.includes("builder")) {
+    packTitle = "Site Visit Pack";
+    headline = `Interactive site visit scheduler and property inquiry portal for ${bName}.`;
+    benefits = [
+      "⭐ Site Visit Scheduler",
+      "✓ Property Listings Filter",
+      "✓ EMI Calculator",
+      "✓ Direct Agent Inquiry"
+    ];
+    rationale = `Serious property buyers want to schedule site visits quickly. This upgrade captures high-intent buyers before they move on to other listings.`;
+  } else if (ind.includes("coaching") || ind.includes("education") || ind.includes("school") || ind.includes("academy") || ind.includes("tuition") || ind.includes("course")) {
+    packTitle = "Student Enrollment Pack";
+    headline = `Automated demo class registration and batch seat booking for ${bName}.`;
+    benefits = [
+      "⭐ Demo Class Registration",
+      "✓ Batch Timetable Grid",
+      "✓ Faculty Credentials",
+      "✓ WhatsApp Parent Support"
+    ];
+    rationale = `Parents and students prefer registering for a demo class before enrolling. This pack streamlines trial class signups for upcoming batches.`;
+  }
+
+  const upgradeCard = {
+    id: "upgrade_1",
+    name: `${baseName} + ${packTitle}`,
+    price: upgradePrice,
+    headline,
+    benefits,
+    rationale
+  };
+
+  return [baseCard, upgradeCard];
 }
 
 function getOnboardingFallbackSummary(

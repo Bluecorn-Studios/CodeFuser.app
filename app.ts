@@ -2769,56 +2769,19 @@ app.post("/api/start-project/package-upgrade-options", requestTimeout(45000, "AI
       dominance: ["₹41,500", "₹43,250", "₹44,999", "₹46,800", "₹48,250"]
     };
 
-    // Choose base and upgrade 1 prices and names realistically
+    // Base package defaults
     let baseName = "✦ Fusion";
     let basePrice = "₹19,999";
-    let baseFeatures = [
-      "Makes your business feel more premium and professional",
-      "Designed to give your customers a better experience",
-      "Personalized recommendations for your business",
-      "Extra attention to your business"
-    ];
-
-    const growthPrices = PLUS_PREDEFINED_PRICES.growth;
-    let upgrade1Name = "✦ Fusion+";
-    let upgrade1Price = growthPrices[Math.floor(Math.random() * growthPrices.length)];
-    let upgrade1FeaturesAdded = [
-      "✓ Appointment Booking System",
-      "✓ Local SEO Setup"
-    ];
+    const pkgKey = packageId === "foundation" ? "foundation" : packageId === "dominance" ? "dominance" : "growth";
+    const allowedPrices = PLUS_PREDEFINED_PRICES[pkgKey];
+    const upgrade1Price = allowedPrices[Math.floor(Math.random() * allowedPrices.length)];
 
     if (packageId === "foundation") {
       baseName = "⚡ Ignite";
       basePrice = "₹9,999";
-      baseFeatures = [
-        "Premium launch experience",
-        "Better overall customer experience",
-        "Extra attention to your business needs",
-        "Designed to make your brand stand out"
-      ];
-      const foundationPrices = PLUS_PREDEFINED_PRICES.foundation;
-      upgrade1Name = "⚡ Ignite+";
-      upgrade1Price = foundationPrices[Math.floor(Math.random() * foundationPrices.length)];
-      upgrade1FeaturesAdded = [
-        "✓ Google Reviews Showcase",
-        "✓ Instant WhatsApp Chat"
-      ];
     } else if (packageId === "dominance") {
       baseName = "⬢ Catalyst";
       basePrice = "₹39,999";
-      baseFeatures = [
-        "Our most premium experience",
-        "Extra care throughout your project",
-        "Personalized business recommendations",
-        "Designed for businesses that want the very best experience"
-      ];
-      const dominancePrices = PLUS_PREDEFINED_PRICES.dominance;
-      upgrade1Name = "⬢ Catalyst+";
-      upgrade1Price = dominancePrices[Math.floor(Math.random() * dominancePrices.length)];
-      upgrade1FeaturesAdded = [
-        "✓ Client Portal & Accounts",
-        "✓ Custom Analytics Dashboard"
-      ];
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -2844,106 +2807,42 @@ app.post("/api/start-project/package-upgrade-options", requestTimeout(45000, "AI
       }
     });
 
-    const systemPrompt = `You are an experienced, honest website & business consultant at CodeFuser.
-Your task is to provide a simple, friendly website consultation for a local business owner ("${businessName}", Industry: "${industry || 'General'}", Goal: "${goal || 'Growth'}").
+    const systemPrompt = `You are an experienced, senior web & digital growth consultant at CodeFuser.
+Your client is a local business owner ("${businessName}", Industry: "${industry || 'General'}", Goal: "${goal || 'Growth'}").
 
-User Notes/Prompt: "${aiPrompt || 'None'}"
-Currently Selected Package: ${baseName} (${basePrice})
+User Prompt Notes: "${aiPrompt || 'None'}"
+Currently Selected Base Package: ${baseName} (${basePrice})
 
-CRITICAL CONSULTANT RULE - LESS IS MORE (QUALITY > QUANTITY):
-1. The AI is allowed to recommend ONLY 2 to 4 features if that is genuinely all the business needs to achieve its goals.
-2. NEVER fill or pad recommendations simply to reach 5-7 items. Quality > Quantity.
-3. "If the client is a small local business owner with limited technical knowledge, always prefer fewer recommendations that are easy to understand over many recommendations that feel impressive."
-4. NEVER recommend features solely because they belong to an industry template (e.g. don't recommend digital photo proofing or complex calculators if the owner didn't express a need for them).
-5. Recommend features ONLY because they help THIS specific business achieve ITS goals ("${goal || 'Growth'}").
+BUSINESS MODEL & RECOMMENDATION ENGINE RULES:
+1. The customer has chosen the base package "${baseName}" at its fixed price "${basePrice}". This is Card 1 (LEFT).
+2. Card 2 (RIGHT) is an OPTIONAL AI RECOMMENDATION MICRO SOLUTION PACK specifically tailored to "${businessName}".
+3. Card 2 Price MUST be EXACTLY "${upgrade1Price}" (selected randomly from allowed predefined pricing tiers).
+4. EVERY RECOMMENDATION MUST BE A MICRO SOLUTION PACK consisting of:
+   - 1 Hero Feature (marked with ⭐, e.g. "⭐ Online Booking", "⭐ WhatsApp Ordering", "⭐ Appointment Booking")
+   - 2-3 Supporting Features (marked with ✓, e.g. "✓ Calendar Scheduling", "✓ Email Confirmation", "✓ Booking Management")
 
-PRIORITY HIERARCHY FOR RECOMMENDATIONS:
-1. Client's Specific Business Goals & Prompt Notes (Highest Priority)
-2. Client Requirements & Custom Requests
-3. Business Type & Context
-4. Industry Best Practices
-5. Package Mapping & Recommendations
+FEATURE LIBRARY FOR PACK BUNDLES:
+- Booking Pack: Hero: ⭐ Online Booking | Supporting: ✓ Calendar Scheduling, ✓ Email Confirmation, ✓ Booking Dashboard
+- Sales Pack: Hero: ⭐ Online Payments | Supporting: ✓ Razorpay Integration, ✓ Order Tracking, ✓ Digital Invoice
+- WhatsApp Pack: Hero: ⭐ WhatsApp Ordering | Supporting: ✓ Auto Replies, ✓ Lead Routing, ✓ Quick Enquiry
+- SEO Pack: Hero: ⭐ Local SEO Optimization | Supporting: ✓ Google Business Setup, ✓ Schema Markup, ✓ Sitemap Generator
+- Portfolio Pack: Hero: ⭐ Premium Gallery | Supporting: ✓ Categorized Proofing, ✓ Lightbox View, ✓ High-Res Image Optimization
+- AI Pack: Hero: ⭐ AI Chatbot Assistant | Supporting: ✓ FAQ Auto-Responder, ✓ Smart Lead Qualification, ✓ Inquiry Routing
+- CRM Pack: Hero: ⭐ Customer Portal | Supporting: ✓ Client CRM Integration, ✓ Follow-up Automation, ✓ Saved Favorites
 
-1. FEATURE NAMING PHILOSOPHY ("STUPIDLY SIMPLE" - UNDERSTANDABLE IN 2 SECONDS):
-   - A 45-year-old local shop or clinic owner MUST understand every feature name instantly.
-   - BANNED FANCY/CORPORATE NAMES:
-     * "Treatment Services Showcase" -> USE "Treatments We Offer"
-     * "Client Proofing Portal" -> USE "Download Your Photos"
-     * "Mortgage & EMI Calculator" -> USE "EMI Calculator"
-     * "Digital Consultation Intake Form" -> USE "Online Consultation Form"
-     * "Faculty & Mentor Profiles" -> USE "Teacher Profiles"
-     * "Virtual Video Tours" -> USE "Video Tours"
-     * "Lead Intake Funnel" -> USE "Free Trial Pass"
-   - APPROVED STUPIDLY SIMPLE NAMES:
-     * Dental/Clinic: "Doctor Profiles", "Online Booking", "Treatments We Offer", "Patient Reviews", "Clinic Location"
-     * Restaurant: "Digital Menu", "Table Reservation", "Online Orders", "Customer Reviews", "Location & Hours"
-     * Gym: "Membership Plans", "Trainer Profiles", "Class Schedule", "Free Trial Pass", "Member Reviews"
-     * Photo Studio: "Portfolio Gallery", "Price Packages", "Booking Form", "Customer Reviews"
-     * Salon/Spa: "Price List & Services", "WhatsApp Booking", "Before & After Photos", "Client Reviews"
-     * Real Estate: "Property Listings", "Video Tours", "Agent Profiles", "Schedule Site Visit"
-     * Education: "Course Catalog", "Teacher Profiles", "Free Demo Class", "Student Results"
+CARD 1 (id: "current"):
+- name: "${baseName}"
+- price: "${basePrice}"
+- headline: "Essential core features included to launch your online web presence."
+- benefits: Array of 3-4 standard baseline features included in base package (e.g. ["✓ Mobile-Responsive Web Design", "✓ Contact Form", "✓ Google Maps Pin", "✓ Core Services Overview"]).
+- rationale: "2 simple sentences summarizing why ${baseName} is a solid foundation."
 
-2. OUR RECOMMENDATION ADVICE (FRIENDLY BUSINESS STATEMENT):
-   - "advice" MUST be a short 1-2 line statement written in simple, direct English explaining how these features help their business.
-     Examples:
-     * Photo Studio: "These features help showcase your photography work and make it easy for customers to book a photoshoot."
-     * Restaurant: "These features help local diners explore your digital menu and reserve a table quickly."
-     * Dental Clinic: "These features help patients learn about your treatments and book appointments online."
-     * Gym: "These features help fitness enthusiasts check class schedules, see trainer profiles, and claim trial passes."
-
-3. OPTIONAL FUTURE GROWTH IDEAS ("optionalRecommendations"):
-   - Generate 2 to 3 friendly, practical local business growth steps.
-   - DO NOT write startup/corporate consultant jargon (like "reduce patient no-shows by 40%" or "digital intake funnels").
-     Examples:
-     * Dental Clinic:
-       - "Allow patients to book appointments online."
-       - "Show patient reviews to build trust."
-       - "Make it easy for patients to find your clinic location."
-     * Restaurant:
-       - "Let customers see your menu before visiting."
-       - "Allow table reservations online."
-       - "Make weekend offers easy to share on WhatsApp."
-     * Gym:
-       - "Allow members to check class schedules easily."
-       - "Offer a free trial pass to attract new members."
-       - "Show trainer profiles and member transformation stories."
-     * Photo Studio:
-       - "Make your best work easy to showcase."
-       - "Allow customers to enquire in one click."
-       - "Display your photography packages clearly."
-
-4. PACKAGE+ COPYWRITING (RECOMMENDED ADD-ON):
-   - Explanation/rationale must be 1 short sentence (maximum 15 words) specific to the feature.
-
-5. ABSOLUTELY NO TECHNICAL JARGON (no "SSL", "Responsive", "SEO", "Hosting", "Fast Loading").
-
-6. CRITICAL OPTIONS CARDS RULES (EXACTLY 2 CARDS IN "options" ARRAY):
-   - DO NOT generate a pricing page comparison (e.g. NEVER put Ignite in Card 1 and Fusion in Card 2!).
-   - Step 6 is an AI Consultation for the client's package.
-   - Card 1 (id: "current"):
-     * name: "${baseName}" (e.g. "Ignite", "Fusion", or "Catalyst").
-     * price: "${basePrice}" (e.g. "₹9,999", "₹19,999", or "₹39,999").
-     * headline: 1 short sentence describing what is included in this package for their business.
-     * benefits: Array of 3-4 simple features included in this base package (e.g. ["✓ Portfolio Gallery", "✓ Price Packages", "✓ Contact Form", "✓ Google Map"]).
-     * rationale: 1 short sentence explaining why this package fits their business goals.
-   - Card 2 (id: "upgrade_1"):
-     * name: "${baseName} + [Single Add-on Feature Name]" (e.g. "Ignite + Online Booking", "Fusion + WhatsApp Booking", "Catalyst + Client Portal").
-     * price: AI Recommended Plus price (MUST be one of these predefined prices: For Ignite: ₹10,450, ₹11,250, ₹11,999, ₹12,250, or ₹13,500. For Fusion: ₹20,250, ₹20,999, ₹21,500, ₹22,250, or ₹22,900. For Catalyst: ₹41,500, ₹43,250, ₹44,999, ₹46,800, or ₹48,250).
-     * headline: 1 short sentence describing the benefit of adding this single optional feature.
-     * benefits: Array containing ONLY the single optional add-on feature (e.g. ["✓ Online Booking"]).
-     * rationale: 1 short sentence explaining why adding this single feature gives extra value to their business.
-
-FINAL 4-SECTION CONSULTATION STRUCTURE:
-
-SECTION 1: ABOUT YOUR BUSINESS ("aboutYourBusiness"): 1-2 short friendly lines.
-SECTION 2: BIGGEST OPPORTUNITY ("biggestOpportunity"): 1-2 short lines on business growth.
-SECTION 3: OUR RECOMMENDATION ("ourRecommendation"):
-  - "recommendedFeatures": 2 to 5 stupidly simple, high-value feature names (ONLY what genuinely adds value, no padding).
-  - "advice": 1-2 short lines tailored specifically to their business type and goals.
-  - "recommendedPackage": "Ignite", "Fusion", or "Catalyst".
-SECTION 4: YOUR PACKAGE ("yourPackageEvaluation"):
-  - "status": "perfect", "upgrade_recommended", "downgrade_recommended", or "different_recommended".
-  - "evaluationText": 1-2 short lines evaluating choice "${baseName}".`;
+CARD 2 (id: "upgrade_1"):
+- name: "${baseName} + [Micro Solution Pack Name]" (e.g. "${baseName} + Premium Booking Pack" or "${baseName} + Online Ordering Pack")
+- price: "${upgrade1Price}"
+- headline: 1 short, clean sentence describing what this solution pack provides for "${businessName}".
+- benefits: Array where item 0 is the Hero Feature (e.g. "⭐ Online Booking"), followed by 2-3 Supporting Features (e.g. ["✓ Calendar Scheduling", "✓ Email Confirmation", "✓ Booking Management"]).
+- rationale: "Why We Recommend This: Write ONLY 2-3 simple sentences in plain English explaining why this upgrade is useful for ${businessName}. No marketing buzzwords, no ROI paragraphs, no consultant reports. Keep it simple, clear, and direct."`;
 
     checkAbort(req);
 
@@ -3008,18 +2907,22 @@ SECTION 4: YOUR PACKAGE ("yourPackageEvaluation"):
               },
               options: {
                 type: Type.ARRAY,
-                description: "Must contain card options: baseline card and upgrade/alternate card",
+                description: "Must contain card options: baseline card and upgrade solution pack card",
                 items: {
                   type: Type.OBJECT,
                   properties: {
                     id: { type: Type.STRING },
                     name: { type: Type.STRING },
+                    packTitle: { type: Type.STRING },
                     price: { type: Type.STRING },
                     headline: { type: Type.STRING },
+                    problemSolved: { type: Type.STRING },
                     benefits: {
                       type: Type.ARRAY,
                       items: { type: Type.STRING }
                     },
+                    expectedResults: { type: Type.STRING },
+                    priceJustification: { type: Type.STRING },
                     rationale: { type: Type.STRING }
                   },
                   required: ["id", "name", "price", "headline", "benefits", "rationale"]
@@ -3301,118 +3204,134 @@ function getFallbackUpgrades(
   const bName = businessName || "Your Business";
   const ind = (industry || "").toLowerCase();
 
-  let featureName = "Online Booking";
-  let recAddons = ["✓ Online Booking"];
-  let addOnPriceDelta = 1249;
-  let recReason = "Customers can book your services anytime.";
+  const PLUS_PREDEFINED_PRICES: Record<string, string[]> = {
+    foundation: ["₹10,450", "₹11,250", "₹11,999", "₹12,250", "₹13,500"],
+    growth: ["₹20,250", "₹20,999", "₹21,500", "₹22,250", "₹22,900"],
+    dominance: ["₹41,500", "₹43,250", "₹44,999", "₹46,800", "₹48,250"]
+  };
 
-  if (ind.includes("food") || ind.includes("restaurant") || ind.includes("cafe")) {
-    featureName = "Table Reservation";
-    recAddons = ["✓ Table Reservation"];
-    addOnPriceDelta = 1249;
-    recReason = "Lets customers reserve a table online.";
-  } else if (ind.includes("law") || ind.includes("legal") || ind.includes("advocate") || ind.includes("attorney")) {
-    featureName = "Contact Form";
-    recAddons = ["✓ Contact Form"];
-    addOnPriceDelta = 899;
-    recReason = "Makes it easier for customers to contact you.";
-  } else if (ind.includes("medical") || ind.includes("clinic") || ind.includes("doctor") || ind.includes("dental")) {
-    featureName = "Online Booking";
-    recAddons = ["✓ Online Booking"];
-    addOnPriceDelta = 1499;
-    recReason = "Patients can book appointments online anytime.";
-  } else if (ind.includes("gym") || ind.includes("fitness")) {
-    featureName = "Trial Pass Form";
-    recAddons = ["✓ Trial Pass Form"];
-    addOnPriceDelta = 749;
-    recReason = "Lets interested members request trial passes easily.";
-  } else if (ind.includes("salon") || ind.includes("spa") || ind.includes("beauty")) {
-    featureName = "WhatsApp Booking";
-    recAddons = ["✓ WhatsApp Booking"];
-    addOnPriceDelta = 599;
-    recReason = "Clients can request salon bookings directly via WhatsApp.";
-  } else if (ind.includes("photo") || ind.includes("studio") || ind.includes("design")) {
-    featureName = "Online Booking";
-    recAddons = ["✓ Online Booking"];
-    addOnPriceDelta = 1249;
-    recReason = "Customers can book photo sessions anytime.";
-  } else if (ind.includes("estate") || ind.includes("real") || ind.includes("property")) {
-    featureName = "Inquiry Form";
-    recAddons = ["✓ Inquiry Form"];
-    addOnPriceDelta = 1149;
-    recReason = "Makes it easier for buyers to ask about properties.";
-  }
-
-  const fPrices = ["₹10,450", "₹11,250", "₹11,999", "₹12,250", "₹13,500"];
-  const gPrices = ["₹20,250", "₹20,999", "₹21,500", "₹22,250", "₹22,900"];
-  const dPrices = ["₹41,500", "₹43,250", "₹44,999", "₹46,800", "₹48,250"];
+  let baseName = "✦ Fusion";
+  let basePrice = "₹19,999";
+  const pkgKey = packageId === "foundation" ? "foundation" : packageId === "dominance" ? "dominance" : "growth";
+  const allowedPrices = PLUS_PREDEFINED_PRICES[pkgKey];
+  const upgradePrice = allowedPrices[Math.floor(Math.random() * allowedPrices.length)];
 
   if (packageId === "foundation") {
-    const upgradeVal = fPrices[Math.floor(Math.random() * fPrices.length)];
-    return [
-      {
-        id: "current",
-        name: "⚡ Ignite",
-        price: "₹9,999",
-        headline: "Show your work online and help local customers find you easily.",
-        benefits: getDynamicIndustryBenefits(industry, 'base'),
-        rationale: "Ignite already gives you great value with key business features included."
-      },
-      {
-        id: "upgrade_1",
-        name: `⚡ Ignite + ${featureName}`,
-        price: upgradeVal,
-        headline: "A simple addition to help your business grow.",
-        benefits: recAddons,
-        rationale: recReason
-      }
-    ];
+    baseName = "⚡ Ignite";
+    basePrice = "₹9,999";
+  } else if (packageId === "dominance") {
+    baseName = "⬢ Catalyst";
+    basePrice = "₹39,999";
   }
 
-  if (packageId === "dominance") {
-    const upgradeVal = dPrices[Math.floor(Math.random() * dPrices.length)];
-    return [
-      {
-        id: "current",
-        name: "⬢ Catalyst",
-        price: "₹39,999",
-        headline: "Complete custom business setup with full support.",
-        benefits: getDynamicIndustryBenefits(industry, 'base'),
-        rationale: "Catalyst includes custom strategy, logic, and full project support."
-      },
-      {
-        id: "upgrade_1",
-        name: "⬢ Catalyst + Customer Portal",
-        price: upgradeVal,
-        headline: "An optional client management portal.",
-        benefits: [
-          "✓ Customer Portal"
-        ],
-        rationale: "Lets customers log in and manage account details anytime."
-      }
-    ];
-  }
+  // Base card configuration
+  const baseCard = {
+    id: "current",
+    name: baseName,
+    price: basePrice,
+    headline: `Clean, modern website setup designed to validate ${bName}'s online brand presence.`,
+    benefits: [
+      "✓ Mobile-Responsive Web Design",
+      "✓ Direct Business Contact Form",
+      "✓ Core Services Overview",
+      "✓ Google Maps Pin & Hours"
+    ],
+    rationale: `${baseName} delivers essential online visibility for early-stage local businesses.`
+  };
 
-  // Default / Fusion
-  const upgradeVal = gPrices[Math.floor(Math.random() * gPrices.length)];
-  return [
-    {
-      id: "current",
-      name: "✦ Fusion",
-      price: "₹19,999",
-      headline: "Everything included to show your work and get new customers.",
-      benefits: getDynamicIndustryBenefits(industry, 'base'),
-      rationale: "Fusion provides great business value with custom pages and customer contact tools."
-    },
-    {
-      id: "upgrade_1",
-      name: `✦ Fusion + ${featureName}`,
-      price: upgradeVal,
-      headline: "A simple addition to help your business grow.",
-      benefits: recAddons,
-      rationale: recReason
-    }
+  // Determine Micro Solution Pack based on industry category
+  let packTitle = "Client Acquisition Pack";
+  let headline = `24/7 automated lead capture and customer inquiry management for ${bName}.`;
+  let benefits = [
+    "⭐ Online Booking",
+    "✓ Calendar Scheduling",
+    "✓ Email Confirmation",
+    "✓ Booking Management"
   ];
+  let rationale = `Most customers want to check availability before reaching out. This upgrade lets visitors book sessions directly and helps reduce missed inquiries.`;
+
+  if (ind.includes("photo") || ind.includes("studio") || ind.includes("photography") || ind.includes("designer")) {
+    packTitle = "Premium Booking Pack";
+    headline = `Instant session booking, proofing gallery, and scheduling portal for ${bName}.`;
+    benefits = [
+      "⭐ Online Booking",
+      "✓ Calendar Scheduling",
+      "✓ Email Confirmation",
+      "✓ Booking Management"
+    ];
+    rationale = `Most customers first want to check availability before calling. This upgrade lets visitors book sessions instantly and helps reduce missed inquiries.`;
+  } else if (ind.includes("food") || ind.includes("restaurant") || ind.includes("cafe") || ind.includes("bakery") || ind.includes("dining")) {
+    packTitle = "Online Ordering Pack";
+    headline = `Direct digital food menu and WhatsApp ordering system for ${bName}.`;
+    benefits = [
+      "⭐ WhatsApp Ordering",
+      "✓ Digital Menu",
+      "✓ Order Request Form",
+      "✓ Business Hours"
+    ];
+    rationale = `Allows customers to view your full menu and send direct orders via WhatsApp. Eliminates phone queue confusion during rush dinner hours.`;
+  } else if (ind.includes("medical") || ind.includes("clinic") || ind.includes("doctor") || ind.includes("dental") || ind.includes("hospital") || ind.includes("health")) {
+    packTitle = "Patient Booking Pack";
+    headline = `24/7 automated patient appointment booking and reminder system for ${bName}.`;
+    benefits = [
+      "⭐ Appointment Booking",
+      "✓ Doctor Profiles",
+      "✓ WhatsApp Reminder",
+      "✓ Time Slot Manager"
+    ];
+    rationale = `Gives patients a fast 24/7 online booking system with automated reminders. Cuts down on reception desk phone queues and prevents missed consultations.`;
+  } else if (ind.includes("gym") || ind.includes("fitness") || ind.includes("yoga") || ind.includes("crossfit") || ind.includes("workout")) {
+    packTitle = "Membership Growth Pack";
+    headline = `Trial pass registration and class booking system for ${bName}.`;
+    benefits = [
+      "⭐ Free Trial Registration",
+      "✓ Trainer Profiles",
+      "✓ Class Timetable",
+      "✓ Membership Enquiry"
+    ];
+    rationale = `Local fitness seekers prefer trying a class first. This pack captures trial pass signups directly from your website and converts them into active members.`;
+  } else if (ind.includes("salon") || ind.includes("spa") || ind.includes("beauty") || ind.includes("parlour") || ind.includes("hair")) {
+    packTitle = "Smart Booking Pack";
+    headline = `One-click WhatsApp booking and treatment service menu for ${bName}.`;
+    benefits = [
+      "⭐ Appointment Booking",
+      "✓ Service Catalogue",
+      "✓ Before & After Gallery",
+      "✓ WhatsApp Booking"
+    ];
+    rationale = `Clients love browsing treatment prices before booking. This pack makes it easy for visitors to choose a service and lock in their appointment.`;
+  } else if (ind.includes("estate") || ind.includes("real") || ind.includes("property") || ind.includes("realty") || ind.includes("builder")) {
+    packTitle = "Site Visit Pack";
+    headline = `Interactive site visit scheduler and property inquiry portal for ${bName}.`;
+    benefits = [
+      "⭐ Site Visit Scheduler",
+      "✓ Property Listings Filter",
+      "✓ EMI Calculator",
+      "✓ Direct Agent Inquiry"
+    ];
+    rationale = `Serious property buyers want to schedule site visits quickly. This upgrade captures high-intent buyers before they move on to other listings.`;
+  } else if (ind.includes("coaching") || ind.includes("education") || ind.includes("school") || ind.includes("academy") || ind.includes("tuition") || ind.includes("course")) {
+    packTitle = "Student Enrollment Pack";
+    headline = `Automated demo class registration and batch seat booking for ${bName}.`;
+    benefits = [
+      "⭐ Demo Class Registration",
+      "✓ Batch Timetable Grid",
+      "✓ Faculty Credentials",
+      "✓ WhatsApp Parent Support"
+    ];
+    rationale = `Parents and students prefer registering for a demo class before enrolling. This pack streamlines trial class signups for upcoming batches.`;
+  }
+
+  const upgradeCard = {
+    id: "upgrade_1",
+    name: `${baseName} + ${packTitle}`,
+    price: upgradePrice,
+    headline,
+    benefits,
+    rationale
+  };
+
+  return [baseCard, upgradeCard];
 }
 
 function getDynamicIndustryBenefits(industry: string, level: 'base' | 'upgrade_1'): string[] {
