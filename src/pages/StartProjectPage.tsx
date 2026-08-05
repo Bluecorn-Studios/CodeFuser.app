@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { parseFeature } from '../lib/featureUtils';
+import { parseFeature, splitFeaturesForCards } from '../lib/featureUtils';
 import { 
   ArrowRight, 
   ArrowLeft, 
@@ -861,8 +861,9 @@ export const StartProjectPage: React.FC = () => {
 
             // Restore FROZEN AI recommendations directly from Supabase
             if (quote.recommendationCards && Array.isArray(quote.recommendationCards) && quote.recommendationCards.length > 0) {
-              setRecommendationCards(quote.recommendationCards);
-              setTempFetchedCards(quote.recommendationCards);
+              const formattedCards = splitFeaturesForCards(quote.recommendationCards, quote.aiSummary?.ourRecommendation?.recommendedFeatures);
+              setRecommendationCards(formattedCards);
+              setTempFetchedCards(formattedCards);
               if (quote.aiSummary) {
                 setAiSummary(quote.aiSummary);
               }
@@ -1256,7 +1257,8 @@ export const StartProjectPage: React.FC = () => {
       }
 
       if (fetchedCards) {
-        const processedCards = fetchedCards.map((c: any) => {
+        const splitCards = splitFeaturesForCards(fetchedCards, aiSummary?.ourRecommendation?.recommendedFeatures);
+        const processedCards = splitCards.map((c: any) => {
           if (c.id !== 'current') {
             const initialPrice = getInitialPlusPackagePrice(formData.packageId, c.price);
             return { ...c, price: initialPrice };
@@ -1264,6 +1266,7 @@ export const StartProjectPage: React.FC = () => {
           return c;
         });
         setTempFetchedCards(processedCards);
+        setRecommendationCards(processedCards);
         // Save and freeze generated AI recommendations into Supabase
         saveDraftToSupabase({
           recommendationCards: processedCards,
@@ -3317,7 +3320,7 @@ That's enough. We'll help with the rest.`}
               <div className="mt-8 mb-10">
                 {recommendationCards && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                    {recommendationCards.map((card) => {
+                    {splitFeaturesForCards(recommendationCards, aiSummary?.ourRecommendation?.recommendedFeatures).map((card) => {
                       const isSelected = selectedCardId === card.id;
                       const currentCard = recommendationCards.find(c => c.id === 'current');
                       
@@ -4521,7 +4524,7 @@ function getOnboardingFallbackUpgrades(
     rationale
   };
 
-  return [baseCard, upgradeCard];
+  return splitFeaturesForCards([baseCard, upgradeCard], benefits);
 }
 
 function getOnboardingFallbackSummary(

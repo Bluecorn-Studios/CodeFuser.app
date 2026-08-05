@@ -2823,8 +2823,7 @@ CARD 1 (LEFT - Base Package: "${baseName}" at "${basePrice}"):
 - name: "${baseName}"
 - price: "${basePrice}"
 - headline: "Essential core website features included to launch your online presence."
-- benefits: Array of EXACTLY 4 simple, non-technical baseline features:
-  ["✓ Mobile Friendly Design", "✓ Contact Form", "✓ Google Maps Location", "✓ Business Info & Hours"]
+- benefits: Array of EXACTLY 4 features from the 6 recommended business features (specifically features 1, 2, 5, and 6 of the 6 recommended features, formatted with '✓ ' prefix)
 - rationale: "2 simple sentences in plain English explaining why ${baseName} is a solid website starting point."
 
 CARD 2 (RIGHT - Recommendation Pack):
@@ -2832,10 +2831,10 @@ CARD 2 (RIGHT - Recommendation Pack):
 - price: MUST BE EXACTLY "${upgrade1Price}".
 - name: "${baseName} + [Micro Solution Pack Name]" (e.g. "${baseName} + Online Ordering Pack", "${baseName} + Smart Booking Pack", "${baseName} + Patient Booking Pack", "${baseName} + Membership Growth Pack")
 - headline: 1 short, clean sentence in plain English describing what this solution pack provides for "${businessName}".
-- benefits: Array of EXACTLY SIX special high-value business features tailored specifically to the business type:
-  - Item 0 MUST be the Hero Feature (marked with ⭐, e.g. "⭐ Online Booking", "⭐ Online Ordering", "⭐ Trial Registration", "⭐ Online Appointment", "⭐ Wedding Gallery", "⭐ Property Listings", "⭐ Course List")
-  - Items 1-5 MUST be 5 Supporting Special Business Features (marked with ✓, e.g. "✓ Table Booking", "✓ Digital Menu", "✓ WhatsApp Orders", "✓ Customer Reviews", "✓ Loyalty Program")
-  - STRICT RULE: NEVER include generic website features (like Mobile Friendly, Contact Form, Maps, Fast Website, SEO, Basic Gallery) in Card 2! Those belong in Card 1. Card 2 MUST contain 6 SPECIAL high-value business features.
+- benefits: Array of ALWAYS EXACTLY TWO features (specifically the 3rd and 4th features from the 6 recommended business features):
+  - Item 0 MUST be the 3rd feature from recommendations (marked with ⭐, e.g. "⭐ Photo Package Showcase")
+  - Item 1 MUST be the 4th feature from recommendations (marked with ✓, e.g. "✓ Online Payments for Bookings")
+  - STRICT RULE: Card 2 MUST contain ALWAYS EXACTLY 2 features! The other 4 features belong in Card 1.
 - rationale: "Why We Recommend This: Write ONLY 2-3 simple sentences in plain English for a local business owner explaining why this upgrade is useful. No developer jargon, no marketing buzzwords, no ROI math paragraphs. Keep it simple, clear, and direct."`;
 
     checkAbort(req);
@@ -2940,6 +2939,9 @@ CARD 2 (RIGHT - Recommendation Pack):
       if (data.options && data.options.length === 2 && data.summary) {
         
         if (res.headersSent || req.timedOut) return;
+
+        // Ensure options features are strictly split: Card 1 gets 4 features, Card 2 gets ALWAYS 2 features (3rd and 4th)
+        data.options = splitFeaturesForCards(data.options, data.summary?.ourRecommendation?.recommendedFeatures);
 
         // CRITICAL ARCHITECTURE RULE: Application calculates scores deterministically, NOT the AI
         data.scores = calculateDeterministicScores({
@@ -3341,7 +3343,68 @@ function getFallbackUpgrades(
     rationale
   };
 
-  return [baseCard, upgradeCard];
+  return splitFeaturesForCards([baseCard, upgradeCard], benefits);
+}
+
+function splitFeaturesForCards(cards: any[], recommendedFeatures?: string[]): any[] {
+  if (!cards || !Array.isArray(cards) || cards.length < 2) return cards;
+
+  const baseCardIndex = cards.findIndex((c: any) => c.id === 'current');
+  const upgradeCardIndex = cards.findIndex((c: any) => c.id !== 'current');
+
+  if (baseCardIndex === -1 || upgradeCardIndex === -1) return cards;
+
+  const baseCard = cards[baseCardIndex];
+  const upgradeCard = cards[upgradeCardIndex];
+
+  let sixFeatures: string[] = [];
+
+  if (recommendedFeatures && Array.isArray(recommendedFeatures) && recommendedFeatures.length >= 6) {
+    sixFeatures = recommendedFeatures.slice(0, 6);
+  } else if (upgradeCard.benefits && Array.isArray(upgradeCard.benefits) && upgradeCard.benefits.length >= 6) {
+    sixFeatures = upgradeCard.benefits.slice(0, 6);
+  } else {
+    const combined = [...(upgradeCard.benefits || []), ...(baseCard.benefits || [])];
+    const cleaned = combined
+      .map(f => String(f).replace(/^[⭐✓✔]\s*/, '').trim())
+      .filter(f => !["Mobile Friendly Design", "Contact Form", "Google Maps Location", "Business Info & Hours"].some(b => f.toLowerCase().includes(b.toLowerCase())));
+    const unique = Array.from(new Set(cleaned));
+    if (unique.length >= 6) {
+      sixFeatures = unique.slice(0, 6);
+    }
+  }
+
+  if (sixFeatures.length < 6) {
+    return cards;
+  }
+
+  const cleanedSix = sixFeatures.map(f => String(f).replace(/^[⭐✓✔]\s*/, '').trim());
+
+  // 1st, 2nd, 5th, 6th features -> Base Card (indices 0, 1, 4, 5)
+  const baseBenefits = [
+    `✓ ${cleanedSix[0]}`,
+    `✓ ${cleanedSix[1]}`,
+    `✓ ${cleanedSix[4]}`,
+    `✓ ${cleanedSix[5]}`
+  ];
+
+  // 3rd and 4th features -> Upgrade Card (indices 2, 3)
+  const upgradeBenefits = [
+    `⭐ ${cleanedSix[2]}`,
+    `✓ ${cleanedSix[3]}`
+  ];
+
+  const newCards = [...cards];
+  newCards[baseCardIndex] = {
+    ...baseCard,
+    benefits: baseBenefits
+  };
+  newCards[upgradeCardIndex] = {
+    ...upgradeCard,
+    benefits: upgradeBenefits
+  };
+
+  return newCards;
 }
 
 function getDynamicIndustryBenefits(industry: string, level: 'base' | 'upgrade_1'): string[] {

@@ -159,3 +159,70 @@ export function formatFeatureString(raw: string): string {
   const p = prefix ? `${prefix} ` : "";
   return `${p}${title} — ${description}`;
 }
+
+/**
+ * Splits 6 recommended features across Base Card (4 features: 1st, 2nd, 5th, 6th) 
+ * and Upgrade Card (2 features: 3rd and 4th) to create urgency and clear value differentiation.
+ */
+export function splitFeaturesForCards(cards: any[], recommendedFeatures?: string[]): any[] {
+  if (!cards || !Array.isArray(cards) || cards.length < 2) return cards;
+
+  const baseCardIndex = cards.findIndex((c: any) => c.id === 'current');
+  const upgradeCardIndex = cards.findIndex((c: any) => c.id !== 'current');
+
+  if (baseCardIndex === -1 || upgradeCardIndex === -1) return cards;
+
+  const baseCard = cards[baseCardIndex];
+  const upgradeCard = cards[upgradeCardIndex];
+
+  let sixFeatures: string[] = [];
+
+  if (recommendedFeatures && Array.isArray(recommendedFeatures) && recommendedFeatures.length >= 6) {
+    sixFeatures = recommendedFeatures.slice(0, 6);
+  } else if (upgradeCard.benefits && Array.isArray(upgradeCard.benefits) && upgradeCard.benefits.length >= 6) {
+    sixFeatures = upgradeCard.benefits.slice(0, 6);
+  } else {
+    // Combine features from base + upgrade
+    const combined = [...(upgradeCard.benefits || []), ...(baseCard.benefits || [])];
+    const cleaned = combined
+      .map(f => String(f).replace(/^[⭐✓✔]\s*/, '').trim())
+      .filter(f => !["Mobile Friendly Design", "Contact Form", "Google Maps Location", "Business Info & Hours"].some(b => f.toLowerCase().includes(b.toLowerCase())));
+    const unique = Array.from(new Set(cleaned));
+    if (unique.length >= 6) {
+      sixFeatures = unique.slice(0, 6);
+    }
+  }
+
+  if (sixFeatures.length < 6) {
+    return cards;
+  }
+
+  const cleanedSix = sixFeatures.map(f => String(f).replace(/^[⭐✓✔]\s*/, '').trim());
+
+  // 1st, 2nd, 5th, 6th features -> Base Card (indices 0, 1, 4, 5)
+  const baseBenefits = [
+    `✓ ${cleanedSix[0]}`,
+    `✓ ${cleanedSix[1]}`,
+    `✓ ${cleanedSix[4]}`,
+    `✓ ${cleanedSix[5]}`
+  ];
+
+  // 3rd and 4th features -> Upgrade Card (indices 2, 3)
+  const upgradeBenefits = [
+    `⭐ ${cleanedSix[2]}`,
+    `✓ ${cleanedSix[3]}`
+  ];
+
+  const newCards = [...cards];
+  newCards[baseCardIndex] = {
+    ...baseCard,
+    benefits: baseBenefits
+  };
+  newCards[upgradeCardIndex] = {
+    ...upgradeCard,
+    benefits: upgradeBenefits
+  };
+
+  return newCards;
+}
+
