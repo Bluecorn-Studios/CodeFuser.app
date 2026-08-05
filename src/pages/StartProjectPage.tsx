@@ -494,14 +494,14 @@ export const StartProjectPage: React.FC = () => {
   // Stages: 'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'
   const [onboardingStage, setOnboardingStage] = useState<'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'>('form');
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<'milestone' | 'upfront'>('milestone');
-  const [activeDevPaymentMode, setActiveDevPaymentMode] = useState<string>('auto_simulate');
+  const [verificationEnabled, setVerificationEnabled] = useState<boolean>(false);
 
   useEffect(() => {
-    fetch('/api/config/dev-payment-mode')
+    fetch('/api/config/razorpay')
       .then(res => res.json())
       .then(data => {
-        if (data && data.mode) {
-          setActiveDevPaymentMode(data.mode);
+        if (data && typeof data.verificationEnabled === 'boolean') {
+          setVerificationEnabled(data.verificationEnabled);
         }
       })
       .catch(() => {});
@@ -626,18 +626,18 @@ export const StartProjectPage: React.FC = () => {
         });
       }
 
-      let activeDevMode = "auto_simulate";
+      let isVerificationOn = false;
       try {
-        const modeRes = await fetch("/api/config/dev-payment-mode");
+        const modeRes = await fetch("/api/config/razorpay");
         const modeData = await modeRes.json();
-        if (modeData && modeData.mode) {
-          activeDevMode = modeData.mode;
+        if (modeData && typeof modeData.verificationEnabled === 'boolean') {
+          isVerificationOn = modeData.verificationEnabled;
         }
       } catch (err) {
-        console.warn("Could not check dev payment mode:", err);
+        console.warn("Could not check payment verification config:", err);
       }
 
-      if (activeDevMode === "auto_simulate" && projId) {
+      if (!isVerificationOn && projId) {
         setAuthSuccess("Workspace registered! Simulating automatic payment completion...");
         try {
           const simRes = await fetch(`/api/projects/${projId}/simulate-payment`, {
@@ -3922,16 +3922,17 @@ That's enough. We'll help with the rest.`}
                     setPaymentErrorMsg(null);
                     setShowSandboxFallback(false);
 
-                    // 1. Check Development Payment Mode FIRST (Auto-simulation check)
-                    let activeDevMode = "auto_simulate";
+                    // 1. Check RAZORPAY_VERIFICATION status from server
+                    let isVerificationOn = verificationEnabled;
                     try {
-                      const modeRes = await fetch("/api/config/dev-payment-mode");
+                      const modeRes = await fetch("/api/config/razorpay");
                       const modeData = await modeRes.json();
-                      if (modeData && modeData.mode) {
-                        activeDevMode = modeData.mode;
+                      if (modeData && typeof modeData.verificationEnabled === 'boolean') {
+                        isVerificationOn = modeData.verificationEnabled;
+                        setVerificationEnabled(isVerificationOn);
                       }
                     } catch (err) {
-                      console.warn("Could not check dev payment mode configuration:", err);
+                      console.warn("Could not check payment configuration:", err);
                     }
 
                     // Attempt quote lock on server (non-blocking)
@@ -3956,8 +3957,8 @@ That's enough. We'll help with the rest.`}
                       console.warn("Quotation lock notice (non-fatal):", err);
                     }
 
-                    if (activeDevMode === "auto_simulate") {
-                      // AUTOMATIC SUCCESS SIMULATION MODE: Skip Razorpay checkout popup completely!
+                    if (!isVerificationOn) {
+                      // RAZORPAY_VERIFICATION=false: Automatic Payment Simulation Engine
                       try {
                         const simRes = await fetch(`/api/projects/${projId}/simulate-payment`, {
                           method: "POST",
@@ -3982,7 +3983,7 @@ That's enough. We'll help with the rest.`}
                       return;
                     }
 
-                    // 3. Load Razorpay Checkout Script (For Razorpay Test Mode or Production Live Mode)
+                    // 3. Load Razorpay Checkout Script (For Live Razorpay Mode)
                     try {
                       const scriptLoaded = await loadRazorpayScript();
                       if (!scriptLoaded) {
@@ -4015,10 +4016,6 @@ That's enough. We'll help with the rest.`}
                     if (!orderData || !orderData.success) {
                       const errMsg = orderData?.error || "Payment order creation failed.";
                       setPaymentErrorMsg(errMsg);
-                      // If keys are not set, enable sandbox fallback option
-                      if (errMsg.includes("API Key ID") || errMsg.includes("Secret") || errMsg.includes("configured") || errMsg.includes("missing")) {
-                        setShowSandboxFallback(true);
-                      }
                       setPaymentLoading(false);
                       return;
                     }
@@ -4105,9 +4102,9 @@ That's enough. We'll help with the rest.`}
                   {paymentLoading ? (
                     <>
                       <div className="h-3.5 w-3.5 rounded-full border-2 border-t-transparent border-black animate-spin" />
-                      <span>{activeDevPaymentMode === 'auto_simulate' ? 'Simulating Payment...' : 'Connecting...'}</span>
+                      <span>{!verificationEnabled ? 'Simulating Payment...' : 'Connecting...'}</span>
                     </>
-                  ) : activeDevPaymentMode === 'auto_simulate' ? (
+                  ) : !verificationEnabled ? (
                     <>
                       <Zap className="w-4 h-4 text-black fill-black shrink-0" />
                       <span>Simulate Payment (₹{(selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment).toLocaleString('en-IN')})</span>

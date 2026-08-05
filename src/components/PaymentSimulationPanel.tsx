@@ -18,70 +18,29 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
   onStatusChange,
   className = ""
 }) => {
-  const [isDevMode, setIsDevMode] = useState<boolean>(false);
-  const [isProduction, setIsProduction] = useState<boolean>(false);
-  const [devPaymentMode, setDevPaymentMode] = useState<"auto_simulate" | "razorpay_test" | "live_production">("auto_simulate");
+  const [isVerificationOn, setIsVerificationOn] = useState<boolean>(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [isChangingMode, setIsChangingMode] = useState<boolean>(false);
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
 
-  const fetchDevConfig = () => {
-    fetch("/api/config/dev-payment-mode")
+  const fetchConfig = () => {
+    fetch("/api/config/razorpay")
       .then((res) => res.json())
       .then((data) => {
-        setIsProduction(Boolean(data.isProduction));
-        setIsDevMode(!data.isProduction || Boolean(import.meta.env.DEV));
-        if (data.mode) {
-          setDevPaymentMode(data.mode);
-        }
+        setIsVerificationOn(Boolean(data.verificationEnabled));
       })
       .catch(() => {
-        setIsDevMode(Boolean(import.meta.env.DEV));
+        setIsVerificationOn(false);
       });
   };
 
   useEffect(() => {
-    fetchDevConfig();
+    fetchConfig();
   }, []);
 
-  // PRODUCTION SAFETY GUARD: Render nothing if strictly production
-  if (isProduction) {
+  // PRODUCTION / VERIFICATION GUARD: Render nothing if RAZORPAY_VERIFICATION=true
+  if (isVerificationOn) {
     return null;
   }
-
-  const handleModeChange = async (newMode: "auto_simulate" | "razorpay_test" | "live_production") => {
-    if (newMode === devPaymentMode || isChangingMode) return;
-    setIsChangingMode(true);
-    setMessage(null);
-
-    try {
-      const res = await fetch("/api/config/dev-payment-mode", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: newMode })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setDevPaymentMode(newMode);
-        setMessage({
-          type: "info",
-          text: `Updated Development Payment Mode to: ${
-            newMode === "auto_simulate"
-              ? "Automatic Success Simulation (No Razorpay Popup)"
-              : newMode === "razorpay_test"
-              ? "Razorpay Test Mode"
-              : "Live Production Mode"
-          }`
-        });
-      } else {
-        throw new Error(data.error || "Failed to update payment mode.");
-      }
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Failed to change payment mode." });
-    } finally {
-      setIsChangingMode(false);
-    }
-  };
 
   const handleSimulate = async (action: "success" | "failed" | "cancelled" | "pending") => {
     if (!projectId) {
@@ -145,77 +104,19 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
         </span>
       </div>
 
-      {/* Development Payment Mode Single Toggle */}
-      <div className="mb-5 p-3.5 rounded-xl bg-black/60 border border-amber-500/25 space-y-3">
+      {/* Development Payment Mode Status Banner */}
+      <div className="mb-5 p-3.5 rounded-xl bg-black/60 border border-amber-500/25 space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-[11px] font-mono font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-amber-400" /> Development Payment Mode
+            <Zap className="w-3.5 h-3.5 text-amber-400" /> Payment Mode: Simulation Engine Active
           </label>
-          <span className="text-[9px] font-mono font-bold text-neutral-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">
-            {devPaymentMode === "auto_simulate" ? "⚡ AUTO SIMULATE" : devPaymentMode === "razorpay_test" ? "🧪 TEST MODE" : "🔒 LIVE MODE"}
+          <span className="text-[9px] font-mono font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+            RAZORPAY_VERIFICATION=false
           </span>
         </div>
-
-        <div className="space-y-2 pt-1">
-          {/* Option 1: Automatic Success Simulation */}
-          <label className={`flex items-start gap-2.5 text-xs text-neutral-200 cursor-pointer p-2 rounded-lg transition-colors ${devPaymentMode === 'auto_simulate' ? 'bg-amber-500/10 border border-amber-500/30' : 'hover:bg-neutral-900/60'}`}>
-            <input
-              type="radio"
-              name="devPaymentMode"
-              value="auto_simulate"
-              checked={devPaymentMode === "auto_simulate"}
-              disabled={isProduction || isChangingMode}
-              onChange={() => handleModeChange("auto_simulate")}
-              className="mt-0.5 accent-amber-500 text-amber-500 focus:ring-amber-500 cursor-pointer"
-            />
-            <div>
-              <span className="font-bold text-white block">Automatic Success Simulation</span>
-              <span className="text-[10px] text-neutral-400 leading-tight block">
-                Skips Razorpay checkout popup completely. Instantly triggers backend payment success flow, unlocks client portal & advances pages.
-              </span>
-            </div>
-          </label>
-
-          {/* Option 2: Razorpay Test Mode */}
-          <label className={`flex items-start gap-2.5 text-xs text-neutral-200 cursor-pointer p-2 rounded-lg transition-colors ${devPaymentMode === 'razorpay_test' ? 'bg-amber-500/10 border border-amber-500/30' : 'hover:bg-neutral-900/60'}`}>
-            <input
-              type="radio"
-              name="devPaymentMode"
-              value="razorpay_test"
-              checked={devPaymentMode === "razorpay_test"}
-              disabled={isProduction || isChangingMode}
-              onChange={() => handleModeChange("razorpay_test")}
-              className="mt-0.5 accent-amber-500 text-amber-500 focus:ring-amber-500 cursor-pointer"
-            />
-            <div>
-              <span className="font-bold text-white block">Razorpay Test Mode</span>
-              <span className="text-[10px] text-neutral-400 leading-tight block">
-                Opens the standard Razorpay checkout modal using test keys for manual test card transactions.
-              </span>
-            </div>
-          </label>
-
-          {/* Option 3: Live Production Mode (disabled in development) */}
-          <label className={`flex items-start gap-2.5 text-xs text-neutral-400 p-2 rounded-lg transition-colors ${!isProduction ? 'opacity-50 cursor-not-allowed bg-neutral-950/40' : devPaymentMode === 'live_production' ? 'bg-emerald-500/10 border border-emerald-500/30' : ''}`}>
-            <input
-              type="radio"
-              name="devPaymentMode"
-              value="live_production"
-              checked={devPaymentMode === "live_production"}
-              disabled={!isProduction || isChangingMode}
-              onChange={() => handleModeChange("live_production")}
-              className="mt-0.5 accent-amber-500 text-amber-500 focus:ring-amber-500 cursor-not-allowed"
-            />
-            <div>
-              <span className="font-bold block text-neutral-300">
-                Live Production Mode <span className="text-[9px] uppercase font-mono text-amber-500 font-extrabold ml-1">(disabled in development)</span>
-              </span>
-              <span className="text-[10px] text-neutral-500 leading-tight block">
-                Full production checkout with live Razorpay signature verification and strict payment gateway enforcement.
-              </span>
-            </div>
-          </label>
-        </div>
+        <p className="text-[10px] text-neutral-400 leading-normal">
+          Razorpay checkout is disabled. Payments automatically trigger the simulation engine, unlock the portal, and record transactions without requiring real card data.
+        </p>
       </div>
 
       {/* Manual Immediate Trigger Button */}

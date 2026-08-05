@@ -24,13 +24,6 @@ export function getRazorpayInstance() {
  * Verify payment signature returned by the checkout modal
  */
 export function verifyPaymentSignature(orderId: string, paymentId: string, signature: string): boolean {
-  if (process.env.NODE_ENV !== "production") {
-    if (signature === "signature_mock_bypass" || signature.startsWith("signature_mock_")) {
-      console.log("Simulated Sandbox Bypass payment signature authorized.");
-      return true;
-    }
-  }
-
   const secret = process.env.RAZORPAY_KEY_SECRET;
   if (!secret) {
     console.warn("RAZORPAY_KEY_SECRET environment variable is missing. Real signature verification cannot be performed.");

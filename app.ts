@@ -1876,56 +1876,40 @@ app.get("/api/projects/:id/assets/:assetId/download-url", requestTimeout(10000, 
   }
 });
 
-// In-memory Developer Payment Mode setting (default: auto_simulate in development)
-let currentDevPaymentMode: "auto_simulate" | "razorpay_test" | "live_production" = "auto_simulate";
-
-// API: Expose Razorpay Public Key ID & Development Simulation status
+// API: Expose Razorpay Public Key ID & Payment Verification Status (Single source of truth: RAZORPAY_VERIFICATION)
 app.get("/api/config/razorpay", (req, res) => {
-  const isProduction = process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live";
-  const activeMode = isProduction ? "live_production" : currentDevPaymentMode;
+  const verificationEnabled = process.env.RAZORPAY_VERIFICATION === "true";
   return res.json({
     keyId: process.env.RAZORPAY_KEY_ID || "",
-    verificationModeActive: isProduction,
-    isDevSimulation: activeMode === "auto_simulate" && !isProduction,
-    paymentMode: activeMode
+    verificationEnabled,
+    verificationModeActive: verificationEnabled,
+    isDevSimulation: !verificationEnabled
   });
 });
 
 app.get("/api/config/dev-payment-mode", (req, res) => {
-  const isProduction = process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live";
-  const activeMode = isProduction ? "live_production" : currentDevPaymentMode;
+  const verificationEnabled = process.env.RAZORPAY_VERIFICATION === "true";
   return res.json({
-    mode: activeMode,
-    isProduction,
-    autoSimulateEnabled: activeMode === "auto_simulate" && !isProduction,
-    availableModes: [
-      { id: "auto_simulate", label: "Automatic Success Simulation", disabled: isProduction },
-      { id: "razorpay_test", label: "Razorpay Test Mode", disabled: isProduction },
-      { id: "live_production", label: "Live Production Mode (disabled in development)", disabled: !isProduction }
-    ]
+    verificationEnabled,
+    mode: verificationEnabled ? "live" : "simulation",
+    isProduction: verificationEnabled,
+    autoSimulateEnabled: !verificationEnabled
   });
 });
 
 app.post("/api/config/dev-payment-mode", (req, res) => {
-  const isProduction = process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live";
-  if (isProduction) {
-    return res.status(400).json({ success: false, error: "Cannot change payment mode in production environments." });
-  }
-  const { mode } = req.body;
-  if (["auto_simulate", "razorpay_test", "live_production"].includes(mode)) {
-    currentDevPaymentMode = mode;
-    console.log(`[Developer Settings] Payment Mode updated to: ${currentDevPaymentMode}`);
-    return res.json({ success: true, mode: currentDevPaymentMode });
-  }
-  return res.status(400).json({ success: false, error: "Invalid payment mode specified." });
+  return res.status(400).json({
+    success: false,
+    error: "Payment mode is strictly controlled by RAZORPAY_VERIFICATION environment variable."
+  });
 });
 
 app.get("/api/config/dev-simulation", (req, res) => {
-  const isProduction = process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live";
-  const activeMode = isProduction ? "live_production" : currentDevPaymentMode;
+  const verificationEnabled = process.env.RAZORPAY_VERIFICATION === "true";
   return res.json({
-    enabled: activeMode === "auto_simulate" && !isProduction,
-    mode: activeMode,
+    enabled: !verificationEnabled,
+    verificationEnabled,
+    mode: verificationEnabled ? "live" : "simulation",
     environment: process.env.NODE_ENV || "development"
   });
 });
@@ -1933,6 +1917,12 @@ app.get("/api/config/dev-simulation", (req, res) => {
 // API: Create Razorpay Order
 app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razorpay Order"), validateProjectIdParam, requireAuth, verifyProjectOwnership, projectsRateLimiter, validateBody(createOrderSchema), async (req: any, res) => {
   try {
+    if (process.env.RAZORPAY_VERIFICATION !== "true") {
+      return res.status(400).json({
+        success: false,
+        error: "Razorpay order creation is disabled when RAZORPAY_VERIFICATION is not 'true'."
+      });
+    }
     const { id } = req.params;
     const { term } = req.body; // 'milestone' | 'upfront'
 
@@ -2159,6 +2149,13 @@ async function processPaymentSuccessCore({
 // API: Verify Razorpay Payment Signature (Client-side fast checkout verification)
 app.post("/api/projects/:id/verify-payment", requestTimeout(15000, "Verify Razorpay Payment"), validateProjectIdParam, requireAuth, verifyProjectOwnership, paymentVerificationRateLimiter, validateBody(verifyPaymentSchema), async (req: any, res) => {
   try {
+    if (process.env.RAZORPAY_VERIFICATION !== "true") {
+      return res.status(400).json({
+        success: false,
+        error: "Razorpay payment verification is disabled when RAZORPAY_VERIFICATION is not 'true'."
+      });
+    }
+
     const { id } = req.params;
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, term } = req.body;
 
@@ -2211,11 +2208,11 @@ app.post("/api/projects/:id/verify-payment", requestTimeout(15000, "Verify Razor
 // API: Development Payment Simulation Endpoint (Reuses exact core payment success flow)
 app.post("/api/projects/:id/simulate-payment", requestTimeout(15000, "Simulate Payment"), validateProjectIdParam, requireAuth, verifyProjectOwnership, validateBody(simulatePaymentSchema), async (req: any, res) => {
   try {
-    // PRODUCTION SAFETY GUARD: MUST NEVER execution in production environments
-    if (process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live") {
+    // Block simulation if RAZORPAY_VERIFICATION is enabled ("true")
+    if (process.env.RAZORPAY_VERIFICATION === "true") {
       return res.status(403).json({
         success: false,
-        error: "Payment simulation is disabled in production environments."
+        error: "Payment simulation is disabled when RAZORPAY_VERIFICATION=true."
       });
     }
 

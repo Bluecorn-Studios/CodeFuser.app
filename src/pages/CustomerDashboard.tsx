@@ -273,6 +273,18 @@ export default function CustomerDashboard() {
   
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [verificationEnabled, setVerificationEnabled] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch('/api/config/razorpay')
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.verificationEnabled === 'boolean') {
+          setVerificationEnabled(data.verificationEnabled);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const loadRazorpayScript = () => {
     return new Promise<boolean>((resolve) => {
@@ -294,19 +306,20 @@ export default function CustomerDashboard() {
     setPaymentError(null);
     
     try {
-      // 1. Check Development Payment Mode
-      let activeDevMode = "auto_simulate";
+      // 1. Check RAZORPAY_VERIFICATION configuration from server
+      let isVerificationOn = verificationEnabled;
       try {
-        const modeRes = await fetch("/api/config/dev-payment-mode");
+        const modeRes = await fetch("/api/config/razorpay");
         const modeData = await modeRes.json();
-        if (modeData && modeData.mode) {
-          activeDevMode = modeData.mode;
+        if (modeData && typeof modeData.verificationEnabled === 'boolean') {
+          isVerificationOn = modeData.verificationEnabled;
+          setVerificationEnabled(isVerificationOn);
         }
       } catch (err) {
-        console.warn("Could not check dev payment mode configuration:", err);
+        console.warn("Could not check payment verification configuration:", err);
       }
 
-      if (activeDevMode === "auto_simulate") {
+      if (!isVerificationOn) {
         // AUTOMATIC SUCCESS SIMULATION MODE: Skip Razorpay checkout popup completely!
         const simRes = await fetch(`/api/projects/${projectId}/simulate-payment`, {
           method: "POST",
@@ -1723,7 +1736,7 @@ export default function CustomerDashboard() {
                         ) : (
                           <>
                             <Coins size={14} />
-                            <span>Pay Final 50% Milestone (₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")})</span>
+                            <span>{!verificationEnabled ? "Simulate Final 50% Milestone" : "Pay Final 50% Milestone"} (₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")})</span>
                           </>
                         )}
                       </button>
