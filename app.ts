@@ -2807,42 +2807,36 @@ app.post("/api/start-project/package-upgrade-options", requestTimeout(45000, "AI
       }
     });
 
-    const systemPrompt = `You are an experienced, senior web & digital growth consultant at CodeFuser.
-Your client is a local business owner ("${businessName}", Industry: "${industry || 'General'}", Goal: "${goal || 'Growth'}").
+    const systemPrompt = `You are a friendly, local business growth consultant at CodeFuser speaking directly to a local business owner.
+Your client is the owner of "${businessName}" (Industry: "${industry || 'General'}", Goal: "${goal || 'Growth'}").
 
 User Prompt Notes: "${aiPrompt || 'None'}"
 Currently Selected Base Package: ${baseName} (${basePrice})
 
-BUSINESS MODEL & RECOMMENDATION ENGINE RULES:
-1. The customer has chosen the base package "${baseName}" at its fixed price "${basePrice}". This is Card 1 (LEFT).
-2. Card 2 (RIGHT) is an OPTIONAL AI RECOMMENDATION MICRO SOLUTION PACK specifically tailored to "${businessName}".
-3. Card 2 Price MUST be EXACTLY "${upgrade1Price}" (selected randomly from allowed predefined pricing tiers).
-4. EVERY RECOMMENDATION MUST BE A MICRO SOLUTION PACK consisting of:
-   - 1 Hero Feature (marked with ⭐, e.g. "⭐ Online Booking", "⭐ WhatsApp Ordering", "⭐ Appointment Booking")
-   - 2-3 Supporting Features (marked with ✓, e.g. "✓ Calendar Scheduling", "✓ Email Confirmation", "✓ Booking Management")
+BUSINESS CONSULTANT RULES & LANGUAGE DIRECTIVES:
+1. Speak strictly like a local business consultant talking to a local business owner (restaurant, salon, gym, clinic, photo studio, shop owner).
+2. TECHNICAL JARGON IS STRICTLY FORBIDDEN! NEVER output developer terms like: Lightbox, Image Optimization, Proofing, Lazy Loading, Responsive, Schema, Metadata, SEO Optimization, API, Dashboard Widgets, Analytics Module, Customer Portal, Razorpay Integration.
+   - Replace with plain everyday business terms: Photo Gallery, Wedding Albums, Full Screen Photo Viewer, Fast Loading Photos, WhatsApp Chat, Contact Form, Client Login, Online Booking, Online Payments, Google Business Listing.
 
-FEATURE LIBRARY FOR PACK BUNDLES:
-- Booking Pack: Hero: ⭐ Online Booking | Supporting: ✓ Calendar Scheduling, ✓ Email Confirmation, ✓ Booking Dashboard
-- Sales Pack: Hero: ⭐ Online Payments | Supporting: ✓ Razorpay Integration, ✓ Order Tracking, ✓ Digital Invoice
-- WhatsApp Pack: Hero: ⭐ WhatsApp Ordering | Supporting: ✓ Auto Replies, ✓ Lead Routing, ✓ Quick Enquiry
-- SEO Pack: Hero: ⭐ Local SEO Optimization | Supporting: ✓ Google Business Setup, ✓ Schema Markup, ✓ Sitemap Generator
-- Portfolio Pack: Hero: ⭐ Premium Gallery | Supporting: ✓ Categorized Proofing, ✓ Lightbox View, ✓ High-Res Image Optimization
-- AI Pack: Hero: ⭐ AI Chatbot Assistant | Supporting: ✓ FAQ Auto-Responder, ✓ Smart Lead Qualification, ✓ Inquiry Routing
-- CRM Pack: Hero: ⭐ Customer Portal | Supporting: ✓ Client CRM Integration, ✓ Follow-up Automation, ✓ Saved Favorites
-
-CARD 1 (id: "current"):
+CARD 1 (LEFT - Base Package: "${baseName}" at "${basePrice}"):
+- id: "current"
 - name: "${baseName}"
 - price: "${basePrice}"
-- headline: "Essential core features included to launch your online web presence."
-- benefits: Array of 3-4 standard baseline features included in base package (e.g. ["✓ Mobile-Responsive Web Design", "✓ Contact Form", "✓ Google Maps Pin", "✓ Core Services Overview"]).
-- rationale: "2 simple sentences summarizing why ${baseName} is a solid foundation."
+- headline: "Essential core website features included to launch your online presence."
+- benefits: Array of EXACTLY 4 simple, non-technical baseline features:
+  ["✓ Mobile Friendly Design", "✓ Contact Form", "✓ Google Maps Location", "✓ Business Info & Hours"]
+- rationale: "2 simple sentences in plain English explaining why ${baseName} is a solid website starting point."
 
-CARD 2 (id: "upgrade_1"):
-- name: "${baseName} + [Micro Solution Pack Name]" (e.g. "${baseName} + Premium Booking Pack" or "${baseName} + Online Ordering Pack")
-- price: "${upgrade1Price}"
-- headline: 1 short, clean sentence describing what this solution pack provides for "${businessName}".
-- benefits: Array where item 0 is the Hero Feature (e.g. "⭐ Online Booking"), followed by 2-3 Supporting Features (e.g. ["✓ Calendar Scheduling", "✓ Email Confirmation", "✓ Booking Management"]).
-- rationale: "Why We Recommend This: Write ONLY 2-3 simple sentences in plain English explaining why this upgrade is useful for ${businessName}. No marketing buzzwords, no ROI paragraphs, no consultant reports. Keep it simple, clear, and direct."`;
+CARD 2 (RIGHT - Recommendation Pack):
+- id: "upgrade_1"
+- price: MUST BE EXACTLY "${upgrade1Price}".
+- name: "${baseName} + [Micro Solution Pack Name]" (e.g. "${baseName} + Online Ordering Pack", "${baseName} + Smart Booking Pack", "${baseName} + Patient Booking Pack", "${baseName} + Membership Growth Pack")
+- headline: 1 short, clean sentence in plain English describing what this solution pack provides for "${businessName}".
+- benefits: Array of EXACTLY SIX special high-value business features tailored specifically to the business type:
+  - Item 0 MUST be the Hero Feature (marked with ⭐, e.g. "⭐ Online Booking", "⭐ Online Ordering", "⭐ Trial Registration", "⭐ Online Appointment", "⭐ Wedding Gallery", "⭐ Property Listings", "⭐ Course List")
+  - Items 1-5 MUST be 5 Supporting Special Business Features (marked with ✓, e.g. "✓ Table Booking", "✓ Digital Menu", "✓ WhatsApp Orders", "✓ Customer Reviews", "✓ Loyalty Program")
+  - STRICT RULE: NEVER include generic website features (like Mobile Friendly, Contact Form, Maps, Fast Website, SEO, Basic Gallery) in Card 2! Those belong in Card 1. Card 2 MUST contain 6 SPECIAL high-value business features.
+- rationale: "Why We Recommend This: Write ONLY 2-3 simple sentences in plain English for a local business owner explaining why this upgrade is useful. No developer jargon, no marketing buzzwords, no ROI math paragraphs. Keep it simple, clear, and direct."`;
 
     checkAbort(req);
 
@@ -3229,97 +3223,113 @@ function getFallbackUpgrades(
     id: "current",
     name: baseName,
     price: basePrice,
-    headline: `Clean, modern website setup designed to validate ${bName}'s online brand presence.`,
+    headline: `Clean, modern website setup designed to establish ${bName}'s online business presence.`,
     benefits: [
-      "✓ Mobile-Responsive Web Design",
-      "✓ Direct Business Contact Form",
-      "✓ Core Services Overview",
-      "✓ Google Maps Pin & Hours"
+      "✓ Mobile Friendly Design",
+      "✓ Contact Form",
+      "✓ Google Maps Location",
+      "✓ Business Info & Hours"
     ],
-    rationale: `${baseName} delivers essential online visibility for early-stage local businesses.`
+    rationale: `${baseName} provides the baseline website foundation for local business visibility.`
   };
 
-  // Determine Micro Solution Pack based on industry category
-  let packTitle = "Client Acquisition Pack";
-  let headline = `24/7 automated lead capture and customer inquiry management for ${bName}.`;
+  // Determine Micro Solution Pack based on industry category (EXACTLY 6 SPECIAL BUSINESS FEATURES EACH)
+  let packTitle = "Client Growth Pack";
+  let headline = `24/7 online booking, direct WhatsApp ordering, and price catalog for ${bName}.`;
   let benefits = [
     "⭐ Online Booking",
-    "✓ Calendar Scheduling",
-    "✓ Email Confirmation",
-    "✓ Booking Management"
+    "✓ WhatsApp Orders",
+    "✓ Customer Reviews",
+    "✓ Service Price List",
+    "✓ Special Offers",
+    "✓ Client Login"
   ];
-  let rationale = `Most customers want to check availability before reaching out. This upgrade lets visitors book sessions directly and helps reduce missed inquiries.`;
+  let rationale = `Makes it easy for customers to explore your service prices, send direct WhatsApp inquiries, and book appointments 24/7 without waiting for business hours.`;
 
   if (ind.includes("photo") || ind.includes("studio") || ind.includes("photography") || ind.includes("designer")) {
     packTitle = "Premium Booking Pack";
-    headline = `Instant session booking, proofing gallery, and scheduling portal for ${bName}.`;
+    headline = `Direct photoshoot booking, photo gallery, and event package showcase for ${bName}.`;
     benefits = [
-      "⭐ Online Booking",
-      "✓ Calendar Scheduling",
-      "✓ Email Confirmation",
-      "✓ Booking Management"
+      "⭐ Wedding Gallery",
+      "✓ Event Gallery",
+      "✓ Online Booking",
+      "✓ Package Pricing",
+      "✓ Customer Reviews",
+      "✓ Download Photos"
     ];
-    rationale = `Most customers first want to check availability before calling. This upgrade lets visitors book sessions instantly and helps reduce missed inquiries.`;
+    rationale = `You're a photo studio. Most customers first want to check availability before calling. This upgrade lets visitors book sessions instantly and helps reduce missed inquiries.`;
   } else if (ind.includes("food") || ind.includes("restaurant") || ind.includes("cafe") || ind.includes("bakery") || ind.includes("dining")) {
     packTitle = "Online Ordering Pack";
-    headline = `Direct digital food menu and WhatsApp ordering system for ${bName}.`;
+    headline = `Digital menu ordering, table reservations, and WhatsApp chat ordering for ${bName}.`;
     benefits = [
-      "⭐ WhatsApp Ordering",
+      "⭐ Online Ordering",
+      "✓ Table Booking",
       "✓ Digital Menu",
-      "✓ Order Request Form",
-      "✓ Business Hours"
+      "✓ WhatsApp Orders",
+      "✓ Customer Reviews",
+      "✓ Loyalty Program"
     ];
-    rationale = `Allows customers to view your full menu and send direct orders via WhatsApp. Eliminates phone queue confusion during rush dinner hours.`;
+    rationale = `Allows customers to view your digital menu and place orders directly on WhatsApp. Helps manage customer table bookings and keeps customers coming back with a loyalty program.`;
   } else if (ind.includes("medical") || ind.includes("clinic") || ind.includes("doctor") || ind.includes("dental") || ind.includes("hospital") || ind.includes("health")) {
     packTitle = "Patient Booking Pack";
-    headline = `24/7 automated patient appointment booking and reminder system for ${bName}.`;
+    headline = `24/7 automated patient appointment scheduling and WhatsApp reminders for ${bName}.`;
     benefits = [
-      "⭐ Appointment Booking",
+      "⭐ Online Appointment",
       "✓ Doctor Profiles",
+      "✓ Patient Reviews",
+      "✓ Treatment Pages",
       "✓ WhatsApp Reminder",
-      "✓ Time Slot Manager"
+      "✓ Health Packages"
     ];
-    rationale = `Gives patients a fast 24/7 online booking system with automated reminders. Cuts down on reception desk phone queues and prevents missed consultations.`;
+    rationale = `Gives patients a fast 24/7 online appointment booking system with automated WhatsApp reminders. Cuts down on phone calls at your reception desk and stops missed appointments.`;
   } else if (ind.includes("gym") || ind.includes("fitness") || ind.includes("yoga") || ind.includes("crossfit") || ind.includes("workout")) {
     packTitle = "Membership Growth Pack";
-    headline = `Trial pass registration and class booking system for ${bName}.`;
+    headline = `Free trial pass registration, trainer profiles, and class scheduling for ${bName}.`;
     benefits = [
-      "⭐ Free Trial Registration",
+      "⭐ Trial Registration",
+      "✓ Membership Plans",
       "✓ Trainer Profiles",
-      "✓ Class Timetable",
-      "✓ Membership Enquiry"
+      "✓ Workout Timetable",
+      "✓ Progress Tracker",
+      "✓ Nutrition Plans"
     ];
-    rationale = `Local fitness seekers prefer trying a class first. This pack captures trial pass signups directly from your website and converts them into active members.`;
+    rationale = `Local fitness seekers prefer trying a class first. This upgrade captures free trial pass registrations directly from your website and converts them into active monthly members.`;
   } else if (ind.includes("salon") || ind.includes("spa") || ind.includes("beauty") || ind.includes("parlour") || ind.includes("hair")) {
     packTitle = "Smart Booking Pack";
-    headline = `One-click WhatsApp booking and treatment service menu for ${bName}.`;
+    headline = `One-click WhatsApp booking, treatment price list, and style showcase for ${bName}.`;
     benefits = [
-      "⭐ Appointment Booking",
-      "✓ Service Catalogue",
+      "⭐ Online Booking",
       "✓ Before & After Gallery",
-      "✓ WhatsApp Booking"
+      "✓ WhatsApp Booking",
+      "✓ Service Price List",
+      "✓ Gift Cards",
+      "✓ Membership System"
     ];
-    rationale = `Clients love browsing treatment prices before booking. This pack makes it easy for visitors to choose a service and lock in their appointment.`;
+    rationale = `Clients love checking service prices and seeing before-and-after results before booking. This upgrade lets visitors choose a treatment and book their appointment in one click.`;
   } else if (ind.includes("estate") || ind.includes("real") || ind.includes("property") || ind.includes("realty") || ind.includes("builder")) {
     packTitle = "Site Visit Pack";
-    headline = `Interactive site visit scheduler and property inquiry portal for ${bName}.`;
+    headline = `Property listings showcase, site visit scheduler, and loan calculator for ${bName}.`;
     benefits = [
-      "⭐ Site Visit Scheduler",
-      "✓ Property Listings Filter",
+      "⭐ Property Listings",
+      "✓ Property Search",
+      "✓ Site Visit Booking",
       "✓ EMI Calculator",
-      "✓ Direct Agent Inquiry"
+      "✓ WhatsApp Enquiry",
+      "✓ Virtual Tour"
     ];
-    rationale = `Serious property buyers want to schedule site visits quickly. This upgrade captures high-intent buyers before they move on to other listings.`;
+    rationale = `Serious property buyers want to view listings and schedule site visits quickly. This upgrade lets buyers calculate EMI options and book property visits directly.`;
   } else if (ind.includes("coaching") || ind.includes("education") || ind.includes("school") || ind.includes("academy") || ind.includes("tuition") || ind.includes("course")) {
     packTitle = "Student Enrollment Pack";
-    headline = `Automated demo class registration and batch seat booking for ${bName}.`;
+    headline = `Free demo class registration, course catalog, and batch seat booking for ${bName}.`;
     benefits = [
-      "⭐ Demo Class Registration",
-      "✓ Batch Timetable Grid",
-      "✓ Faculty Credentials",
-      "✓ WhatsApp Parent Support"
+      "⭐ Course List",
+      "✓ Demo Class Booking",
+      "✓ Student Reviews",
+      "✓ Batch Timings",
+      "✓ Download Brochure",
+      "✓ Online Admission"
     ];
-    rationale = `Parents and students prefer registering for a demo class before enrolling. This pack streamlines trial class signups for upcoming batches.`;
+    rationale = `Parents and students prefer registering for a demo class before enrolling. This upgrade makes it easy for prospective students to check batch timings and sign up for demo classes.`;
   }
 
   const upgradeCard = {

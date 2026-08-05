@@ -10,6 +10,18 @@ export async function sendEmail(to: string, subject: string, html: string) {
     return;
   }
 
+  if (!to || typeof to !== "string" || !to.trim()) {
+    console.warn(`[Resend Skipped] Empty target email address provided: "${to}". Skipping email transmission.`);
+    return;
+  }
+
+  const cleanTo = to.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(cleanTo)) {
+    console.warn(`[Resend Skipped] Invalid target email address format provided: "${cleanTo}". Skipping email transmission.`);
+    return;
+  }
+
   const fromAddress = process.env.EMAIL_FROM || "CodeFuser <onboarding@resend.dev>";
 
   try {
@@ -21,7 +33,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
       },
       body: JSON.stringify({
         from: fromAddress,
-        to: [to],
+        to: [cleanTo],
         subject: subject,
         html: html
       })

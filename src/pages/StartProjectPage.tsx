@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { parseFeature } from '../lib/featureUtils';
 import { 
   ArrowRight, 
   ArrowLeft, 
@@ -4402,97 +4403,113 @@ function getOnboardingFallbackUpgrades(
     id: "current",
     name: baseName,
     price: basePrice,
-    headline: `Clean, modern website setup designed to validate ${bName}'s online brand presence.`,
+    headline: `Clean, modern website setup designed to establish ${bName}'s online business presence.`,
     benefits: [
-      "✓ Mobile-Responsive Web Design",
-      "✓ Direct Business Contact Form",
-      "✓ Core Services Overview",
-      "✓ Google Maps Pin & Hours"
+      "✓ Mobile Friendly Design",
+      "✓ Contact Form",
+      "✓ Google Maps Location",
+      "✓ Business Info & Hours"
     ],
-    rationale: `${baseName} delivers essential online visibility for early-stage local businesses.`
+    rationale: `${baseName} provides the baseline website foundation for local business visibility.`
   };
 
-  // Determine Micro Solution Pack based on industry category
-  let packTitle = "Client Acquisition Pack";
-  let headline = `24/7 automated lead capture and customer inquiry management for ${bName}.`;
+  // Determine Micro Solution Pack based on industry category (EXACTLY 6 SPECIAL BUSINESS FEATURES EACH)
+  let packTitle = "Client Growth Pack";
+  let headline = `24/7 online booking, direct WhatsApp ordering, and price catalog for ${bName}.`;
   let benefits = [
     "⭐ Online Booking",
-    "✓ Calendar Scheduling",
-    "✓ Email Confirmation",
-    "✓ Booking Management"
+    "✓ WhatsApp Orders",
+    "✓ Customer Reviews",
+    "✓ Service Price List",
+    "✓ Special Offers",
+    "✓ Client Login"
   ];
-  let rationale = `Most customers want to check availability before reaching out. This upgrade lets visitors book sessions directly and helps reduce missed inquiries.`;
+  let rationale = `Makes it easy for customers to explore your service prices, send direct WhatsApp inquiries, and book appointments 24/7 without waiting for business hours.`;
 
   if (ind.includes("photo") || ind.includes("studio") || ind.includes("photography") || ind.includes("designer")) {
     packTitle = "Premium Booking Pack";
-    headline = `Instant session booking, proofing gallery, and scheduling portal for ${bName}.`;
+    headline = `Direct photoshoot booking, photo gallery, and event package showcase for ${bName}.`;
     benefits = [
-      "⭐ Online Booking",
-      "✓ Calendar Scheduling",
-      "✓ Email Confirmation",
-      "✓ Booking Management"
+      "⭐ Wedding Gallery",
+      "✓ Event Gallery",
+      "✓ Online Booking",
+      "✓ Package Pricing",
+      "✓ Customer Reviews",
+      "✓ Download Photos"
     ];
-    rationale = `Most customers first want to check availability before calling. This upgrade lets visitors book sessions instantly and helps reduce missed inquiries.`;
+    rationale = `You're a photo studio. Most customers first want to check availability before calling. This upgrade lets visitors book sessions instantly and helps reduce missed inquiries.`;
   } else if (ind.includes("food") || ind.includes("restaurant") || ind.includes("cafe") || ind.includes("bakery") || ind.includes("dining")) {
     packTitle = "Online Ordering Pack";
-    headline = `Direct digital food menu and WhatsApp ordering system for ${bName}.`;
+    headline = `Digital menu ordering, table reservations, and WhatsApp chat ordering for ${bName}.`;
     benefits = [
-      "⭐ WhatsApp Ordering",
+      "⭐ Online Ordering",
+      "✓ Table Booking",
       "✓ Digital Menu",
-      "✓ Order Request Form",
-      "✓ Business Hours"
+      "✓ WhatsApp Orders",
+      "✓ Customer Reviews",
+      "✓ Loyalty Program"
     ];
-    rationale = `Allows customers to view your full menu and send direct orders via WhatsApp. Eliminates phone queue confusion during rush dinner hours.`;
+    rationale = `Allows customers to view your digital menu and place orders directly on WhatsApp. Helps manage customer table bookings and keeps customers coming back with a loyalty program.`;
   } else if (ind.includes("medical") || ind.includes("clinic") || ind.includes("doctor") || ind.includes("dental") || ind.includes("hospital") || ind.includes("health")) {
     packTitle = "Patient Booking Pack";
-    headline = `24/7 automated patient appointment booking and reminder system for ${bName}.`;
+    headline = `24/7 automated patient appointment scheduling and WhatsApp reminders for ${bName}.`;
     benefits = [
-      "⭐ Appointment Booking",
+      "⭐ Online Appointment",
       "✓ Doctor Profiles",
+      "✓ Patient Reviews",
+      "✓ Treatment Pages",
       "✓ WhatsApp Reminder",
-      "✓ Time Slot Manager"
+      "✓ Health Packages"
     ];
-    rationale = `Gives patients a fast 24/7 online booking system with automated reminders. Cuts down on reception desk phone queues and prevents missed consultations.`;
+    rationale = `Gives patients a fast 24/7 online appointment booking system with automated WhatsApp reminders. Cuts down on phone calls at your reception desk and stops missed appointments.`;
   } else if (ind.includes("gym") || ind.includes("fitness") || ind.includes("yoga") || ind.includes("crossfit") || ind.includes("workout")) {
     packTitle = "Membership Growth Pack";
-    headline = `Trial pass registration and class booking system for ${bName}.`;
+    headline = `Free trial pass registration, trainer profiles, and class scheduling for ${bName}.`;
     benefits = [
-      "⭐ Free Trial Registration",
+      "⭐ Trial Registration",
+      "✓ Membership Plans",
       "✓ Trainer Profiles",
-      "✓ Class Timetable",
-      "✓ Membership Enquiry"
+      "✓ Workout Timetable",
+      "✓ Progress Tracker",
+      "✓ Nutrition Plans"
     ];
-    rationale = `Local fitness seekers prefer trying a class first. This pack captures trial pass signups directly from your website and converts them into active members.`;
+    rationale = `Local fitness seekers prefer trying a class first. This upgrade captures free trial pass registrations directly from your website and converts them into active monthly members.`;
   } else if (ind.includes("salon") || ind.includes("spa") || ind.includes("beauty") || ind.includes("parlour") || ind.includes("hair")) {
     packTitle = "Smart Booking Pack";
-    headline = `One-click WhatsApp booking and treatment service menu for ${bName}.`;
+    headline = `One-click WhatsApp booking, treatment price list, and style showcase for ${bName}.`;
     benefits = [
-      "⭐ Appointment Booking",
-      "✓ Service Catalogue",
+      "⭐ Online Booking",
       "✓ Before & After Gallery",
-      "✓ WhatsApp Booking"
+      "✓ WhatsApp Booking",
+      "✓ Service Price List",
+      "✓ Gift Cards",
+      "✓ Membership System"
     ];
-    rationale = `Clients love browsing treatment prices before booking. This pack makes it easy for visitors to choose a service and lock in their appointment.`;
+    rationale = `Clients love checking service prices and seeing before-and-after results before booking. This upgrade lets visitors choose a treatment and book their appointment in one click.`;
   } else if (ind.includes("estate") || ind.includes("real") || ind.includes("property") || ind.includes("realty") || ind.includes("builder")) {
     packTitle = "Site Visit Pack";
-    headline = `Interactive site visit scheduler and property inquiry portal for ${bName}.`;
+    headline = `Property listings showcase, site visit scheduler, and loan calculator for ${bName}.`;
     benefits = [
-      "⭐ Site Visit Scheduler",
-      "✓ Property Listings Filter",
+      "⭐ Property Listings",
+      "✓ Property Search",
+      "✓ Site Visit Booking",
       "✓ EMI Calculator",
-      "✓ Direct Agent Inquiry"
+      "✓ WhatsApp Enquiry",
+      "✓ Virtual Tour"
     ];
-    rationale = `Serious property buyers want to schedule site visits quickly. This upgrade captures high-intent buyers before they move on to other listings.`;
+    rationale = `Serious property buyers want to view listings and schedule site visits quickly. This upgrade lets buyers calculate EMI options and book property visits directly.`;
   } else if (ind.includes("coaching") || ind.includes("education") || ind.includes("school") || ind.includes("academy") || ind.includes("tuition") || ind.includes("course")) {
     packTitle = "Student Enrollment Pack";
-    headline = `Automated demo class registration and batch seat booking for ${bName}.`;
+    headline = `Free demo class registration, course catalog, and batch seat booking for ${bName}.`;
     benefits = [
-      "⭐ Demo Class Registration",
-      "✓ Batch Timetable Grid",
-      "✓ Faculty Credentials",
-      "✓ WhatsApp Parent Support"
+      "⭐ Course List",
+      "✓ Demo Class Booking",
+      "✓ Student Reviews",
+      "✓ Batch Timings",
+      "✓ Download Brochure",
+      "✓ Online Admission"
     ];
-    rationale = `Parents and students prefer registering for a demo class before enrolling. This pack streamlines trial class signups for upcoming batches.`;
+    rationale = `Parents and students prefer registering for a demo class before enrolling. This upgrade makes it easy for prospective students to check batch timings and sign up for demo classes.`;
   }
 
   const upgradeCard = {
@@ -4544,12 +4561,12 @@ function getOnboardingFallbackSummary(
   let businessCat = "General Business";
   let opportunity = `Helping local customers discover ${bName} and convert into paying clients effortlessly.`;
   let recFeatures = [
-    "Services Showcase",
+    "Online Booking",
+    "WhatsApp Orders",
     "Customer Reviews",
-    "Contact Form",
-    "Google Location Map",
-    "WhatsApp Direct Inquiry",
-    "Pricing Packages"
+    "Service Price List",
+    "Special Offers",
+    "Client Login"
   ];
   let advice = `These features make it effortless for local customers to discover ${bName}, explore your services, and contact you directly.`;
   let optionalRecommendations = [
@@ -4563,12 +4580,12 @@ function getOnboardingFallbackSummary(
     businessCat = "Health & Wellness";
     opportunity = "Building immediate patient trust and making appointment bookings effortless.";
     recFeatures = [
+      "Online Appointment",
       "Doctor Profiles",
-      "Online Booking",
-      "Treatments We Offer",
       "Patient Reviews",
-      "Clinic Location",
-      "Emergency Call"
+      "Treatment Pages",
+      "WhatsApp Reminder",
+      "Health Packages"
     ];
     advice = "These features help patients learn about your treatments and book appointments online.";
     optionalRecommendations = [
@@ -4581,12 +4598,12 @@ function getOnboardingFallbackSummary(
     businessCat = "Food & Beverage";
     opportunity = "Displaying your digital menu and table reservations so local diners can reach you instantly.";
     recFeatures = [
+      "Online Ordering",
+      "Table Booking",
       "Digital Menu",
-      "Table Reservation",
-      "Online Orders",
+      "WhatsApp Orders",
       "Customer Reviews",
-      "Daily Specials",
-      "Location & Hours"
+      "Loyalty Program"
     ];
     advice = "These features help local diners explore your digital menu and reserve a table quickly.";
     optionalRecommendations = [
@@ -4599,12 +4616,12 @@ function getOnboardingFallbackSummary(
     businessCat = "Sports & Fitness";
     opportunity = "Helping members view class schedules, check trainer expertise, and join instantly.";
     recFeatures = [
+      "Trial Registration",
       "Membership Plans",
       "Trainer Profiles",
-      "Class Schedule",
-      "Transformation Photos",
-      "Free Trial Pass",
-      "Member Reviews"
+      "Workout Timetable",
+      "Progress Tracker",
+      "Nutrition Plans"
     ];
     advice = "These features help fitness enthusiasts check class schedules, see trainer profiles, and claim trial passes.";
     optionalRecommendations = [
@@ -4617,12 +4634,12 @@ function getOnboardingFallbackSummary(
     businessCat = "Photography & Creative";
     opportunity = "Showcasing your photo portfolio and letting clients book sessions effortlessly.";
     recFeatures = [
-      "Portfolio Gallery",
-      "Download Your Photos",
-      "Price Packages",
-      "Booking Form",
+      "Wedding Gallery",
+      "Event Gallery",
+      "Online Booking",
+      "Package Pricing",
       "Customer Reviews",
-      "Instagram Videos"
+      "Download Photos"
     ];
     advice = "These features help showcase your photography work and make it easy for customers to book a photoshoot.";
     optionalRecommendations = [
@@ -4635,12 +4652,12 @@ function getOnboardingFallbackSummary(
     businessCat = "Beauty & Personal Care";
     opportunity = "Showcasing your style gallery and letting clients book appointments easily.";
     recFeatures = [
-      "Price List & Services",
+      "Online Booking",
+      "Before & After Gallery",
       "WhatsApp Booking",
-      "Stylist Profiles",
-      "Before & After Photos",
-      "Client Reviews",
-      "Special Packages"
+      "Service Price List",
+      "Gift Cards",
+      "Membership System"
     ];
     advice = "These features help clients explore your beauty treatments, see past results, and book appointments instantly.";
     optionalRecommendations = [
@@ -4654,11 +4671,11 @@ function getOnboardingFallbackSummary(
     opportunity = "Helping property seekers explore featured listings and schedule site visits.";
     recFeatures = [
       "Property Listings",
-      "Video Tours",
-      "Agent Profiles",
-      "Schedule Site Visit",
+      "Property Search",
+      "Site Visit Booking",
       "EMI Calculator",
-      "Client Reviews"
+      "WhatsApp Enquiry",
+      "Virtual Tour"
     ];
     advice = "These features help home buyers explore listings, take video tours, and schedule site visits effortlessly.";
     optionalRecommendations = [
@@ -4671,11 +4688,12 @@ function getOnboardingFallbackSummary(
     businessCat = "Education & Learning";
     opportunity = "Building academic credibility and driving free demo class enrollments.";
     recFeatures = [
-      "Teacher Profiles",
-      "Free Demo Class",
-      "Student Results",
-      "Fee Structure",
-      "Contact Form"
+      "Course List",
+      "Demo Class Booking",
+      "Student Reviews",
+      "Batch Timings",
+      "Download Brochure",
+      "Online Admission"
     ];
     advice = "These features help prospective students explore your courses, build trust, and sign up for demo classes easily.";
     optionalRecommendations = [

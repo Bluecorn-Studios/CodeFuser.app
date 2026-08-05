@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { R as Reveal, E as Eyebrow, G as Button, b as getMailtoLink, cn, useAppRouter, Link } from './Reveal';
 import { PricingPlan } from '../types';
 import { X, Sparkles, MessageSquare, Gift, Globe, Check, Lock, ShieldCheck, Tag } from 'lucide-react';
+import { parseFeature } from '../lib/featureUtils';
 
 export const pricingPlans: PricingPlan[] = [
   {
@@ -13,11 +14,11 @@ export const pricingPlans: PricingPlan[] = [
     level: 1,
     capacity: "■■□□□",
     features: [
-      "Look professional with a modern website (Multi-Page Website)",
-      "Help nearby customers find your location (Google Maps)",
-      "Get direct customer calls & WhatsApp messages (Click-to-Call & WhatsApp)",
-      "Fast mobile design so customers don't wait (Mobile Friendly)",
-      "Help more people discover your business on Google (Basic SEO)"
+      "Multi-Page Website",
+      "Google Maps",
+      "Click-to-Call & WhatsApp",
+      "Mobile Friendly",
+      "Google Search Setup"
     ],
     bestFor: "• New businesses\n• Small local shops\n• Businesses getting online for the first time"
   },
@@ -30,10 +31,10 @@ export const pricingPlans: PricingPlan[] = [
     capacity: "■■■□□",
     features: [
       "✓ Everything in Ignite, plus...",
-      "Customers get answers even while you're sleeping (AI Chatbot)",
-      "Let customers book appointments online easily (Online Booking)",
-      "Showcase your work & photos to build trust (Photo Gallery)",
-      "Build strong trust with customer reviews (Review Showcase)"
+      "AI Chatbot",
+      "Online Booking",
+      "Photo Gallery",
+      "Review Showcase"
     ],
     bestFor: "• Businesses receiving regular customer calls\n• Businesses wanting more customers\n• Businesses ready to grow",
     highlight: true
@@ -47,11 +48,11 @@ export const pricingPlans: PricingPlan[] = [
     capacity: "■■■■■",
     features: [
       "✓ Everything in Fusion, plus...",
-      "Let customers pay you online easily (Payment Gateway)",
-      "Never lose customer details again (CRM)",
-      "Automated WhatsApp & Email reminders to save time (Automated Follow-ups)",
-      "See how your business is growing online (Analytics Dashboard)",
-      "Priority phone & direct WhatsApp support (Priority Support)"
+      "Payment Gateway",
+      "CRM",
+      "Automated Follow-ups",
+      "Analytics Dashboard",
+      "Priority Support"
     ],
     bestFor: "• Growing businesses\n• Businesses managing many customers\n• Businesses wanting automation and long-term growth"
   }
@@ -284,17 +285,17 @@ export const FreePremiumBundle: React.FC<FreePremiumBundleProps> = ({ tierId }) 
 
   const freeItems = tierId === "foundation" ? [
     "Fast Website Hosting (1 Month Free)",
-    "Basic SEO Setup"
+    "Google Search Setup"
   ] : tierId === "growth" ? [
     "Domain Name (1 Year Free)",
     "Fast Website Hosting (2 Months Free)",
-    "Client Portal Access",
-    "Basic SEO Setup"
+    "Client Login Access",
+    "Google Search Setup"
   ] : [
     "Domain Name (2 Years Free)",
     "Fast Website Hosting (3 Months Free)",
-    "Client Portal Access",
-    "Basic SEO Setup"
+    "Client Login Access",
+    "Google Search Setup"
   ];
 
   return (
@@ -318,13 +319,19 @@ export const FreePremiumBundle: React.FC<FreePremiumBundleProps> = ({ tierId }) 
       </div>
 
       {/* Value Stack Checklist Card */}
-      <div className={cn("p-4 rounded-2xl border w-full backdrop-blur-md shadow-sm space-y-2.5 text-left relative z-10", cardClass)}>
-        {freeItems.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2.5 text-xs sm:text-[13px] font-semibold">
-            <span className={cn("font-black text-sm shrink-0", checkColor)}>✔</span>
-            <span className={textColor}>{item}</span>
-          </div>
-        ))}
+      <div className={cn("p-4 rounded-2xl border w-full backdrop-blur-md shadow-sm space-y-3 text-left relative z-10", cardClass)}>
+        {freeItems.map((item, idx) => {
+          const parsed = parseFeature(item);
+          return (
+            <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-[13px]">
+              <span className={cn("font-black text-sm shrink-0 mt-0.5", checkColor)}>✔</span>
+              <div className="flex flex-col gap-0.5">
+                <span className={cn("font-bold text-xs sm:text-[13px]", textColor)}>{parsed.title}</span>
+                <span className="text-[11px] opacity-75 font-normal leading-snug">{parsed.description}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -569,23 +576,39 @@ export function TierCard({ tier }: TierCardProps) {
         </p>
       </div>
       
-      <ul className={cn("mt-8 space-y-2.5 text-sm transition-all duration-300 relative z-10", featuresClass)}>
+      <ul className={cn("mt-8 space-y-3.5 text-sm transition-all duration-300 relative z-10", featuresClass)}>
         {tier.features.map((feat, idx) => {
           const isHiddenOnMobile = idx > 2 && !showAllFeatures;
           const isHierarchy = feat.startsWith("✓ Everything in");
+          if (isHierarchy) {
+            return (
+              <li 
+                key={feat} 
+                className={cn(
+                  "flex items-center gap-2",
+                  isHiddenOnMobile ? "hidden md:flex" : "flex",
+                  "font-bold text-amber-400/95 pb-1 border-b border-white/10 mb-1 tracking-wide text-xs sm:text-sm"
+                )}
+              >
+                <span className="text-amber-300">{feat}</span>
+              </li>
+            );
+          }
+
+          const parsed = parseFeature(feat);
           return (
             <li 
               key={feat} 
               className={cn(
-                "items-start gap-3",
-                isHiddenOnMobile ? "hidden md:flex" : "flex",
-                isHierarchy ? "font-bold text-amber-400/95 pb-1 border-b border-white/10 mb-1 tracking-wide text-xs sm:text-sm" : ""
+                "items-start gap-2.5",
+                isHiddenOnMobile ? "hidden md:flex" : "flex"
               )}
             >
-              {!isHierarchy && (
-                <span className={cn("mt-2 h-[1.5px] w-3 shrink-0 rounded-full", bulletColor)} />
-              )}
-              <span className={isHierarchy ? "text-amber-300" : ""}>{feat}</span>
+              <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", bulletColor)} />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-bold text-xs sm:text-sm">{parsed.title}</span>
+                <span className="text-xs opacity-75 font-normal leading-snug">{parsed.description}</span>
+              </div>
             </li>
           );
         })}

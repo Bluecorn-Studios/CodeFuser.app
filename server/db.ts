@@ -459,12 +459,19 @@ export async function logAuditEvent(event: {
       notes: event.notes || null,
     }]);
     if (error) {
-      if (error.message?.includes("Could not find the table") || error.code === "PGRST205") {
+      if (
+        error.message?.includes("Could not find the table") ||
+        error.message?.includes("Could not find") ||
+        error.message?.includes("schema cache") ||
+        error.code === "PGRST205" ||
+        error.code === "PGRST204"
+      ) {
         if (isProduction) {
-          console.error(`[Audit Trail Error] Table public.audit_trail is not yet initialized in Supabase. Could not persist audit event in database.`);
+          console.warn(`[Audit Trail Notice] Table public.audit_trail schema is not fully synchronized in Supabase: ${error.message}. Saving to local backup.`);
         } else {
-          console.warn(`[Audit Trail Notice] Table public.audit_trail is not yet initialized in Supabase. Successfully wrote event to local fallback.`);
+          console.warn(`[Audit Trail Notice] Table public.audit_trail schema is not fully synchronized in Supabase. Successfully wrote event to local fallback.`);
         }
+        saveLocalAuditEvent(event);
       } else {
         console.error("[Audit Trail Error] Failed to write event:", error.message);
       }
