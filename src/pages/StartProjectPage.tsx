@@ -491,9 +491,21 @@ export const StartProjectPage: React.FC = () => {
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string>('current');
 
-  // Stages: 'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'calendly' | 'asset_center' | 'success'
-  const [onboardingStage, setOnboardingStage] = useState<'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'calendly' | 'asset_center' | 'success'>('form');
+  // Stages: 'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'
+  const [onboardingStage, setOnboardingStage] = useState<'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'>('form');
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<'milestone' | 'upfront'>('milestone');
+  const [activeDevPaymentMode, setActiveDevPaymentMode] = useState<string>('auto_simulate');
+
+  useEffect(() => {
+    fetch('/api/config/dev-payment-mode')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.mode) {
+          setActiveDevPaymentMode(data.mode);
+        }
+      })
+      .catch(() => {});
+  }, [onboardingStage]);
 
   // Secure Client Workspace inline auth states
   const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup');
@@ -614,12 +626,47 @@ export const StartProjectPage: React.FC = () => {
         });
       }
 
+      let activeDevMode = "auto_simulate";
+      try {
+        const modeRes = await fetch("/api/config/dev-payment-mode");
+        const modeData = await modeRes.json();
+        if (modeData && modeData.mode) {
+          activeDevMode = modeData.mode;
+        }
+      } catch (err) {
+        console.warn("Could not check dev payment mode:", err);
+      }
+
+      if (activeDevMode === "auto_simulate" && projId) {
+        setAuthSuccess("Workspace registered! Simulating automatic payment completion...");
+        try {
+          const simRes = await fetch(`/api/projects/${projId}/simulate-payment`, {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${sessionToken || getAuthToken() || ""}`
+            },
+            body: JSON.stringify({ term: selectedPaymentTerm || "milestone", action: "success" })
+          });
+          const simData = await simRes.json();
+          if (simData.success) {
+            setAuthSuccess("Registration & Simulated Payment Complete! Redirecting to Scheduling...");
+            setTimeout(() => {
+              setOnboardingStage('schedule');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 1000);
+            return;
+          }
+        } catch (simErr) {
+          console.warn("Automatic post-registration simulation notice:", simErr);
+        }
+      }
+
       setAuthSuccess(authMode === 'signup' ? "Client Workspace created successfully!" : "Logged in successfully!");
-      
       setTimeout(() => {
         setOnboardingStage('payment');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 1500);
+      }, 1200);
 
     } catch (err: any) {
       setAuthError(err.message || "Authentication aborted.");
@@ -3875,12 +3922,23 @@ That's enough. We'll help with the rest.`}
                     setPaymentErrorMsg(null);
                     setShowSandboxFallback(false);
 
-                    // 1. Lock/freeze quote price on backend
+                    // 1. Check Development Payment Mode FIRST (Auto-simulation check)
+                    let activeDevMode = "auto_simulate";
+                    try {
+                      const modeRes = await fetch("/api/config/dev-payment-mode");
+                      const modeData = await modeRes.json();
+                      if (modeData && modeData.mode) {
+                        activeDevMode = modeData.mode;
+                      }
+                    } catch (err) {
+                      console.warn("Could not check dev payment mode configuration:", err);
+                    }
+
+                    // Attempt quote lock on server (non-blocking)
                     const finalPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : numericPriceForPayment;
                     const discount = selectedPaymentTerm === 'upfront' ? discountVal : 0;
-                    
                     try {
-                      const quoteRes = await fetch(`/api/projects/${projId}/quote`, {
+                      await fetch(`/api/projects/${projId}/quote`, {
                         method: "POST",
                         headers: { 
                           "Content-Type": "application/json",
@@ -3894,26 +3952,8 @@ That's enough. We'll help with the rest.`}
                           summary: aiSummary?.recommendationReason || "Custom engineered web application."
                         })
                       });
-                      if (!quoteRes.ok) {
-                        throw new Error("Failed to lock quotation on server.");
-                      }
                     } catch (err: any) {
-                      console.warn("Quotation lock error:", err);
-                      setPaymentErrorMsg("Failed to lock project details on backend server.");
-                      setPaymentLoading(false);
-                      return;
-                    }
-
-                    // 2. Check Development Payment Mode (Auto-simulation check)
-                    let activeDevMode = "auto_simulate";
-                    try {
-                      const modeRes = await fetch("/api/config/dev-payment-mode");
-                      const modeData = await modeRes.json();
-                      if (modeData && modeData.mode) {
-                        activeDevMode = modeData.mode;
-                      }
-                    } catch (err) {
-                      console.warn("Could not check dev payment mode configuration:", err);
+                      console.warn("Quotation lock notice (non-fatal):", err);
                     }
 
                     if (activeDevMode === "auto_simulate") {
@@ -3929,7 +3969,7 @@ That's enough. We'll help with the rest.`}
                         });
                         const simData = await simRes.json();
                         if (simData.success) {
-                          setOnboardingStage('calendly');
+                          setOnboardingStage('schedule');
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         } else {
                           setPaymentErrorMsg("Automatic payment simulation failed: " + (simData.error || "Unknown error"));
@@ -4030,7 +4070,7 @@ That's enough. We'll help with the rest.`}
                             });
                             const verifyData = await verifyRes.json();
                             if (verifyData.success) {
-                              setOnboardingStage('calendly');
+                              setOnboardingStage('schedule');
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             } else {
                               setPaymentErrorMsg("Payment verification failed: " + (verifyData.error || "Please contact support."));
@@ -4060,16 +4100,22 @@ That's enough. We'll help with the rest.`}
                       setPaymentLoading(false);
                     }
                   }}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 font-semibold text-xs uppercase tracking-wider px-8 py-3.5 rounded-full shadow-lg active:scale-95 transition-all cursor-pointer leading-none disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-amber-400 text-black hover:bg-amber-300 font-bold text-xs uppercase tracking-wider px-8 py-3.5 rounded-full shadow-lg active:scale-95 transition-all cursor-pointer leading-none disabled:opacity-50"
                 >
                   {paymentLoading ? (
                     <>
                       <div className="h-3.5 w-3.5 rounded-full border-2 border-t-transparent border-black animate-spin" />
-                      Connecting...
+                      <span>{activeDevPaymentMode === 'auto_simulate' ? 'Simulating Payment...' : 'Connecting...'}</span>
+                    </>
+                  ) : activeDevPaymentMode === 'auto_simulate' ? (
+                    <>
+                      <Zap className="w-4 h-4 text-black fill-black shrink-0" />
+                      <span>Simulate Payment (₹{(selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment).toLocaleString('en-IN')})</span>
                     </>
                   ) : (
                     <>
-                      Continue <ArrowRight size={14} />
+                      <span>Pay Deposit (₹{(selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment).toLocaleString('en-IN')})</span>
+                      <ArrowRight size={14} />
                     </>
                   )}
                 </button>
@@ -4081,7 +4127,7 @@ That's enough. We'll help with the rest.`}
                 term={selectedPaymentTerm}
                 getAuthToken={getAuthToken}
                 onSuccess={(updatedProject) => {
-                  setOnboardingStage('calendly');
+                  setOnboardingStage('schedule');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 onStatusChange={(status, msg) => {
@@ -4093,9 +4139,9 @@ That's enough. We'll help with the rest.`}
                 }}
               />
             </motion.div>
-          ) : onboardingStage === 'calendly' ? (
+          ) : onboardingStage === 'schedule' ? (
             <motion.div
-              key="calendly"
+              key="schedule"
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
@@ -4262,10 +4308,10 @@ That's enough. We'll help with the rest.`}
               <div className="flex items-center justify-between gap-4 border-t border-neutral-900 pt-6">
                 <button
                   type="button"
-                  onClick={() => setOnboardingStage('calendly')}
+                  onClick={() => setOnboardingStage('schedule')}
                   className="text-xs text-neutral-400 hover:text-white underline"
                 >
-                  ← Back to Calendly
+                  ← Back to Next Phase Prep
                 </button>
                 <button
                   type="button"
