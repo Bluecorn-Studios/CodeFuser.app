@@ -172,40 +172,43 @@ export function cleanFeatureText(rawText: string): string {
 
   // Strip long clause suffixes (e.g. "to display your work beautifully", "for quick client inquiries")
   core = core
-    .replace(/\s+(to|for|so that|designed to|enabling)\s+.*$/i, "")
-    .replace(/\s+and a full screen photo viewer.*$/i, "")
-    .replace(/\s+and whatsapp chat$/i, " & WhatsApp")
+    .replace(/\s+(for|to|with|so|designed|enabling|offering|allowing|making|getting|built|helping)\s+.*$/i, "")
+    .replace(/\s+and\s+.*$/i, "")
     .trim();
 
-  // Standard short overrides for common long feature titles
+  // Standard short overrides for common long feature titles (2-3 words max)
   const lower = core.toLowerCase();
-  if (lower.includes("google business listing") || lower.includes("google business setup") || lower.includes("google business")) {
+  if (lower.includes("google") && (lower.includes("business") || lower.includes("listing") || lower.includes("maps"))) {
     core = "Google Business Listing";
-  } else if (lower.includes("photo gallery") || lower.includes("photoshoot gallery")) {
+  } else if (lower.includes("photo") && lower.includes("gallery")) {
     core = "Photo Gallery";
-  } else if (lower.includes("contact form") && lower.includes("whatsapp")) {
-    core = "Contact Form & WhatsApp";
-  } else if (lower.includes("fast loading photo") || lower.includes("photo viewer")) {
-    core = "Fast Photo Viewer";
-  } else if (lower.includes("online booking system") || lower.includes("online booking")) {
-    core = "Online Booking System";
-  } else if (lower.includes("online payment") || lower.includes("payments for booking")) {
+  } else if (lower.includes("whatsapp")) {
+    core = "WhatsApp Chat";
+  } else if (lower.includes("testimonial") || lower.includes("review")) {
+    core = "Client Reviews";
+  } else if (lower.includes("appointment") || lower.includes("booking")) {
+    core = "Online Booking";
+  } else if (lower.includes("payment")) {
     core = "Online Payments";
-  } else if (lower.includes("mobile friendly")) {
-    core = "Mobile Friendly Design";
-  } else {
-    // Limit to max 5 words
-    const words = core.split(/\s+/);
-    if (words.length > 5) {
-      core = words.slice(0, 5).join(" ");
-    }
+  } else if (lower.includes("contact") || lower.includes("form")) {
+    core = "Contact Form";
+  } else if (lower.includes("menu")) {
+    core = "Digital Menu";
+  } else if (lower.includes("mobile")) {
+    core = "Mobile Website";
+  }
+
+  // Limit strictly to max 3 words
+  const words = core.split(/\s+/).filter(Boolean);
+  if (words.length > 3) {
+    core = words.slice(0, 3).join(" ");
   }
 
   return `${prefix}${core}`;
 }
 
 export function cleanHeadline(rawHeadline: string): string {
-  if (!rawHeadline) return "";
+  if (!rawHeadline) return "Simple website setup.";
   let text = String(rawHeadline).trim();
 
   // Strip promotional phrase prefixes
@@ -213,32 +216,34 @@ export function cleanHeadline(rawHeadline: string): string {
     .replace(/^(This solution pack helps '[^']+' |This solution pack helps [^\s]+ |This solution pack helps |This package gives '[^']+' |This package gives [^\s]+ |This package gives )/i, "")
     .trim();
 
+  text = text.replace(/^(Essential|Clean|Modern|Streamline|Baseline|Complete)\s+/i, "");
   text = text.charAt(0).toUpperCase() + text.slice(1);
 
-  // Keep first sentence, max 10 words
-  const firstSentence = text.split(/(?<=[.!?])\s+/)[0];
-  const words = firstSentence.split(/\s+/);
-  if (words.length > 10) {
-    return words.slice(0, 9).join(" ") + ".";
+  // Keep max 3-4 words
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length > 3) {
+    return words.slice(0, 3).join(" ") + ".";
   }
-  return firstSentence;
+  return text.endsWith(".") ? text : text + ".";
 }
 
 export function cleanRationale(rawRationale: string): string {
-  if (!rawRationale) return "";
+  if (!rawRationale) return "Easy to start.";
   let text = String(rawRationale).trim();
 
   // Strip duplicate labels
   text = text.replace(/^(Why We Recommend This|Package Focus):\s*/gi, "").trim();
   text = text.replace(/^(Why We Recommend This|Package Focus):\s*/gi, "").trim();
+  text = text.replace(/^(This package is a strong starting point to |This package gives |Makes it easy for customers to |Allows customers to |Gives patients |Lets clients |Provides the baseline website foundation for |You're a |Serious property buyers |Parents and students )/gi, "").trim();
 
-  // Keep single short sentence, max 14 words
-  const firstSentence = text.split(/(?<=[.!?])\s+/)[0];
-  const words = firstSentence.split(/\s+/);
-  if (words.length > 14) {
-    return words.slice(0, 13).join(" ") + ".";
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+
+  // Keep max 3-4 words
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length > 3) {
+    return words.slice(0, 3).join(" ") + ".";
   }
-  return firstSentence;
+  return text.endsWith(".") ? text : text + ".";
 }
 
 /**

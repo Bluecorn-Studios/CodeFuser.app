@@ -4488,113 +4488,113 @@ function getOnboardingFallbackUpgrades(
     id: "current",
     name: baseName,
     price: basePrice,
-    headline: `Clean, modern website setup designed to establish ${bName}'s online business presence.`,
+    headline: `Simple website setup.`,
     benefits: [
-      "✓ Mobile Friendly Design",
-      "✓ Contact Form",
-      "✓ Google Maps Location",
-      "✓ Business Info & Hours"
+      "✓ Photo Gallery",
+      "✓ WhatsApp Chat",
+      "✓ Client Reviews",
+      "✓ Google Listing"
     ],
-    rationale: `${baseName} provides the baseline website foundation for local business visibility.`
+    rationale: `Easy to start.`
   };
 
   // Determine Micro Solution Pack based on industry category (EXACTLY 6 SPECIAL BUSINESS FEATURES EACH)
   let packTitle = "Client Growth Pack";
-  let headline = `24/7 online booking, direct WhatsApp ordering, and price catalog for ${bName}.`;
+  let headline = `Easy online booking.`;
   let benefits = [
     "⭐ Online Booking",
-    "✓ WhatsApp Orders",
-    "✓ Customer Reviews",
-    "✓ Service Price List",
+    "✓ WhatsApp Chat",
+    "✓ Client Reviews",
+    "✓ Price List",
     "✓ Special Offers",
-    "✓ Client Login"
+    "✓ Client Portal"
   ];
-  let rationale = `Makes it easy for customers to explore your service prices, send direct WhatsApp inquiries, and book appointments 24/7 without waiting for business hours.`;
+  let rationale = `Book and pay online.`;
 
   if (ind.includes("photo") || ind.includes("studio") || ind.includes("photography") || ind.includes("designer")) {
     packTitle = "Premium Booking Pack";
-    headline = `Direct photoshoot booking, photo gallery, and event package showcase for ${bName}.`;
+    headline = `Photoshoot booking and gallery.`;
     benefits = [
       "⭐ Wedding Gallery",
       "✓ Event Gallery",
       "✓ Online Booking",
       "✓ Package Pricing",
-      "✓ Customer Reviews",
-      "✓ Download Photos"
+      "✓ Client Reviews",
+      "✓ Photo Downloads"
     ];
-    rationale = `You're a photo studio. Most customers first want to check availability before calling. This upgrade lets visitors book sessions instantly and helps reduce missed inquiries.`;
+    rationale = `Easy photoshoot booking.`;
   } else if (ind.includes("food") || ind.includes("restaurant") || ind.includes("cafe") || ind.includes("bakery") || ind.includes("dining")) {
     packTitle = "Online Ordering Pack";
-    headline = `Digital menu ordering, table reservations, and WhatsApp chat ordering for ${bName}.`;
+    headline = `Menu ordering and tables.`;
     benefits = [
       "⭐ Online Ordering",
       "✓ Table Booking",
       "✓ Digital Menu",
       "✓ WhatsApp Orders",
-      "✓ Customer Reviews",
-      "✓ Loyalty Program"
+      "✓ Client Reviews",
+      "✓ Loyalty Rewards"
     ];
-    rationale = `Allows customers to view your digital menu and place orders directly on WhatsApp. Helps manage customer table bookings and keeps customers coming back with a loyalty program.`;
+    rationale = `Order menu and tables.`;
   } else if (ind.includes("medical") || ind.includes("clinic") || ind.includes("doctor") || ind.includes("dental") || ind.includes("hospital") || ind.includes("health")) {
     packTitle = "Patient Booking Pack";
-    headline = `24/7 automated patient appointment scheduling and WhatsApp reminders for ${bName}.`;
+    headline = `Doctor appointment booking.`;
     benefits = [
-      "⭐ Online Appointment",
+      "⭐ Doctor Booking",
       "✓ Doctor Profiles",
       "✓ Patient Reviews",
-      "✓ Treatment Pages",
-      "✓ WhatsApp Reminder",
+      "✓ Treatment List",
+      "✓ WhatsApp Reminders",
       "✓ Health Packages"
     ];
-    rationale = `Gives patients a fast 24/7 online appointment booking system with automated WhatsApp reminders. Cuts down on phone calls at your reception desk and stops missed appointments.`;
+    rationale = `Book doctor appointments easily.`;
   } else if (ind.includes("gym") || ind.includes("fitness") || ind.includes("yoga") || ind.includes("crossfit") || ind.includes("workout")) {
     packTitle = "Membership Growth Pack";
-    headline = `Free trial pass registration, trainer profiles, and class scheduling for ${bName}.`;
+    headline = `Trial pass and classes.`;
     benefits = [
-      "⭐ Trial Registration",
-      "✓ Membership Plans",
+      "⭐ Free Trial Pass",
+      "✓ Gym Plans",
       "✓ Trainer Profiles",
-      "✓ Workout Timetable",
+      "✓ Class Timetable",
       "✓ Progress Tracker",
-      "✓ Nutrition Plans"
+      "✓ Workout Plans"
     ];
-    rationale = `Local fitness seekers prefer trying a class first. This upgrade captures free trial pass registrations directly from your website and converts them into active monthly members.`;
+    rationale = `Get new gym members.`;
   } else if (ind.includes("salon") || ind.includes("spa") || ind.includes("beauty") || ind.includes("parlour") || ind.includes("hair")) {
     packTitle = "Smart Booking Pack";
-    headline = `One-click WhatsApp booking, treatment price list, and style showcase for ${bName}.`;
+    headline = `Salon booking and prices.`;
     benefits = [
       "⭐ Online Booking",
-      "✓ Before & After Gallery",
+      "✓ Style Gallery",
       "✓ WhatsApp Booking",
-      "✓ Service Price List",
+      "✓ Price List",
       "✓ Gift Cards",
-      "✓ Membership System"
+      "✓ Member Perks"
     ];
-    rationale = `Clients love checking service prices and seeing before-and-after results before booking. This upgrade lets visitors choose a treatment and book their appointment in one click.`;
+    rationale = `Book salon treatments fast.`;
   } else if (ind.includes("estate") || ind.includes("real") || ind.includes("property") || ind.includes("realty") || ind.includes("builder")) {
     packTitle = "Site Visit Pack";
-    headline = `Property listings showcase, site visit scheduler, and loan calculator for ${bName}.`;
+    headline = `Property lists and visits.`;
     benefits = [
-      "⭐ Property Listings",
+      "⭐ Property List",
       "✓ Property Search",
-      "✓ Site Visit Booking",
-      "✓ EMI Calculator",
-      "✓ WhatsApp Enquiry",
-      "✓ Virtual Tour"
+      "✓ Visit Booking",
+      "✓ Loan Calculator",
+      "✓ WhatsApp Chat",
+      "✓ Virtual Tours"
     ];
-    rationale = `Serious property buyers want to view listings and schedule site visits quickly. This upgrade lets buyers calculate EMI options and book property visits directly.`;
+    rationale = `View properties and visits.`;
   } else if (ind.includes("coaching") || ind.includes("education") || ind.includes("school") || ind.includes("academy") || ind.includes("tuition") || ind.includes("course")) {
     packTitle = "Student Enrollment Pack";
-    headline = `Free demo class registration, course catalog, and batch seat booking for ${bName}.`;
+    headline = `Demo classes and courses.`;
     benefits = [
       "⭐ Course List",
       "✓ Demo Class Booking",
       "✓ Student Reviews",
-      "✓ Batch Timings",
+      "✓ Class Timings",
       "✓ Download Brochure",
       "✓ Online Admission"
     ];
-    rationale = `Parents and students prefer registering for a demo class before enrolling. This upgrade makes it easy for prospective students to check batch timings and sign up for demo classes.`;
+    rationale = `Book demo classes online.`;
   }
 
   const upgradeCard = {
