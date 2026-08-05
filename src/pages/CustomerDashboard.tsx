@@ -294,6 +294,40 @@ export default function CustomerDashboard() {
     setPaymentError(null);
     
     try {
+      // 1. Check Development Payment Mode
+      let activeDevMode = "auto_simulate";
+      try {
+        const modeRes = await fetch("/api/config/dev-payment-mode");
+        const modeData = await modeRes.json();
+        if (modeData && modeData.mode) {
+          activeDevMode = modeData.mode;
+        }
+      } catch (err) {
+        console.warn("Could not check dev payment mode configuration:", err);
+      }
+
+      if (activeDevMode === "auto_simulate") {
+        // AUTOMATIC SUCCESS SIMULATION MODE: Skip Razorpay checkout popup completely!
+        const simRes = await fetch(`/api/projects/${projectId}/simulate-payment`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${getAuthToken() || ""}`
+          },
+          body: JSON.stringify({ term: "final", action: "success" })
+        });
+        const simData = await simRes.json();
+        if (simData.success) {
+          await refreshProject();
+          setSuccessIndicator("Milestone payment simulated successfully! Client portal fully unlocked.");
+          setTimeout(() => setSuccessIndicator(null), 5000);
+        } else {
+          throw new Error("Automatic payment simulation failed: " + (simData.error || "Unknown error"));
+        }
+        setPaymentLoading(false);
+        return;
+      }
+
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
         throw new Error("Unable to load the Razorpay checkout SDK. Please check your internet connection.");

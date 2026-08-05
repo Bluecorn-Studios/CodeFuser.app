@@ -27,6 +27,7 @@ import {
 import { useAppRouter, w as getWhatsAppLink } from "../components/Reveal";
 import { getAuthUser, getAuthToken } from "../utils/auth";
 import { safeLocalStorage } from "../utils/safeStorage";
+import { PaymentSimulationPanel } from "../components/PaymentSimulationPanel";
 
 interface ProjectRecord {
   id: string;
@@ -541,6 +542,15 @@ export const MissionControl: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* DEVELOPER SETTINGS PAYMENT MODE CONTROLLER */}
+        <div className="mb-6">
+          <PaymentSimulationPanel
+            projectId={projects.length > 0 ? projects[0].id : ""}
+            getAuthToken={getAuthToken}
+            onSuccess={() => fetchProjects()}
+          />
+        </div>
 
         {/* FOUNDER-ONLY COST & PROFIT VISIBILITY CARD */}
         <div className="mb-8 bg-[#050505] border border-amber-500/20 rounded-2xl p-5 relative overflow-hidden font-sans space-y-3">

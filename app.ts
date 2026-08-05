@@ -1876,20 +1876,56 @@ app.get("/api/projects/:id/assets/:assetId/download-url", requestTimeout(10000, 
   }
 });
 
+// In-memory Developer Payment Mode setting (default: auto_simulate in development)
+let currentDevPaymentMode: "auto_simulate" | "razorpay_test" | "live_production" = "auto_simulate";
+
 // API: Expose Razorpay Public Key ID & Development Simulation status
 app.get("/api/config/razorpay", (req, res) => {
-  const isDevSimulation = process.env.NODE_ENV !== "production" && process.env.RAZORPAY_VERIFICATION_MODE !== "live";
+  const isProduction = process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live";
+  const activeMode = isProduction ? "live_production" : currentDevPaymentMode;
   return res.json({
     keyId: process.env.RAZORPAY_KEY_ID || "",
-    verificationModeActive: false,
-    isDevSimulation
+    verificationModeActive: isProduction,
+    isDevSimulation: activeMode === "auto_simulate" && !isProduction,
+    paymentMode: activeMode
   });
 });
 
-app.get("/api/config/dev-simulation", (req, res) => {
-  const isDevSimulation = process.env.NODE_ENV !== "production" && process.env.RAZORPAY_VERIFICATION_MODE !== "live";
+app.get("/api/config/dev-payment-mode", (req, res) => {
+  const isProduction = process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live";
+  const activeMode = isProduction ? "live_production" : currentDevPaymentMode;
   return res.json({
-    enabled: isDevSimulation,
+    mode: activeMode,
+    isProduction,
+    autoSimulateEnabled: activeMode === "auto_simulate" && !isProduction,
+    availableModes: [
+      { id: "auto_simulate", label: "Automatic Success Simulation", disabled: isProduction },
+      { id: "razorpay_test", label: "Razorpay Test Mode", disabled: isProduction },
+      { id: "live_production", label: "Live Production Mode (disabled in development)", disabled: !isProduction }
+    ]
+  });
+});
+
+app.post("/api/config/dev-payment-mode", (req, res) => {
+  const isProduction = process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live";
+  if (isProduction) {
+    return res.status(400).json({ success: false, error: "Cannot change payment mode in production environments." });
+  }
+  const { mode } = req.body;
+  if (["auto_simulate", "razorpay_test", "live_production"].includes(mode)) {
+    currentDevPaymentMode = mode;
+    console.log(`[Developer Settings] Payment Mode updated to: ${currentDevPaymentMode}`);
+    return res.json({ success: true, mode: currentDevPaymentMode });
+  }
+  return res.status(400).json({ success: false, error: "Invalid payment mode specified." });
+});
+
+app.get("/api/config/dev-simulation", (req, res) => {
+  const isProduction = process.env.NODE_ENV === "production" || process.env.RAZORPAY_VERIFICATION_MODE === "live";
+  const activeMode = isProduction ? "live_production" : currentDevPaymentMode;
+  return res.json({
+    enabled: activeMode === "auto_simulate" && !isProduction,
+    mode: activeMode,
     environment: process.env.NODE_ENV || "development"
   });
 });

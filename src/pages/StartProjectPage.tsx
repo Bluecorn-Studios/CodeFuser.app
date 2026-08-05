@@ -3904,7 +3904,45 @@ That's enough. We'll help with the rest.`}
                       return;
                     }
 
-                    // 2. Load Razorpay Checkout Script
+                    // 2. Check Development Payment Mode (Auto-simulation check)
+                    let activeDevMode = "auto_simulate";
+                    try {
+                      const modeRes = await fetch("/api/config/dev-payment-mode");
+                      const modeData = await modeRes.json();
+                      if (modeData && modeData.mode) {
+                        activeDevMode = modeData.mode;
+                      }
+                    } catch (err) {
+                      console.warn("Could not check dev payment mode configuration:", err);
+                    }
+
+                    if (activeDevMode === "auto_simulate") {
+                      // AUTOMATIC SUCCESS SIMULATION MODE: Skip Razorpay checkout popup completely!
+                      try {
+                        const simRes = await fetch(`/api/projects/${projId}/simulate-payment`, {
+                          method: "POST",
+                          headers: { 
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${getAuthToken() || ""}`
+                          },
+                          body: JSON.stringify({ term: selectedPaymentTerm, action: "success" })
+                        });
+                        const simData = await simRes.json();
+                        if (simData.success) {
+                          setOnboardingStage('calendly');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else {
+                          setPaymentErrorMsg("Automatic payment simulation failed: " + (simData.error || "Unknown error"));
+                        }
+                      } catch (err: any) {
+                        setPaymentErrorMsg("Failed to process payment simulation: " + (err.message || "Network error"));
+                      } finally {
+                        setPaymentLoading(false);
+                      }
+                      return;
+                    }
+
+                    // 3. Load Razorpay Checkout Script (For Razorpay Test Mode or Production Live Mode)
                     try {
                       const scriptLoaded = await loadRazorpayScript();
                       if (!scriptLoaded) {
@@ -3916,7 +3954,7 @@ That's enough. We'll help with the rest.`}
                       return;
                     }
 
-                    // 3. Request Razorpay Order from Backend
+                    // 4. Request Razorpay Order from Backend
                     let orderData: any;
                     try {
                       const orderRes = await fetch(`/api/projects/${projId}/razorpay-order`, {
