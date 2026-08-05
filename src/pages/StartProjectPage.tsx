@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { parseFeature, splitFeaturesForCards } from '../lib/featureUtils';
+import { parseFeature, splitFeaturesForCards, cleanFeatureText, cleanHeadline, cleanRationale } from '../lib/featureUtils';
 import { 
   ArrowRight, 
   ArrowLeft, 
@@ -3452,7 +3452,7 @@ That's enough. We'll help with the rest.`}
                             </div>
 
                             <p className="text-xs font-sans font-medium text-zinc-300 leading-relaxed min-h-[36px] mb-2">
-                              {card.headline}
+                              {cleanHeadline(card.headline)}
                             </p>
 
                              <div className="border-t border-white/[0.08] my-4" />
@@ -3464,8 +3464,9 @@ That's enough. We'll help with the rest.`}
                             
                             <ul className="space-y-2 text-xs mb-5 font-sans">
                               {card.benefits && card.benefits.map((benefit: string, bIdx: number) => {
-                                const isHero = benefit.startsWith("⭐") || (card.id !== 'current' && bIdx === 0 && !benefit.startsWith("✓"));
-                                const text = benefit.replace(/^[⭐✓]\s*/, "");
+                                const cleaned = cleanFeatureText(benefit);
+                                const isHero = cleaned.startsWith("⭐") || (card.id !== 'current' && bIdx === 0 && !cleaned.startsWith("✓"));
+                                const text = cleaned.replace(/^[⭐✓✔]\s*/, "");
 
                                 if (isHero) {
                                   return (
@@ -3496,7 +3497,7 @@ That's enough. We'll help with the rest.`}
                               {card.id === 'current' ? 'Package Focus' : 'Why We Recommend This'}
                             </p>
                             <p className="text-xs leading-relaxed text-zinc-300 font-sans">
-                              {card.rationale}
+                              {cleanRationale(card.rationale)}
                             </p>
                           </div>
                         </motion.div>

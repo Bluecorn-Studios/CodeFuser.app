@@ -160,6 +160,87 @@ export function formatFeatureString(raw: string): string {
   return `${p}${title} — ${description}`;
 }
 
+export function cleanFeatureText(rawText: string): string {
+  if (!rawText) return "";
+  let text = String(rawText).trim();
+  const prefixMatch = text.match(/^([⭐✓✔]\s*)/);
+  const prefix = prefixMatch ? prefixMatch[1] : "";
+  let core = text.replace(/^[⭐✓✔]\s*/, "").trim();
+
+  // Strip label prefixes if embedded
+  core = core.replace(/^(Why We Recommend This|Package Focus):\s*/gi, "").trim();
+
+  // Strip long clause suffixes (e.g. "to display your work beautifully", "for quick client inquiries")
+  core = core
+    .replace(/\s+(to|for|so that|designed to|enabling)\s+.*$/i, "")
+    .replace(/\s+and a full screen photo viewer.*$/i, "")
+    .replace(/\s+and whatsapp chat$/i, " & WhatsApp")
+    .trim();
+
+  // Standard short overrides for common long feature titles
+  const lower = core.toLowerCase();
+  if (lower.includes("google business listing") || lower.includes("google business setup") || lower.includes("google business")) {
+    core = "Google Business Listing";
+  } else if (lower.includes("photo gallery") || lower.includes("photoshoot gallery")) {
+    core = "Photo Gallery";
+  } else if (lower.includes("contact form") && lower.includes("whatsapp")) {
+    core = "Contact Form & WhatsApp";
+  } else if (lower.includes("fast loading photo") || lower.includes("photo viewer")) {
+    core = "Fast Photo Viewer";
+  } else if (lower.includes("online booking system") || lower.includes("online booking")) {
+    core = "Online Booking System";
+  } else if (lower.includes("online payment") || lower.includes("payments for booking")) {
+    core = "Online Payments";
+  } else if (lower.includes("mobile friendly")) {
+    core = "Mobile Friendly Design";
+  } else {
+    // Limit to max 5 words
+    const words = core.split(/\s+/);
+    if (words.length > 5) {
+      core = words.slice(0, 5).join(" ");
+    }
+  }
+
+  return `${prefix}${core}`;
+}
+
+export function cleanHeadline(rawHeadline: string): string {
+  if (!rawHeadline) return "";
+  let text = String(rawHeadline).trim();
+
+  // Strip promotional phrase prefixes
+  text = text
+    .replace(/^(This solution pack helps '[^']+' |This solution pack helps [^\s]+ |This solution pack helps |This package gives '[^']+' |This package gives [^\s]+ |This package gives )/i, "")
+    .trim();
+
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+
+  // Keep first sentence, max 10 words
+  const firstSentence = text.split(/(?<=[.!?])\s+/)[0];
+  const words = firstSentence.split(/\s+/);
+  if (words.length > 10) {
+    return words.slice(0, 9).join(" ") + ".";
+  }
+  return firstSentence;
+}
+
+export function cleanRationale(rawRationale: string): string {
+  if (!rawRationale) return "";
+  let text = String(rawRationale).trim();
+
+  // Strip duplicate labels
+  text = text.replace(/^(Why We Recommend This|Package Focus):\s*/gi, "").trim();
+  text = text.replace(/^(Why We Recommend This|Package Focus):\s*/gi, "").trim();
+
+  // Keep single short sentence, max 14 words
+  const firstSentence = text.split(/(?<=[.!?])\s+/)[0];
+  const words = firstSentence.split(/\s+/);
+  if (words.length > 14) {
+    return words.slice(0, 13).join(" ") + ".";
+  }
+  return firstSentence;
+}
+
 /**
  * Splits 6 recommended features across Base Card (4 features: 1st, 2nd, 5th, 6th) 
  * and Upgrade Card (2 features: 3rd and 4th) to create urgency and clear value differentiation.
@@ -185,7 +266,8 @@ export function splitFeaturesForCards(cards: any[], recommendedFeatures?: string
     // Combine features from base + upgrade
     const combined = [...(upgradeCard.benefits || []), ...(baseCard.benefits || [])];
     const cleaned = combined
-      .map(f => String(f).replace(/^[⭐✓✔]\s*/, '').trim())
+      .map(f => cleanFeatureText(String(f)))
+      .map(f => f.replace(/^[⭐✓✔]\s*/, '').trim())
       .filter(f => !["Mobile Friendly Design", "Contact Form", "Google Maps Location", "Business Info & Hours"].some(b => f.toLowerCase().includes(b.toLowerCase())));
     const unique = Array.from(new Set(cleaned));
     if (unique.length >= 6) {
@@ -194,10 +276,16 @@ export function splitFeaturesForCards(cards: any[], recommendedFeatures?: string
   }
 
   if (sixFeatures.length < 6) {
-    return cards;
+    // Clean existing benefits, headlines, rationales
+    return cards.map((c: any) => ({
+      ...c,
+      headline: cleanHeadline(c.headline),
+      rationale: cleanRationale(c.rationale),
+      benefits: (c.benefits || []).map((f: string) => cleanFeatureText(f))
+    }));
   }
 
-  const cleanedSix = sixFeatures.map(f => String(f).replace(/^[⭐✓✔]\s*/, '').trim());
+  const cleanedSix = sixFeatures.map(f => cleanFeatureText(f).replace(/^[⭐✓✔]\s*/, '').trim());
 
   // 1st, 2nd, 5th, 6th features -> Base Card (indices 0, 1, 4, 5)
   const baseBenefits = [
@@ -216,10 +304,14 @@ export function splitFeaturesForCards(cards: any[], recommendedFeatures?: string
   const newCards = [...cards];
   newCards[baseCardIndex] = {
     ...baseCard,
+    headline: cleanHeadline(baseCard.headline),
+    rationale: cleanRationale(baseCard.rationale),
     benefits: baseBenefits
   };
   newCards[upgradeCardIndex] = {
     ...upgradeCard,
+    headline: cleanHeadline(upgradeCard.headline),
+    rationale: cleanRationale(upgradeCard.rationale),
     benefits: upgradeBenefits
   };
 
