@@ -21,6 +21,9 @@ export async function apiClient<T = any>(
   endpoint: string,
   options: ApiClientOptions = {}
 ): Promise<T> {
+  const startTime = performance.now();
+  console.log(`[TRACING] apiClient entered | endpoint: ${endpoint} | timestamp: ${new Date().toISOString()}`);
+
   const { skipAuth = false, headers: customHeaders, ...restOptions } = options;
 
   const headers: Record<string, string> = {
@@ -32,16 +35,29 @@ export async function apiClient<T = any>(
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
       headers["Authorization"] = `Bearer ${session.access_token}`;
-      // Also provide legacy headers for server backward compatibility
       headers["x-user-id"] = session.user.id;
       headers["x-user-email"] = session.user.email || "";
+      console.log(`[TRACING] apiClient injected token for user ${session.user.id}`);
+    } else {
+      console.log(`[TRACING] apiClient no session access_token found`);
     }
   }
 
-  let response = await fetch(endpoint, {
-    ...restOptions,
-    headers,
-  });
+  console.log(`[TRACING] apiClient calling fetch(${endpoint})`);
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      ...restOptions,
+      headers,
+    });
+  } catch (netErr: any) {
+    const elapsed = (performance.now() - startTime).toFixed(2);
+    console.error(`[TRACING] apiClient fetch failed network error | endpoint: ${endpoint} | elapsed: ${elapsed}ms | error:`, netErr);
+    throw netErr;
+  }
+
+  const elapsed = (performance.now() - startTime).toFixed(2);
+  console.log(`[TRACING] apiClient fetch resolved | endpoint: ${endpoint} | status: ${response.status} | statusText: ${response.statusText} | elapsed: ${elapsed}ms`);
 
   // Handle 401 Unauthorized globally
   if (response.status === 401 && !skipAuth) {
@@ -74,8 +90,12 @@ export async function apiClient<T = any>(
 
   if (!response.ok) {
     const errorMessage = data?.error || data?.message || `API request failed with status ${response.status}`;
-    throw new Error(errorMessage);
+    console.error(`[TRACING] apiClient response NOT OK | endpoint: ${endpoint} | status: ${response.status} | message: ${errorMessage}`);
+    const err: any = new Error(errorMessage);
+    err.status = response.status;
+    throw err;
   }
 
+  console.log(`[TRACING] apiClient exited successfully | endpoint: ${endpoint} | elapsed: ${(performance.now() - startTime).toFixed(2)}ms`);
   return data as T;
 }

@@ -244,7 +244,14 @@ export default function CustomerDashboard() {
   const { signOut } = useAuth();
   const { project: ctxProject, isLoading: projLoading, refreshProject } = useProject();
 
+  console.log(`[TRACING] CustomerDashboard rendered | timestamp: ${new Date().toISOString()}`, {
+    ctxProject: ctxProject ? { id: ctxProject.id, name: ctxProject.name } : null,
+    projLoading,
+    localIsLoading: isLoading
+  });
+
   useEffect(() => {
+    console.log(`[TRACING] CustomerDashboard useEffect sync triggered | projLoading: ${projLoading} | ctxProject: ${ctxProject ? ctxProject.id : 'null'}`);
     if (!projLoading) {
       if (ctxProject) {
         setProject(ctxProject as any);
@@ -270,6 +277,7 @@ export default function CustomerDashboard() {
         }
       }
       setIsLoading(false);
+      console.log(`[TRACING] CustomerDashboard setIsLoading(false) executed`);
     }
   }, [ctxProject, projLoading]);
 

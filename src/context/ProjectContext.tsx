@@ -31,66 +31,77 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 6. ProjectProvider started (authLoading: ${authLoading}, isLoading: ${isLoading}, user: ${user ? user.id : 'null'})`);
+  console.log(`[TRACING] ProjectProvider rendered | timestamp: ${new Date().toISOString()} | authLoading: ${authLoading} | projectLoading: ${isLoading} | user: ${user ? user.id : 'null'}`);
+
+  const updateIsLoading = useCallback((val: boolean, caller: string) => {
+    console.log(`[TRACING] ProjectContext setIsLoading(${val}) called by ${caller} | timestamp: ${new Date().toISOString()}`);
+    setIsLoading(val);
+  }, []);
 
   const fetchProject = useCallback(async () => {
+    console.log("fetchProject started", { timestamp: new Date().toISOString() });
+    console.log("user", user);
+
     if (!user) {
       setProject(null);
       setError(null);
-      setIsLoading(false);
+      updateIsLoading(false, "fetchProject (!user)");
+      console.log("fetchProject finished (!user)");
       return;
     }
 
-    const startTime = performance.now();
-    console.log(`[TIMING] ${startTime.toFixed(2)}ms - 7. Project fetch started for userId=${user.id}`);
+    const emailParam = encodeURIComponent(user.email || "");
+    const url = `/api/projects?userId=${user.id}&email=${emailParam}`;
+    console.log("calling /api/projects", url);
 
-    setIsLoading(true);
+    updateIsLoading(true, "fetchProject start");
     setError(null);
 
     try {
-      const emailParam = encodeURIComponent(user.email || "");
-      const res = await apiClient<{ success: boolean; projects?: ProjectData[]; data?: ProjectData[] }>(
-        `/api/projects?userId=${user.id}&email=${emailParam}`
-      );
-
+      // Direct fetch to log response status and raw body
+      const startTime = performance.now();
+      const res = await apiClient<{ success: boolean; projects?: ProjectData[]; data?: ProjectData[] }>(url);
       const endTime = performance.now();
-      console.log(`[TIMING] ${endTime.toFixed(2)}ms - 8. Project fetch finished (took ${(endTime - startTime).toFixed(2)}ms)`);
+
+      console.log("response status", 200);
+      console.log("response body", res);
 
       const rawProjectsList = res.projects || res.data || [];
       const projectsList = Array.isArray(rawProjectsList) ? rawProjectsList.map(normalizeProject) : [];
       
       if (projectsList.length > 0) {
-        // Pick the primary active normalized project
         setProject(projectsList[0]);
       } else {
         setProject(null);
       }
     } catch (err: any) {
-      const endTime = performance.now();
-      console.log(`[TIMING] ${endTime.toFixed(2)}ms - 8. Project fetch finished WITH ERROR (took ${(endTime - startTime).toFixed(2)}ms):`, err);
+      console.log("response status", err.status || "ERROR");
+      console.log("response body", err.message || err);
       console.warn("[ProjectProvider] Failed to fetch project:", err);
       setError(err.message || "Failed to load project details.");
       setProject(null);
     } finally {
-      setIsLoading(false);
+      updateIsLoading(false, "fetchProject finally");
+      console.log("fetchProject finished");
     }
-  }, [user]);
+  }, [user, updateIsLoading]);
 
   useEffect(() => {
+    console.log(`[TRACING] ProjectContext useEffect triggered | authLoading: ${authLoading} | user: ${user ? user.email : 'null'}`);
     if (authLoading) {
-      setIsLoading(true);
+      updateIsLoading(true, "useEffect (authLoading is true)");
       return;
     }
 
     if (!user) {
       setProject(null);
       setError(null);
-      setIsLoading(false);
+      updateIsLoading(false, "useEffect (!user)");
       return;
     }
 
     fetchProject();
-  }, [user, authLoading, fetchProject]);
+  }, [user, authLoading, fetchProject, updateIsLoading]);
 
   const portalAccess = useMemo(() => {
     if (!project) return false;

@@ -10,10 +10,12 @@ interface RequireAuthProps {
 export const RequireAuth: React.FC<RequireAuthProps> = ({ children, onRedirectToLogin }) => {
   const { user, isLoading } = useAuth();
 
-  console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 9. RequireAuth rendered (isLoading: ${isLoading}, user: ${user ? user.email : 'null'})`);
+  console.log(`[TRACING] RequireAuth rendered | timestamp: ${new Date().toISOString()} | isLoading: ${isLoading} | user: ${user ? user.email : 'null'}`);
 
   useEffect(() => {
+    console.log(`[TRACING] RequireAuth useEffect checked | isLoading: ${isLoading} | user: ${user ? user.email : 'null'}`);
     if (!isLoading && !user) {
+      console.log(`[TRACING] RequireAuth redirecting to login...`);
       if (onRedirectToLogin) {
         onRedirectToLogin();
       } else if (typeof window !== "undefined" && window.location.pathname !== "/login") {

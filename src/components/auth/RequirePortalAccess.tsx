@@ -10,7 +10,11 @@ interface RequirePortalAccessProps {
 export const RequirePortalAccess: React.FC<RequirePortalAccessProps> = ({ children }) => {
   const { project, portalAccess, isLoading } = useProject();
 
-  console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 10. RequirePortalAccess rendered (isLoading: ${isLoading}, portalAccess: ${portalAccess}, project: ${project ? project.id : 'null'})`);
+  console.log(`[TRACING] RequirePortalAccess rendered | timestamp: ${new Date().toISOString()}`, {
+    project: project ? { id: project.id, portalAccess: project.portalAccess } : null,
+    portalAccess,
+    isLoading
+  });
 
   if (isLoading) {
     return (

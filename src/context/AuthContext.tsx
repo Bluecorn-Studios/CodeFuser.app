@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { setUnauthenticatedHandler } from "../lib/apiClient";
@@ -22,7 +22,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 2. AuthProvider started (isLoading: ${isLoading})`);
+  const startMs = useRef(performance.now());
+  console.log(`[TRACING] AuthProvider rendered | timestamp: ${new Date().toISOString()} | elapsed: ${(performance.now() - startMs.current).toFixed(2)}ms | loadingStateBefore: ${isLoading} | user: ${user?.email || "null"}`);
 
   // Sync state helper
   const updateAuthState = useCallback((newSession: Session | null) => {
@@ -46,11 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshSession = useCallback(async () => {
     const startTime = performance.now();
-    console.log(`[TIMING] ${startTime.toFixed(2)}ms - 3. getSession() started (via refreshSession)`);
+    console.log(`[TRACING] refreshSession entered | timestamp: ${new Date().toISOString()} | loadingBefore: ${isLoading}`);
     try {
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
       const endTime = performance.now();
-      console.log(`[TIMING] ${endTime.toFixed(2)}ms - 4. getSession() finished (took ${(endTime - startTime).toFixed(2)}ms)`);
+      console.log(`[TRACING] refreshSession getSession finished | elapsed: ${(endTime - startTime).toFixed(2)}ms | session: ${currentSession ? 'found' : 'none'}`);
       if (error) throw error;
       updateAuthState(currentSession);
     } catch (err) {
@@ -58,14 +59,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateAuthState(null);
     } finally {
       setIsLoading(false);
+      console.log(`[TRACING] refreshSession exited | timestamp: ${new Date().toISOString()} | loadingAfter: false`);
     }
-  }, [updateAuthState]);
+  }, [updateAuthState, isLoading]);
 
   // Initial session restoration and listener setup
   useEffect(() => {
     let mounted = true;
 
-    // Register API client 401 unauthenticated callback
     setUnauthenticatedHandler(() => {
       if (mounted) {
         updateAuthState(null);
@@ -74,36 +75,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     async function initAuth() {
       const startTime = performance.now();
-      console.log(`[TIMING] ${startTime.toFixed(2)}ms - 3. getSession() started`);
+      console.log(`[TRACING] initAuth entered | timestamp: ${new Date().toISOString()} | loadingBefore: true`);
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         const endTime = performance.now();
-        console.log(`[TIMING] ${endTime.toFixed(2)}ms - 4. getSession() finished (took ${(endTime - startTime).toFixed(2)}ms, session: ${initialSession ? 'found' : 'none'})`);
+        console.log(`[TRACING] initAuth getSession resolved | elapsed: ${(endTime - startTime).toFixed(2)}ms | session: ${initialSession ? initialSession.user.email : 'null'}`);
+        if (error) console.error("[TRACING] getSession error:", error);
         if (mounted) {
           updateAuthState(initialSession);
         }
       } catch (err) {
         const endTime = performance.now();
-        console.log(`[TIMING] ${endTime.toFixed(2)}ms - 4. getSession() finished WITH ERROR (took ${(endTime - startTime).toFixed(2)}ms):`, err);
-        console.error("[AuthProvider] Failed to initialize live Supabase auth session:", err);
+        console.error(`[TRACING] initAuth threw error | elapsed: ${(endTime - startTime).toFixed(2)}ms:`, err);
         if (mounted) {
           updateAuthState(null);
         }
       } finally {
         if (mounted) {
           setIsLoading(false);
+          console.log(`[TRACING] initAuth exited | timestamp: ${new Date().toISOString()} | loadingAfter: false`);
         }
       }
     }
 
     initAuth();
 
-    // Subscribe to live auth state changes (sign in, sign out, token refresh, multi-tab sync)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 5. onAuthStateChange fired (event: ${event}, session: ${newSession ? 'present' : 'null'})`);
+      console.log(`[TRACING] onAuthStateChange fired | event: ${event} | sessionUser: ${newSession?.user?.email || 'null'} | timestamp: ${new Date().toISOString()}`);
       if (mounted) {
         updateAuthState(newSession);
         setIsLoading(false);
+        console.log(`[TRACING] onAuthStateChange state updated | loadingAfter: false`);
       }
     });
 

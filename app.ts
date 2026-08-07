@@ -1023,31 +1023,40 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
 
 // API: Get all active projects (with secure authenticated filtering support)
 app.get("/api/projects", requestTimeout(10000, "Get Projects"), requireAuth, projectsRateLimiter, validateQuery(getProjectsQuerySchema), async (req: any, res) => {
+  const reqStart = Date.now();
+  console.log(`[TRACING SERVER] GET /api/projects entered | reqId: ${req.reqId} | user: ${req.user?.id} (${req.user?.email}) | query:`, req.query);
   try {
     const { userId, email } = req.query;
     checkAbort(req);
     
     if (req.isAdmin) {
-      // Admins can query all projects, or filter by a specific user/email directly in the database
+      console.log(`[TRACING SERVER] GET /api/projects processing as admin`);
       const filter = (userId || email) ? { userId: userId ? String(userId) : undefined, email: email ? String(email) : undefined } : undefined;
       const projects = await getProjects(req.reqId, filter);
       
-      if (res.headersSent || req.timedOut) return;
+      if (res.headersSent || req.timedOut) {
+        console.log(`[TRACING SERVER] GET /api/projects headers already sent or timed out`);
+        return;
+      }
+      console.log(`[TRACING SERVER] GET /api/projects admin returning ${projects.length} projects | duration: ${Date.now() - reqStart}ms`);
       return res.json({ projects });
     }
     
-    // Regular authenticated user: can ONLY retrieve projects linked to their authenticated session.
-    // Query matching rows directly from Postgres/Supabase for security and high performance.
+    console.log(`[TRACING SERVER] GET /api/projects processing as user ${req.user?.id}`);
     const projects = await getProjects(req.reqId, {
       userId: req.user.id,
       email: req.user.email
     });
     
-    if (res.headersSent || req.timedOut) return;
+    if (res.headersSent || req.timedOut) {
+      console.log(`[TRACING SERVER] GET /api/projects headers already sent or timed out`);
+      return;
+    }
+    console.log(`[TRACING SERVER] GET /api/projects user returning ${projects.length} projects | duration: ${Date.now() - reqStart}ms`);
     return res.json({ projects });
   } catch (error: any) {
     if (res.headersSent) return;
-    console.error("Failed to load project database items:", error);
+    console.error("[TRACING SERVER] Failed to load project database items:", error);
     return res.status(500).json({ error: error.message || String(error) });
   }
 });
