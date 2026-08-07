@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithEmail = useCallback(async (email: string, pass: string) => {
     setIsLoading(true);
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanEmail = (email || "").trim().toLowerCase();
     console.log("email:", cleanEmail);
     console.log("password.length:", pass.length);
     try {

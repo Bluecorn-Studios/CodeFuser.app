@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import { apiClient } from "../lib/apiClient";
+import { normalizeProject, NormalizedProject } from "../lib/schemaNormalizer";
 
-export interface ProjectQuote {
+export type ProjectQuote = {
   id: string;
   packageName: string;
   priceAmount: number;
@@ -10,28 +11,9 @@ export interface ProjectQuote {
   depositPercentage: number;
   deliverables?: string[];
   status?: string;
-}
+};
 
-export interface ProjectData {
-  id: string;
-  name: string;
-  status: string;
-  phase?: string;
-  estimatedDelivery?: string;
-  lastUpdate?: string;
-  nextAction?: string;
-  paymentStatus?: "paid" | "partially_paid" | "unpaid" | string;
-  portalAccess?: boolean;
-  portalAccessSource?: "automatic" | "manual";
-  ownershipChoice?: "full" | "sublet";
-  quote?: ProjectQuote;
-  deliverables?: any[];
-  files?: any[];
-  messages?: any[];
-  updatedAt?: string;
-  createdAt?: string;
-  [key: string]: any;
-}
+export type ProjectData = NormalizedProject;
 
 export interface ProjectContextType {
   project: ProjectData | null;
@@ -74,10 +56,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const endTime = performance.now();
       console.log(`[TIMING] ${endTime.toFixed(2)}ms - 8. Project fetch finished (took ${(endTime - startTime).toFixed(2)}ms)`);
 
-      const projectsList = res.projects || res.data || [];
+      const rawProjectsList = res.projects || res.data || [];
+      const projectsList = Array.isArray(rawProjectsList) ? rawProjectsList.map(normalizeProject) : [];
       
-      if (Array.isArray(projectsList) && projectsList.length > 0) {
-        // Pick the primary active project
+      if (projectsList.length > 0) {
+        // Pick the primary active normalized project
         setProject(projectsList[0]);
       } else {
         setProject(null);

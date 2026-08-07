@@ -11,7 +11,7 @@ export function logAndMapAuthError(err: any, context?: string): string {
     stack
   });
 
-  const msgLower = errorMessage.toLowerCase();
+  const msgLower = (errorMessage && typeof errorMessage === "string" ? errorMessage : String(errorMessage || "")).toLowerCase();
 
   // Classified error flows
   if (msgLower.includes("oauth") || msgLower.includes("provider") || msgLower.includes("google")) {

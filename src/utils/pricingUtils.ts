@@ -5,7 +5,7 @@ export const PLUS_PACKAGE_PREDEFINED_PRICES: Record<string, string[]> = {
 };
 
 export function getPlusPredefinedPrices(packageId: string): string[] {
-  const id = (packageId || "").toLowerCase();
+  const id = String(packageId || "").toLowerCase();
   if (id.includes("foundation") || id.includes("ignite")) {
     return PLUS_PACKAGE_PREDEFINED_PRICES.foundation;
   }
@@ -17,7 +17,7 @@ export function getPlusPredefinedPrices(packageId: string): string[] {
 
 export function getInitialPlusPackagePrice(packageId: string, fallbackDefault?: string): string {
   const prices = getPlusPredefinedPrices(packageId);
-  const id = (packageId || "").toLowerCase();
+  const id = String(packageId || "").toLowerCase();
   const normalizedKey = id.includes("foundation") || id.includes("ignite")
     ? "foundation"
     : id.includes("dominance") || id.includes("catalyst")
@@ -44,7 +44,7 @@ export function getInitialPlusPackagePrice(packageId: string, fallbackDefault?: 
 }
 
 export function savePlusPackagePrice(packageId: string, price: string): void {
-  const id = (packageId || "").toLowerCase();
+  const id = String(packageId || "").toLowerCase();
   const normalizedKey = id.includes("foundation") || id.includes("ignite")
     ? "foundation"
     : id.includes("dominance") || id.includes("catalyst")

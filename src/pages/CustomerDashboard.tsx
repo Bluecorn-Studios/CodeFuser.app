@@ -588,6 +588,7 @@ export default function CustomerDashboard() {
       setTimeout(() => setSuccessIndicator(null), 3500);
     }
   };  const getCleanPackageName = (name: string): string => {
+    if (!name || typeof name !== "string") return "Package";
     const n = name.toLowerCase();
     if (n.includes("foundation") || n.includes("ignite")) {
       return "Ignite Package";
@@ -602,7 +603,7 @@ export default function CustomerDashboard() {
   };
 
   const getPlanDetails = (packageId: string) => {
-    const p = packageId?.toLowerCase() || "";
+    const p = (packageId && typeof packageId === "string") ? packageId.toLowerCase() : "";
     if (p.includes("ignite") || p.includes("foundation")) {
       return { name: "Ignite Package", price: 9999, originalPrice: 9999, timeline: "5-7 days after asset submission" };
     }
@@ -616,14 +617,15 @@ export default function CustomerDashboard() {
   };
 
   const getAssetCategory = (val: string | undefined): "provided" | "help" | "not_required" | "pending" => {
-    if (!val || val === "" || val === "no") return "pending";
+    if (!val || typeof val !== "string" || val === "" || val === "no") return "pending";
     if (val === "help" || val === "no_help") return "help";
-    if (val === "not_required" || val.toLowerCase().includes("not_required") || val.toLowerCase().includes("not required")) return "not_required";
+    const valLower = val.toLowerCase();
+    if (val === "not_required" || valLower.includes("not_required") || valLower.includes("not required")) return "not_required";
     return "provided";
   };
 
   const getDisplayValue = (val: string) => {
-    if (!val || val === "yes" || val === "no" || val === "help" || val === "no_help" || val === "not_required") return "";
+    if (!val || typeof val !== "string" || val === "yes" || val === "no" || val === "help" || val === "no_help" || val === "not_required") return "";
     if (val.startsWith("Provided: ")) return val.replace("Provided: ", "");
     return val;
   };
@@ -642,7 +644,7 @@ export default function CustomerDashboard() {
   ];
 
   const getCustomerStageIndex = (statusStr: string, hasEmptyAssets: boolean): number => {
-    const s = statusStr?.toLowerCase() || "";
+    const s = (statusStr && typeof statusStr === "string") ? statusStr.toLowerCase() : "";
     if (s.includes("completed") || s.includes("delivery") || s.includes("delivered")) return 9; // Delivery
     if (s.includes("launch") || s.includes("live") || s.includes("launched")) return 8; // Launch
     if (s.includes("testing") || s.includes("qa")) return 7; // Testing
@@ -1017,7 +1019,7 @@ export default function CustomerDashboard() {
         description: "Your premium website is fully live, secure, and completed. You can access your final delivered assets below.",
         btnText: "Visit Live Production Website",
         action: () => {
-          const domain = project.hasDomain && project.hasDomain !== "no" ? project.hasDomain.replace("Provided: ", "").trim() : "";
+          const domain = typeof project?.hasDomain === "string" && project.hasDomain !== "no" ? project.hasDomain.replace("Provided: ", "").trim() : "";
           if (domain && domain !== "help" && domain !== "not_required") {
             window.open(domain.startsWith("http") ? domain : `https://${domain}`, "_blank");
           } else {
@@ -1652,7 +1654,7 @@ export default function CustomerDashboard() {
               </div>
               <div className="space-y-3 font-sans text-xs">
                 {(() => {
-                  const ind = (project.industry || project.customIndustry || "").toLowerCase();
+                  const ind = (String(project?.industry || project?.customIndustry || "")).toLowerCase();
                   
                   let tips = [
                     { title: "Google Reviews Widget", desc: "Display real customer Google reviews to build instant trust with local visitors.", tag: "Trust" },
@@ -2229,7 +2231,7 @@ export default function CustomerDashboard() {
                   <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest block mb-2 font-bold">Payment Statement</span>
                   <div className="p-3 bg-neutral-950 border border-neutral-900 rounded-2xl flex items-center justify-between">
                     <div className="min-w-0">
-                      <span className="text-xs font-bold text-white block truncate">Receipt #{project.id.slice(0, 8).toUpperCase()}</span>
+                      <span className="text-xs font-bold text-white block truncate">Receipt #{(project?.id || "PROJECT").slice(0, 8).toUpperCase()}</span>
                       <span className="text-[9px] font-mono text-neutral-500">Razorpay Secure Transaction</span>
                     </div>
                     <button 

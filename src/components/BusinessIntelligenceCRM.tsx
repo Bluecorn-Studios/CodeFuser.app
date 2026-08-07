@@ -241,9 +241,10 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
       const discount = p.quote.discount || 0;
       const discountedPrice = basePrice - discount;
 
-      if (p.purchasedPlan?.toLowerCase().includes("upfront")) {
+      const planLower = String(p.purchasedPlan || "").toLowerCase();
+      if (planLower.includes("upfront")) {
         return acc + Math.round(discountedPrice * 0.9); // 10% discount for upfront payments
-      } else if (p.purchasedPlan?.toLowerCase().includes("milestone")) {
+      } else if (planLower.includes("milestone")) {
         return acc + Math.round(discountedPrice * 0.5); // 50% milestone
       }
       return acc + discountedPrice;
@@ -254,9 +255,10 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
     if (p.selectedPackage === "foundation") basePkgPrice = 9999;
     if (p.selectedPackage === "dominance") basePkgPrice = 39999;
 
-    if (p.purchasedPlan?.toLowerCase().includes("upfront")) {
+    const planLowerDefault = String(p.purchasedPlan || "").toLowerCase();
+    if (planLowerDefault.includes("upfront")) {
       return acc + Math.round(basePkgPrice * 0.9);
-    } else if (p.purchasedPlan?.toLowerCase().includes("milestone")) {
+    } else if (planLowerDefault.includes("milestone")) {
       return acc + Math.round(basePkgPrice * 0.5);
     }
     return acc + basePkgPrice;
@@ -1100,7 +1102,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
           <div className="md:col-span-4 max-h-[480px] overflow-y-auto divide-y divide-neutral-900/60">
             {projects
               .filter(p => {
-                const query = crmSearchQuery.toLowerCase();
+                const query = (crmSearchQuery || "").toLowerCase();
                 return (
                   (p.clientName || "").toLowerCase().includes(query) ||
                   (p.businessName || "").toLowerCase().includes(query) ||
@@ -1197,7 +1199,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
                         <span className="text-[9px] font-mono text-emerald-400">Step Complete</span>
                       </div>
                       <p className="text-[11px] text-zinc-400 mt-1 font-sans">
-                        Diagnostic packets compiled. Client selected prospective package: <strong>{selectedJourneyProject.selectedPackage.toUpperCase()}</strong>.
+                        Diagnostic packets compiled. Client selected prospective package: <strong>{String(selectedJourneyProject.selectedPackage || "Standard").toUpperCase()}</strong>.
                       </p>
                       <div className="mt-2.5 bg-neutral-950 border border-neutral-900 p-2.5 rounded-xl text-[10px] font-sans text-zinc-500 flex flex-wrap gap-x-4 gap-y-1.5">
                         <span><strong>Industry:</strong> {selectedJourneyProject.industry || "N/A"}</span>

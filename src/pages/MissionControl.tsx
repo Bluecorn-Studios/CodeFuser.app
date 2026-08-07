@@ -28,6 +28,7 @@ import { useAppRouter, w as getWhatsAppLink } from "../components/Reveal";
 import { getAuthUser, getAuthToken } from "../utils/auth";
 import { safeLocalStorage } from "../utils/safeStorage";
 import { PaymentSimulationPanel } from "../components/PaymentSimulationPanel";
+import { normalizeProject, normalizeUser } from "../lib/schemaNormalizer";
 
 interface ProjectRecord {
   id: string;
@@ -159,8 +160,8 @@ export const MissionControl: React.FC = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.users) {
-          setUsersList(data.users);
+        if (data.success && Array.isArray(data.users)) {
+          setUsersList(data.users.map(normalizeUser));
         }
       }
     } catch (err) {
@@ -284,8 +285,8 @@ export const MissionControl: React.FC = () => {
         throw new Error(errorData.error || `Server returned status ${response.status}`);
       }
       const data = await response.json();
-      if (data.projects) {
-        setProjects(data.projects);
+      if (Array.isArray(data.projects)) {
+        setProjects(data.projects.map(normalizeProject));
         setDbSource("Supabase Synced");
       }
     } catch (err: any) {
@@ -455,7 +456,7 @@ export const MissionControl: React.FC = () => {
 
   const getFilteredProjects = () => {
     return projects.filter(proj => {
-      const query = searchQuery.toLowerCase();
+      const query = (searchQuery || "").toLowerCase();
       const matchesSearch = 
         (proj.businessName || "").toLowerCase().includes(query) ||
         (proj.clientName || "").toLowerCase().includes(query) ||
@@ -743,7 +744,7 @@ export const MissionControl: React.FC = () => {
                     >
                       <div className="flex items-start gap-4">
                         <div className="h-10 w-10 shrink-0 rounded-xl bg-neutral-950 border border-border/60 flex items-center justify-center text-amber-500 font-bold text-xs shadow-inner">
-                          {proj.businessName.substring(0, 2).toUpperCase()}
+                          {(proj.businessName || "CF").substring(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <div className="flex items-center flex-wrap gap-2">
@@ -766,7 +767,7 @@ export const MissionControl: React.FC = () => {
                             </span>
                             <span className="text-muted-foreground/30">•</span>
                             <span className="font-mono text-[10px] font-bold text-amber-500">
-                              {proj.selectedPackage.toUpperCase()}
+                              {String(proj.selectedPackage || "Standard").toUpperCase()}
                             </span>
                           </div>
                         </div>
@@ -1150,7 +1151,7 @@ export const MissionControl: React.FC = () => {
                                       <input 
                                         type="text" 
                                         name="packageName" 
-                                        defaultValue={extraProjectMap[proj.id]?.quote?.packageName || proj.selectedPackage.toUpperCase()} 
+                                        defaultValue={extraProjectMap[proj.id]?.quote?.packageName || String(proj.selectedPackage || "Standard").toUpperCase()} 
                                         className="w-full bg-neutral-900 border border-neutral-800 text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-amber-500 text-white"
                                         required
                                       />
@@ -1893,7 +1894,7 @@ export const MissionControl: React.FC = () => {
                                   <div className="flex flex-wrap gap-2">
                                     <button
                                       onClick={() => {
-                                        const draft = `Hello ${proj.clientName}! Welcome to CodeFuser. Your website project for ${proj.businessName} (${proj.selectedPackage.toUpperCase()} Package) is now officially active. You can track live updates in your CodeFuser Portal!`;
+                                        const draft = `Hello ${proj.clientName}! Welcome to CodeFuser. Your website project for ${proj.businessName} (${(proj.selectedPackage || "Standard").toUpperCase()} Package) is now officially active. You can track live updates in your CodeFuser Portal!`;
                                         setCommDraftsMap(prev => ({ ...prev, [proj.id]: draft }));
                                       }}
                                       className="px-2.5 py-1 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 text-[9.5px] font-mono font-bold text-amber-400 rounded transition-all cursor-pointer"
@@ -2228,7 +2229,7 @@ export const MissionControl: React.FC = () => {
                               </p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className="font-mono text-zinc-300 font-semibold text-[11px]">
-                                  {proj.id?.toUpperCase()}
+                                  {proj.id ? proj.id.toUpperCase() : ""}
                                 </span>
                                 <button
                                   onClick={() => handleFetchAuditTrail(proj.id)}
@@ -2325,7 +2326,7 @@ export const MissionControl: React.FC = () => {
                     <tbody className="divide-y divide-neutral-900/60">
                       {usersList
                         .filter(u => {
-                          const query = userSearchQuery.toLowerCase();
+                          const query = (userSearchQuery || "").toLowerCase();
                           return (
                             (u.email || "").toLowerCase().includes(query) ||
                             (u.fullName || "").toLowerCase().includes(query) ||
@@ -2406,7 +2407,7 @@ export const MissionControl: React.FC = () => {
                     <span className="text-amber-500 animate-pulse">●</span> Real-time Audit Trail Activity log
                   </h3>
                   <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                    PROJECT REF ID: {activeAuditProjId.toUpperCase()}
+                    PROJECT REF ID: {activeAuditProjId ? activeAuditProjId.toUpperCase() : ""}
                   </p>
                 </div>
                 <button

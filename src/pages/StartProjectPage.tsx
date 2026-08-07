@@ -49,6 +49,7 @@ import { getInitialPlusPackagePrice } from '../utils/pricingUtils';
 import { supabase } from '../lib/supabase';
 import { safeLocalStorage } from '../utils/safeStorage';
 import { PaymentSimulationPanel } from '../components/PaymentSimulationPanel';
+import { normalizeProjectFormData } from '../lib/schemaNormalizer';
 
 interface StartProjectData {
   businessName: string;
@@ -934,7 +935,20 @@ export const StartProjectPage: React.FC = () => {
         try {
           const parsed = JSON.parse(savedDraft);
           if (parsed.formData) {
-            setFormData(prev => ({ ...prev, ...parsed.formData }));
+            setFormData(prev => {
+              const normalized = normalizeProjectFormData({ ...prev, ...parsed.formData });
+              return {
+                ...prev,
+                ...normalized,
+                goal: prev.goal,
+                customGoal: prev.customGoal,
+                packageId: normalized.selectedPlanId || prev.packageId,
+                ownership: prev.ownership,
+                hasDomain: (normalized.hasDomain as any) || prev.hasDomain,
+                hasLogo: (normalized.hasLogo as any) || prev.hasLogo,
+                contentReady: prev.contentReady,
+              };
+            });
           }
           if (parsed.step) {
             setStep(parsed.step);
@@ -1012,10 +1026,10 @@ export const StartProjectPage: React.FC = () => {
 
   // Memoized Country Search Filter
   const filteredCountries = React.useMemo(() => {
-    const query = countrySearch.toLowerCase();
+    const query = (countrySearch || "").toLowerCase();
     return COUNTRIES.filter(c => 
-      c.name.toLowerCase().includes(query) || 
-      c.code.includes(countrySearch)
+      (c.name || "").toLowerCase().includes(query) || 
+      (c.code || "").includes(countrySearch)
     );
   }, [countrySearch]);
 
@@ -1029,7 +1043,7 @@ export const StartProjectPage: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const planParam = params.get('plan');
     if (planParam) {
-      const match = pricingPlans.find(p => p.id === planParam || p.name.toLowerCase() === planParam.toLowerCase());
+      const match = pricingPlans.find(p => p.id === planParam || (p.name && p.name.toLowerCase() === planParam.toLowerCase()));
       if (match) {
         setFormData(prev => ({ ...prev, packageId: match.id }));
         setIsPlanLocked(true);
@@ -1473,8 +1487,9 @@ ${formData.ownerName}
                       <div className="space-y-4 text-center sm:text-left">
                         {/* 1. "Welcome," on line 1, full name indented on line 2 */}
                         {(() => {
-                          const formattedFullName = formData.ownerName && formData.ownerName.trim()
-                            ? formData.ownerName.trim().split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ")
+                          const nameStr = typeof formData?.ownerName === "string" ? formData.ownerName.trim() : "";
+                          const formattedFullName = nameStr
+                            ? nameStr.split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ")
                             : "Partner";
 
                           return (
@@ -5063,7 +5078,7 @@ function getOnboardingFallbackSummary(
   }
 
   return {
-    aboutYourBusiness: `${bName} is a ${specificType.toLowerCase()} looking to expand local reach and make client inquiries effortless.`,
+    aboutYourBusiness: `${bName} is a ${String(specificType || "").toLowerCase()} looking to expand local reach and make client inquiries effortless.`,
     biggestOpportunity: opportunity,
     ourRecommendation: {
       recommendedPackage: recPkgName,

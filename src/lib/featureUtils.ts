@@ -91,7 +91,7 @@ const FEATURE_DICTIONARY: Record<string, string> = {
  * One short sentence explaining exactly what it allows customers or the business owner to do.
  */
 export function parseFeature(raw: string): FormattedFeature {
-  if (!raw) {
+  if (!raw || typeof raw !== "string") {
     return { title: "Custom Feature", description: "Enhances your website with tailored capability." };
   }
 
@@ -249,6 +249,8 @@ export function cleanRationale(rawRationale: string): string {
  * Splits 6 recommended features across Base Card (4 features: 1st, 2nd, 5th, 6th) 
  * and Upgrade Card (2 features: 3rd and 4th) to create urgency and clear value differentiation.
  */
+import { normalizeAiFeatures } from "./schemaNormalizer";
+
 export function splitFeaturesForCards(cards: any[], recommendedFeatures?: string[]): any[] {
   if (!cards || !Array.isArray(cards) || cards.length < 2) return cards;
 
@@ -262,17 +264,20 @@ export function splitFeaturesForCards(cards: any[], recommendedFeatures?: string
 
   let sixFeatures: string[] = [];
 
-  if (recommendedFeatures && Array.isArray(recommendedFeatures) && recommendedFeatures.length >= 6) {
-    sixFeatures = recommendedFeatures.slice(0, 6);
-  } else if (upgradeCard.benefits && Array.isArray(upgradeCard.benefits) && upgradeCard.benefits.length >= 6) {
-    sixFeatures = upgradeCard.benefits.slice(0, 6);
+  const normalizedRecs = normalizeAiFeatures(recommendedFeatures);
+  const normalizedCardBenefits = normalizeAiFeatures(upgradeCard.benefits);
+
+  if (normalizedRecs.length >= 6) {
+    sixFeatures = normalizedRecs.slice(0, 6);
+  } else if (normalizedCardBenefits.length >= 6) {
+    sixFeatures = normalizedCardBenefits.slice(0, 6);
   } else {
     // Combine features from base + upgrade
     const combined = [...(upgradeCard.benefits || []), ...(baseCard.benefits || [])];
     const cleaned = combined
       .map(f => cleanFeatureText(String(f)))
       .map(f => f.replace(/^[⭐✓✔]\s*/, '').trim())
-      .filter(f => !["Mobile Friendly Design", "Contact Form", "Google Maps Location", "Business Info & Hours"].some(b => f.toLowerCase().includes(b.toLowerCase())));
+      .filter(f => typeof f === "string" && !["Mobile Friendly Design", "Contact Form", "Google Maps Location", "Business Info & Hours"].some(b => f.toLowerCase().includes(b.toLowerCase())));
     const unique = Array.from(new Set(cleaned));
     if (unique.length >= 6) {
       sixFeatures = unique.slice(0, 6);
