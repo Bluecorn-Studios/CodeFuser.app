@@ -38,7 +38,8 @@ import {
   TrendingUp,
   DollarSign,
   CheckCircle2,
-  Star
+  Star,
+  Upload
 } from 'lucide-react';
 import { useAppRouter, b as getMailtoLink, w as getWhatsAppLink, cn } from '../components/Reveal';
 import { PagePath, PricingPlan } from '../types';
@@ -490,6 +491,9 @@ export const StartProjectPage: React.FC = () => {
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string>('current');
+
+  const [uploadedAssets, setUploadedAssets] = useState<Record<string, string>>({});
+  const [skippedAssets, setSkippedAssets] = useState<Record<string, boolean>>({});
 
   // Stages: 'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'
   const [onboardingStage, setOnboardingStage] = useState<'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'>('form');
@@ -2056,17 +2060,17 @@ ${formData.ownerName}
                   >
                     <h3 className="font-display text-lg sm:text-[22px] font-bold tracking-tight text-[#f5f5f0] mb-4 pb-3 border-b border-zinc-800 flex items-center justify-between gap-4">
                       <span className="tracking-wide">Your Website Package</span>
-                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-300/90 font-bold uppercase shrink-0">01 / Selected Plan</span>
+                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/80 font-bold uppercase shrink-0">01 / Selected Plan</span>
                     </h3>
                     
                     {isPlanLocked ? (
-                      <div className="relative overflow-hidden p-6 sm:p-8 rounded-2xl border border-purple-500/35 bg-gradient-to-r from-[#0d0a1a] via-[#140f2a] to-[#0a0815] shadow-[0_0_30px_rgba(168,85,247,0.18)] hover:border-purple-500/50 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-6 font-sans">
+                      <div className="relative overflow-hidden p-6 sm:p-8 rounded-2xl border border-purple-300/25 bg-gradient-to-r from-[#110f1c] via-[#161324] to-[#0f0e1a] shadow-[0_0_20px_rgba(192,132,252,0.10)] hover:border-purple-300/40 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-6 font-sans">
                         <div className="flex items-center gap-4">
-                          <div className="p-3.5 rounded-2xl bg-purple-950/80 border border-purple-500/40 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)] shrink-0">
-                            <Lock size={22} className="text-purple-300" />
+                          <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-300/30 text-purple-200 shadow-[0_0_12px_rgba(192,132,252,0.12)] shrink-0">
+                            <Lock size={22} className="text-purple-200" />
                           </div>
                           <div className="space-y-1">
-                            <span className="text-[11px] font-mono text-purple-300 font-bold uppercase tracking-wider block">
+                            <span className="text-[11px] font-mono text-purple-200/90 font-bold uppercase tracking-wider block">
                               SELECTED WEBSITE PLAN
                             </span>
                             <h4 className="font-display text-xl sm:text-2xl font-bold text-white">
@@ -2096,8 +2100,8 @@ ${formData.ownerName}
                               onClick={() => updateField('packageId', plan.id)}
                               className={`relative flex flex-col justify-between p-5 rounded-2xl border text-left transition-all duration-300 select-none active:scale-95 cursor-pointer ${
                                 isSelected 
-                                  ? 'bg-gradient-to-b from-purple-950/60 via-[#0f0d1b] to-[#080710] border-purple-500/60 text-white shadow-[0_0_30px_rgba(168,85,247,0.25)] ring-1 ring-purple-500/40' 
-                                  : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-purple-500/40 hover:text-white'
+                                  ? 'bg-gradient-to-b from-purple-950/30 via-[#110f1d] to-[#080710] border-purple-300/40 text-white shadow-[0_0_20px_rgba(192,132,252,0.12)] ring-1 ring-purple-300/25' 
+                                  : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-purple-300/30 hover:text-white'
                               }`}
                             >
                               {plan.highlight && (
@@ -2106,7 +2110,7 @@ ${formData.ownerName}
                                 </span>
                               )}
                               <div className="space-y-1">
-                                <span className="text-[11px] text-purple-300/80 font-mono font-semibold block">{plan.tagline}</span>
+                                <span className="text-[11px] text-purple-200/80 font-mono font-semibold block">{plan.tagline}</span>
                                 <span className="text-base font-bold text-white block">
                                   {plan.name.replace(/[⚡✦⬢]/g, '').trim()}
                                 </span>
@@ -2135,10 +2139,10 @@ ${formData.ownerName}
                   >
                     <h3 className="font-display text-lg sm:text-[22px] font-bold tracking-tight text-[#f5f5f0] mt-10 mb-4 pb-3 border-b border-zinc-800 flex items-center justify-between gap-4">
                       <span className="tracking-wide">Continuous Care & Cloud Management</span>
-                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-300/90 font-bold uppercase shrink-0">02 / Monthly Maintenance</span>
+                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/80 font-bold uppercase shrink-0">02 / Monthly Maintenance</span>
                     </h3>
                     
-                    <div className="p-6 sm:p-7 rounded-2xl border border-purple-500/35 bg-gradient-to-r from-[#0d0a1a] via-[#140f2a] to-[#0a0815] shadow-[0_0_30px_rgba(168,85,247,0.18)] font-sans space-y-5">
+                    <div className="p-6 sm:p-7 rounded-2xl border border-purple-300/25 bg-gradient-to-r from-[#110f1c] via-[#161324] to-[#0f0e1a] shadow-[0_0_20px_rgba(192,132,252,0.10)] font-sans space-y-5">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
                         <div>
                           <div className="flex items-center gap-2">
@@ -2154,22 +2158,22 @@ ${formData.ownerName}
                       </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/40 border border-purple-500/25 text-xs text-purple-100 font-medium">
-                          <div className="p-2 rounded-lg bg-purple-900/50 text-purple-300 shrink-0">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/25 border border-purple-300/20 text-xs text-purple-100 font-medium">
+                          <div className="p-2 rounded-lg bg-purple-900/30 text-purple-200 shrink-0">
                             <ShieldCheck size={18} />
                           </div>
                           <span className="font-semibold text-zinc-200">Secure Cloud Hosting</span>
                         </div>
                         
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/40 border border-purple-500/25 text-xs text-purple-100 font-medium">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/25 border border-purple-300/20 text-xs text-purple-100 font-medium">
                           <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
                             <Zap size={18} />
                           </div>
                           <span className="font-semibold text-zinc-200">Speed & Security Updates</span>
                         </div>
                         
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/40 border border-purple-500/25 text-xs text-purple-100 font-medium">
-                          <div className="p-2 rounded-lg bg-purple-900/50 text-purple-300 shrink-0">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/25 border border-purple-300/20 text-xs text-purple-100 font-medium">
+                          <div className="p-2 rounded-lg bg-purple-900/30 text-purple-200 shrink-0">
                             <Wrench size={18} />
                           </div>
                           <span className="font-semibold text-zinc-200">Technical Maintenance</span>
@@ -2188,12 +2192,12 @@ ${formData.ownerName}
                   >
                     <h3 className="font-display text-lg sm:text-[22px] font-bold tracking-tight text-[#f5f5f0] mt-10 mb-4 pb-3 border-b border-zinc-800 flex items-center justify-between gap-4">
                       <span className="tracking-wide">Premium Client Workspace</span>
-                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-300/90 font-bold uppercase shrink-0">03 / Exclusive Client Gift</span>
+                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/80 font-bold uppercase shrink-0">03 / Exclusive Client Gift</span>
                     </h3>
 
-                    <div className="relative p-8 sm:p-10 rounded-3xl border border-purple-500/30 bg-gradient-to-b from-[#181528]/95 to-[#0d0b18]/98 backdrop-blur-3xl overflow-hidden group hover:border-purple-500/45 transition-all duration-500 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_35px_rgba(168,85,247,0.15)]">
+                    <div className="relative p-8 sm:p-10 rounded-3xl border border-purple-300/25 bg-gradient-to-b from-[#151322]/95 to-[#0e0d19]/98 backdrop-blur-3xl overflow-hidden group hover:border-purple-300/35 transition-all duration-500 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_25px_rgba(192,132,252,0.10)]">
                       <div className="mb-8 text-left">
-                        <span className="inline-block text-xs font-mono tracking-wider font-bold text-purple-300 uppercase bg-purple-500/15 border border-purple-500/30 px-4 py-1.5 rounded-full mb-3 shadow-[0_0_12px_rgba(168,85,247,0.15)]">
+                        <span className="inline-block text-xs font-mono tracking-wider font-bold text-purple-200 uppercase bg-purple-300/10 border border-purple-300/20 px-4 py-1.5 rounded-full mb-3 shadow-[0_0_12px_rgba(192,132,252,0.08)]">
                           Exclusive Client Gift
                         </span>
                         <h4 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight mb-2">
@@ -3391,7 +3395,7 @@ That's enough. We'll help with the rest.`}
                       
                       if (card.id === 'upgrade_1' || card.id === 'upgrade_2') {
                         badge = "Recommended AI Upgrade";
-                        badgeStyle = "bg-purple-500/15 text-purple-300 border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)]";
+                        badgeStyle = "bg-purple-300/10 text-purple-200 border-purple-300/20 shadow-[0_0_12px_rgba(192,132,252,0.08)]";
                       }
 
                       return (
@@ -3401,12 +3405,12 @@ That's enough. We'll help with the rest.`}
                           whileHover={{ y: -4 }}
                           className={`relative select-none cursor-pointer p-6 sm:p-7 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${
                             isSelected 
-                              ? 'border-purple-400 bg-[#0a0a0a] shadow-[0_0_35px_rgba(168,85,247,0.18)]' 
+                              ? 'border-purple-300/50 bg-[#0a0a0a] shadow-[0_0_25px_rgba(192,132,252,0.12)]' 
                               : 'border-white/[0.08] bg-[#060606] hover:border-white/[0.18] hover:bg-[#080808]'
                           }`}
                         >
                           {isSelected && (
-                            <div className="absolute -inset-px rounded-2xl border-2 border-purple-400 pointer-events-none" />
+                            <div className="absolute -inset-px rounded-2xl border-2 border-purple-300/60 pointer-events-none" />
                           )}
 
                           <div>
@@ -3417,7 +3421,7 @@ That's enough. We'll help with the rest.`}
                               </span>
                               <div className={`h-6 w-6 rounded-full border flex items-center justify-center transition-all ${
                                 isSelected 
-                                  ? 'border-purple-400 bg-purple-500 text-black shadow-[0_0_10px_rgba(168,85,247,0.5)]' 
+                                  ? 'border-purple-300 bg-purple-300/90 text-black shadow-[0_0_10px_rgba(192,132,252,0.3)]' 
                                   : 'border-white/20 bg-transparent'
                               }`}>
                                 {isSelected && <Check className="h-4 w-4 stroke-[3]" />}
@@ -3431,7 +3435,7 @@ That's enough. We'll help with the rest.`}
                                   Base Configuration
                                 </p>
                               ) : (
-                                <p className="text-[10px] font-mono font-bold tracking-[0.12em] text-purple-400 mb-0.5 uppercase flex items-center gap-1">
+                                <p className="text-[10px] font-mono font-bold tracking-[0.12em] text-purple-300 mb-0.5 uppercase flex items-center gap-1">
                                   <Sparkles className="h-3 w-3" /> Recommended AI Upgrade
                                 </p>
                               )}
@@ -3444,7 +3448,7 @@ That's enough. We'll help with the rest.`}
                                   {card.price}
                                 </span>
                                 {card.id !== 'current' && (
-                                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/25 animate-pulse">
+                                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-300/10 text-purple-200 border border-purple-300/20 animate-pulse">
                                     {getDiffText(card) || "+₹5,000 Complete Pack Upgrade"}
                                   </span>
                                 )}
@@ -3458,7 +3462,7 @@ That's enough. We'll help with the rest.`}
                              <div className="border-t border-white/[0.08] my-4" />
 
                             {/* Section Checklist */}
-                            <p className="text-[9px] font-mono text-purple-300/90 uppercase tracking-widest block mb-3 font-bold">
+                            <p className="text-[9px] font-mono text-purple-200/80 uppercase tracking-widest block mb-3 font-bold">
                               {card.id === 'current' ? 'Included In Base Package' : 'Included In This Upgrade'}
                             </p>
                             
@@ -3470,7 +3474,7 @@ That's enough. We'll help with the rest.`}
 
                                 if (isHero) {
                                   return (
-                                    <li key={bIdx} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-200 font-semibold shadow-sm">
+                                    <li key={bIdx} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-purple-300/10 border border-purple-300/20 text-purple-100 font-semibold shadow-sm">
                                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-300">
                                         <Star className="h-3.5 w-3.5 fill-amber-300" />
                                       </span>
@@ -3481,7 +3485,7 @@ That's enough. We'll help with the rest.`}
 
                                 return (
                                   <li key={bIdx} className="flex items-center gap-2.5 px-1.5 py-1 text-zinc-300">
-                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
+                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-300/10 border border-purple-300/20 text-purple-200">
                                       <Check className="h-3.5 w-3.5 stroke-[2.5]" />
                                     </span>
                                     <span className="font-medium text-xs text-zinc-200">{text}</span>
@@ -3493,7 +3497,7 @@ That's enough. We'll help with the rest.`}
 
                           {/* Why We Recommend This */}
                           <div className="mt-auto border-t border-white/[0.08] pt-4">
-                            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-purple-300 mb-1.5">
+                            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-purple-200/90 mb-1.5">
                               {card.id === 'current' ? 'Package Focus' : 'Why We Recommend This'}
                             </p>
                             <p className="text-xs leading-relaxed text-zinc-300 font-sans">
@@ -3797,7 +3801,7 @@ That's enough. We'll help with the rest.`}
                     onClick={() => setSelectedPaymentTerm('milestone')}
                     className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
                       selectedPaymentTerm === 'milestone' 
-                        ? 'border-purple-500/40 bg-[#0f0d1b] shadow-lg ring-1 ring-purple-500/25' 
+                        ? 'border-purple-300/35 bg-[#12101d] shadow-lg ring-1 ring-purple-300/20' 
                         : 'border-zinc-800/80 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/40'
                     }`}
                   >
@@ -3811,7 +3815,7 @@ That's enough. We'll help with the rest.`}
                         </div>
                         <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
                           selectedPaymentTerm === 'milestone' 
-                            ? 'border-purple-400 bg-purple-500 text-white' 
+                            ? 'border-purple-300 bg-purple-300/90 text-black' 
                             : 'border-zinc-700 bg-transparent'
                         }`}>
                           {selectedPaymentTerm === 'milestone' && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -3820,11 +3824,11 @@ That's enough. We'll help with the rest.`}
 
                       <div className="mt-4 space-y-2 text-xs text-zinc-200">
                         <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'milestone' ? "text-purple-400" : "text-emerald-400"} />
+                          <Check size={14} className={selectedPaymentTerm === 'milestone' ? "text-purple-300" : "text-emerald-400"} />
                           <span className="font-medium">Work starts today</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <Check size={14} className={`${selectedPaymentTerm === 'milestone' ? "text-purple-400" : "text-emerald-400"} shrink-0 mt-0.5`} />
+                          <Check size={14} className={`${selectedPaymentTerm === 'milestone' ? "text-purple-300" : "text-emerald-400"} shrink-0 mt-0.5`} />
                           <span className="font-medium">Pay the balance after you approve your website</span>
                         </div>
                       </div>
@@ -3836,7 +3840,7 @@ That's enough. We'll help with the rest.`}
                     onClick={() => setSelectedPaymentTerm('upfront')}
                     className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
                       selectedPaymentTerm === 'upfront' 
-                        ? 'border-purple-500/40 bg-[#0f0d1b] shadow-lg ring-1 ring-purple-500/25' 
+                        ? 'border-purple-300/35 bg-[#12101d] shadow-lg ring-1 ring-purple-300/20' 
                         : 'border-zinc-800/80 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/40'
                     }`}
                   >
@@ -3855,7 +3859,7 @@ That's enough. We'll help with the rest.`}
                         </div>
                         <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
                           selectedPaymentTerm === 'upfront' 
-                            ? 'border-purple-400 bg-purple-500 text-white' 
+                            ? 'border-purple-300 bg-purple-300/90 text-black' 
                             : 'border-zinc-700 bg-transparent'
                         }`}>
                           {selectedPaymentTerm === 'upfront' && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -3864,11 +3868,11 @@ That's enough. We'll help with the rest.`}
 
                       <div className="mt-4 space-y-2 text-xs text-zinc-200">
                         <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-400" : "text-emerald-400"} />
+                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-300" : "text-emerald-400"} />
                           <span className="font-medium">One-time payment</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-400" : "text-emerald-400"} />
+                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-300" : "text-emerald-400"} />
                           <span className="font-medium">Extra savings (Save ₹{discountVal.toLocaleString('en-IN')})</span>
                         </div>
                       </div>
@@ -4144,59 +4148,120 @@ That's enough. We'll help with the rest.`}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.4 }}
-              className="rounded-3xl border border-neutral-900 bg-[#050505] p-6 sm:p-10 shadow-[0_30px_70px_rgba(0,0,0,0.9)] relative overflow-hidden max-w-xl mx-auto text-center font-sans"
+              className="rounded-3xl border border-white/10 bg-[#050505] p-6 sm:p-10 shadow-[0_30px_70px_rgba(0,0,0,0.95)] relative overflow-hidden max-w-2xl mx-auto font-sans text-left"
             >
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-amber-500/[0.015] blur-[120px] pointer-events-none" />
+              {/* Subtle top glare & ambient blur */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-white/[0.015] blur-[120px] pointer-events-none" />
 
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/5 border border-amber-500/25 text-[10px] font-mono font-bold tracking-widest text-amber-500 uppercase mb-4">
-                🚀 NEXT PHASE PREPARATION
-              </span>
+              {/* Header */}
+              <div className="text-center mb-8">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-semibold text-white mb-4">
+                  🎉 Payment Received
+                </span>
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  Your project has officially started.
+                </h2>
+                <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
+                  Thank you! Our team is now preparing your website.
+                </p>
+              </div>
 
-              <h2 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight">
-                What Happens Next
-              </h2>
-              <p className="text-xs text-neutral-400 mt-2 max-w-md mx-auto leading-relaxed">
-                Your project details are successfully saved. Our team will begin preparing your business website.
-              </p>
-
-              {/* Status Roadmap Steps */}
-              <div className="my-8 rounded-2xl border border-neutral-900 bg-[#0a0a0a]/60 p-5 text-left text-xs space-y-4 font-sans">
-                <div className="flex items-start gap-3">
-                  <div className="h-5 w-5 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 font-mono text-[10px] font-black">1</div>
-                  <div>
-                    <h4 className="font-bold text-white leading-normal">Deep Project Review</h4>
-                    <p className="text-neutral-400 mt-0.5 leading-normal">Our team reviews your selected package terms, design preferences, and vision inputs.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="h-5 w-5 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 font-mono text-[10px] font-black">2</div>
-                  <div>
-                    <h4 className="font-bold text-white leading-normal">Communication Sprints</h4>
-                    <p className="text-neutral-400 mt-0.5 leading-relaxed">
-                      We will contact you directly to confirm setup schedules. Please keep a close eye on your channels:
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase font-mono font-bold tracking-wider">
-                      <span className="px-2.5 py-1 rounded bg-[#020202] border border-neutral-900 text-amber-400">📧 Email Messages</span>
-                      <span className="px-2.5 py-1 rounded bg-[#020202] border border-neutral-900 text-amber-400">📱 WhatsApp Chat</span>
+              {/* Project Progress */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-6">
+                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 mb-3">
+                  Project Progress
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                  {/* Stage 1 */}
+                  <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-emerald-400 font-bold text-xs">✓</span>
+                      <span className="text-[8px] font-mono text-emerald-400/80 uppercase font-bold">Done</span>
                     </div>
+                    <span className="text-xs font-medium text-white leading-tight">Payment Received</span>
+                  </div>
+
+                  {/* Stage 2 */}
+                  <div className="p-3 rounded-xl border border-white/20 bg-white/10 flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-amber-300 font-bold text-xs animate-pulse">⏳</span>
+                      <span className="text-[8px] font-mono text-amber-300 uppercase font-bold">Active</span>
+                    </div>
+                    <span className="text-xs font-medium text-white leading-tight">Reviewing Your Project</span>
+                  </div>
+
+                  {/* Stage 3 */}
+                  <div className="p-3 rounded-xl border border-white/5 bg-black/40 flex flex-col justify-between opacity-50">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-zinc-500 text-xs">⏳</span>
+                      <span className="text-[8px] font-mono text-zinc-500 uppercase">Step 3</span>
+                    </div>
+                    <span className="text-xs font-medium text-zinc-300 leading-tight">Assigning Your Project</span>
+                  </div>
+
+                  {/* Stage 4 */}
+                  <div className="p-3 rounded-xl border border-white/5 bg-black/40 flex flex-col justify-between opacity-50">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-zinc-500 text-xs">⏳</span>
+                      <span className="text-[8px] font-mono text-zinc-500 uppercase">Step 4</span>
+                    </div>
+                    <span className="text-xs font-medium text-zinc-300 leading-tight">Website Design</span>
+                  </div>
+
+                  {/* Stage 5 */}
+                  <div className="p-3 rounded-xl border border-white/5 bg-black/40 flex flex-col justify-between opacity-50">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-zinc-500 text-xs">⏳</span>
+                      <span className="text-[8px] font-mono text-zinc-500 uppercase">Step 5</span>
+                    </div>
+                    <span className="text-xs font-medium text-zinc-300 leading-tight">Development</span>
+                  </div>
+
+                  {/* Stage 6 */}
+                  <div className="p-3 rounded-xl border border-white/5 bg-black/40 flex flex-col justify-between opacity-50">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-zinc-500 text-xs">⏳</span>
+                      <span className="text-[8px] font-mono text-zinc-500 uppercase">Step 6</span>
+                    </div>
+                    <span className="text-xs font-medium text-zinc-300 leading-tight">Launch</span>
                   </div>
                 </div>
               </div>
 
-              {/* Preferred Contact Selector */}
-              <div className="mb-8 text-left bg-[#050505] border border-neutral-900 p-4 rounded-2xl">
-                <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-400 font-extrabold mb-3">
-                  ⏰ PREFERRED CONTACT TIME WINDOW (OPTIONAL):
-                </label>
-                <div className="grid grid-cols-2 gap-2">
+              {/* What Happens Now? */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-6">
+                <h3 className="text-base font-bold text-white mb-3">
+                  What happens now?
+                </h3>
+                <ul className="space-y-2 text-xs sm:text-sm text-zinc-300">
+                  <li className="flex items-start gap-2.5">
+                    <span className="text-white font-bold">•</span>
+                    <span>We'll review everything you submitted.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="text-white font-bold">•</span>
+                    <span>We'll contact you on WhatsApp or Email.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="text-white font-bold">•</span>
+                    <span>We'll discuss any missing details before work begins.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* When Should We Contact You? */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-6">
+                <h3 className="text-base font-bold text-white mb-3">
+                  When should we contact you?
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {[
                     { id: 'morning', label: 'Morning', time: '9 AM - 12 PM' },
                     { id: 'afternoon', label: 'Afternoon', time: '12 PM - 5 PM' },
                     { id: 'evening', label: 'Evening', time: '5 PM - 8 PM' },
-                    { id: 'anytime', label: 'Anytime', time: 'Standard Hours' }
-                  ].map(slot => {
+                    { id: 'anytime', label: 'Anytime', time: 'Flexible' }
+                  ].map((slot) => {
                     const isSelected = preferredContactTime === slot.id;
                     return (
                       <button
@@ -4204,41 +4269,69 @@ That's enough. We'll help with the rest.`}
                         type="button"
                         onClick={() => setPreferredContactTime(slot.id as any)}
                         className={`p-3 rounded-xl border text-left transition-all cursor-pointer select-none active:scale-95 ${
-                          isSelected 
-                            ? 'bg-amber-500/10 border-amber-500 text-white' 
-                            : 'bg-black border-neutral-900 text-neutral-400 hover:border-neutral-800'
+                          isSelected
+                            ? 'border-white bg-white text-black shadow-md font-bold'
+                            : 'border-white/10 bg-black/60 text-zinc-300 hover:border-white/20'
                         }`}
                       >
-                        <span className="block text-xs font-bold leading-none">{slot.label}</span>
-                        <span className="block text-[9px] font-mono text-neutral-500 leading-none mt-1">{slot.time}</span>
+                        <span className="block text-xs sm:text-sm font-bold leading-tight">{slot.label}</span>
+                        <span className={`block text-[10px] font-mono leading-tight mt-1 ${isSelected ? 'text-zinc-800 font-semibold' : 'text-zinc-500'}`}>
+                          {slot.time}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Scheduling Actions */}
-              <div className="space-y-3 max-w-sm mx-auto">
+              {/* Things you can prepare (Optional) */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-8">
+                <h3 className="text-base font-bold text-white mb-3">
+                  Things you can prepare <span className="text-zinc-500 font-normal text-xs sm:text-sm">(Optional)</span>
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-3">
+                  {[
+                    "Logo",
+                    "Business Photos",
+                    "Price List",
+                    "Business Information",
+                    "Social Media Links"
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2.5 p-3 rounded-xl border border-white/5 bg-black/40 text-xs text-zinc-300 font-medium">
+                      <div className="h-4 w-4 rounded border border-white/30 flex items-center justify-center text-white/50 shrink-0 text-[10px] font-mono">
+                        □
+                      </div>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-400">
+                  You can upload these now or later from your Client Dashboard.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-4 text-center">
                 <button
                   type="button"
                   onClick={() => {
                     setOnboardingStage('asset_center');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="btn-pressure inline-flex items-center justify-center gap-2 bg-white text-black font-extrabold text-xs uppercase tracking-wider px-6 py-4 rounded-full w-full h-12 shadow-[0_12px_24px_rgba(255,255,255,0.06)] hover:-translate-y-0.5 transition-all cursor-pointer select-none leading-none"
+                  className="w-full sm:w-auto min-w-[220px] inline-flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-full shadow-[0_10px_30px_rgba(255,255,255,0.1)] transition-all cursor-pointer leading-none active:scale-95"
                 >
-                  Confirm Window & Continue <ArrowRight size={13} />
+                  Continue <ArrowRight size={14} />
                 </button>
-              </div>
 
-              <div className="mt-8">
-                <button
-                  type="button"
-                  onClick={() => setOnboardingStage('payment')}
-                  className="text-xs text-neutral-500 hover:text-white underline"
-                >
-                  ← Back to Payment Setup
-                </button>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingStage('payment')}
+                    className="text-xs text-zinc-500 hover:text-zinc-300 underline"
+                  >
+                    ← Back to Payment Setup
+                  </button>
+                </div>
               </div>
             </motion.div>
           ) : onboardingStage === 'asset_center' ? (
@@ -4248,69 +4341,338 @@ That's enough. We'll help with the rest.`}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.4 }}
-              className="rounded-3xl border border-neutral-900 bg-[#050505] p-6 sm:p-10 shadow-[0_30px_70px_rgba(0,0,0,0.9)] relative overflow-hidden max-w-2xl mx-auto"
+              className="rounded-3xl border border-white/10 bg-[#050505] p-6 sm:p-10 shadow-[0_30px_70px_rgba(0,0,0,0.95)] relative overflow-hidden max-w-2xl mx-auto font-sans text-left"
             >
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/[0.015] blur-[150px] pointer-events-none" />
+              {/* Top ambient glare */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-white/[0.015] blur-[120px] pointer-events-none" />
 
+              {/* Header */}
               <div className="text-center mb-8">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase mb-4 animate-pulse">
-                  📁 Digital Asset Center Ready
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-semibold text-white mb-4">
+                  📁 Upload Business Files
                 </span>
-                <h2 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight">
-                  Queue Your Onboarding Assets
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  What do I need to do?
                 </h2>
-                <p className="text-sm text-neutral-400 max-w-md mx-auto mt-2 leading-relaxed font-sans">
-                  Pre-arrange your digital resources to enable our senior builders to launch early layout stages.
+                <p className="text-sm text-zinc-400 mt-2 leading-relaxed max-w-md mx-auto">
+                  Provide any files or materials you have ready. If you requested design or writing services, we'll handle those for you.
                 </p>
               </div>
 
-              <div className="space-y-4 mb-8 font-sans">
-                {/* Domain choice */}
-                <div className="p-4 rounded-xl border border-neutral-900 bg-black/40 text-left text-xs">
-                  <span className="text-neutral-500 font-mono block text-[9px] font-bold tracking-wider uppercase mb-1">Website Address (Domain Setup)</span>
-                  <p className="text-white font-semibold flex items-center gap-2">
-                    <Check size={12} className="text-amber-500" />
-                    {formData.hasDomain === 'yes' ? "Registered Domain identified" : formData.hasDomain === 'no' ? "Not set — assisted registration chosen" : "Assisted domain brainstorm chosen"}
-                  </p>
-                  <p className="text-neutral-400 mt-1 leading-normal text-[11px]">
-                    {formData.hasDomain === 'yes' ? "We will configure cloud DNS pointers directly to your registrar settings on our sync video conference." : "We will brainstorm clean, high-conformance branding domains and complete registration directly on our call."}
-                  </p>
+              {/* Upload Cards Grid */}
+              <div className="space-y-3.5 mb-8">
+                {/* 1. Logo */}
+                {formData.hasLogo === 'no' || formData.hasLogo === 'help' ? (
+                  <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Logo & Brand Design</h4>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Included in your package. Our design team will create your logo.
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                        <Check size={13} strokeWidth={3} /> We'll handle this for you
+                      </span>
+                      <span className="block text-[10px] font-mono text-emerald-400/80 mt-1 uppercase">No action needed</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Logo</h4>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Upload your high-resolution logo or icon file (PNG, SVG, or JPG format).
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {uploadedAssets['logo'] ? (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-300 font-medium">
+                          <Check size={13} /> {uploadedAssets['logo']}
+                        </div>
+                      ) : skippedAssets['logo'] ? (
+                        <div className="text-xs text-zinc-500 font-medium px-2 py-1">Skipped for now</div>
+                      ) : null}
+
+                      <label className="cursor-pointer px-3.5 py-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1.5">
+                        <Upload size={13} /> {uploadedAssets['logo'] ? 'Change' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/*,.svg,.ai,.eps"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploadedAssets(prev => ({ ...prev, logo: file.name }));
+                              setSkippedAssets(prev => ({ ...prev, logo: false }));
+                            }
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSkippedAssets(prev => ({ ...prev, logo: !prev['logo'] }));
+                          setUploadedAssets(prev => {
+                            const next = { ...prev };
+                            delete next['logo'];
+                            return next;
+                          });
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 text-zinc-400 hover:text-white text-xs font-medium transition-all"
+                      >
+                        {skippedAssets['logo'] ? 'Undo' : 'Skip'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Text & Copywriting */}
+                {formData.contentReady === 'no_help' ? (
+                  <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Website Copywriting</h4>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Included in your package. We will write all website text for you.
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                        <Check size={13} strokeWidth={3} /> We'll handle this for you
+                      </span>
+                      <span className="block text-[10px] font-mono text-emerald-400/80 mt-1 uppercase">No action needed</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Business Information</h4>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Upload your service descriptions, text notes, or brochure.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {uploadedAssets['text'] ? (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-300 font-medium">
+                          <Check size={13} /> {uploadedAssets['text']}
+                        </div>
+                      ) : skippedAssets['text'] ? (
+                        <div className="text-xs text-zinc-500 font-medium px-2 py-1">Skipped for now</div>
+                      ) : null}
+
+                      <label className="cursor-pointer px-3.5 py-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1.5">
+                        <Upload size={13} /> {uploadedAssets['text'] ? 'Change' : 'Upload'}
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.txt"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploadedAssets(prev => ({ ...prev, text: file.name }));
+                              setSkippedAssets(prev => ({ ...prev, text: false }));
+                            }
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSkippedAssets(prev => ({ ...prev, text: !prev['text'] }));
+                          setUploadedAssets(prev => {
+                            const next = { ...prev };
+                            delete next['text'];
+                            return next;
+                          });
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 text-zinc-400 hover:text-white text-xs font-medium transition-all"
+                      >
+                        {skippedAssets['text'] ? 'Undo' : 'Skip'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Domain Registration */}
+                {formData.hasDomain === 'no' || formData.hasDomain === 'help' ? (
+                  <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Domain Setup</h4>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Included in your package. We will register and set up your web address.
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                        <Check size={13} strokeWidth={3} /> We'll handle this for you
+                      </span>
+                      <span className="block text-[10px] font-mono text-emerald-400/80 mt-1 uppercase">No action needed</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Domain Information</h4>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Upload domain registration details or access information.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {uploadedAssets['domain'] ? (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-300 font-medium">
+                          <Check size={13} /> {uploadedAssets['domain']}
+                        </div>
+                      ) : skippedAssets['domain'] ? (
+                        <div className="text-xs text-zinc-500 font-medium px-2 py-1">Skipped for now</div>
+                      ) : null}
+
+                      <label className="cursor-pointer px-3.5 py-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1.5">
+                        <Upload size={13} /> {uploadedAssets['domain'] ? 'Change' : 'Upload'}
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.txt,image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploadedAssets(prev => ({ ...prev, domain: file.name }));
+                              setSkippedAssets(prev => ({ ...prev, domain: false }));
+                            }
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSkippedAssets(prev => ({ ...prev, domain: !prev['domain'] }));
+                          setUploadedAssets(prev => {
+                            const next = { ...prev };
+                            delete next['domain'];
+                            return next;
+                          });
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 text-zinc-400 hover:text-white text-xs font-medium transition-all"
+                      >
+                        {skippedAssets['domain'] ? 'Undo' : 'Skip'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Business Photos */}
+                <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Business Photos</h4>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Upload photos of your business, store, team, or past work.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {uploadedAssets['photos'] ? (
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-300 font-medium">
+                        <Check size={13} /> {uploadedAssets['photos']}
+                      </div>
+                    ) : skippedAssets['photos'] ? (
+                      <div className="text-xs text-zinc-500 font-medium px-2 py-1">Skipped for now</div>
+                    ) : null}
+
+                    <label className="cursor-pointer px-3.5 py-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1.5">
+                      <Upload size={13} /> {uploadedAssets['photos'] ? 'Change' : 'Upload'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
+                            const countText = files.length === 1 ? files[0].name : `${files.length} photos selected`;
+                            setUploadedAssets(prev => ({ ...prev, photos: countText }));
+                            setSkippedAssets(prev => ({ ...prev, photos: false }));
+                          }
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSkippedAssets(prev => ({ ...prev, photos: !prev['photos'] }));
+                        setUploadedAssets(prev => {
+                          const next = { ...prev };
+                          delete next['photos'];
+                          return next;
+                        });
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 text-zinc-400 hover:text-white text-xs font-medium transition-all"
+                    >
+                      {skippedAssets['photos'] ? 'Undo' : 'Skip'}
+                    </button>
+                  </div>
                 </div>
 
-                {/* Brand Visual Logo */}
-                <div className="p-4 rounded-xl border border-neutral-900 bg-black/40 text-left text-xs">
-                  <span className="text-neutral-500 font-mono block text-[9px] font-bold tracking-wider uppercase mb-1">Brand Identity Assets</span>
-                  <p className="text-white font-semibold flex items-center gap-2">
-                    <Check size={12} className="text-amber-500" />
-                    {formData.hasLogo === 'yes' ? "Branding assets ready" : formData.hasLogo === 'no' ? "Not set — design drafts requested" : "Branding vectors requested"}
-                  </p>
-                  <p className="text-neutral-400 mt-1 leading-normal text-[11px]">
-                    {formData.hasLogo === 'yes' ? "Excellent. Please pre-compile transparent layers (.png .svg vector formats) to streamline page layout integrations." : "Our visual layout directors are pre-scheduled to help design palette definitions and alignment during project sync."}
-                  </p>
-                </div>
+                {/* 5. Price List */}
+                <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Price List</h4>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Upload your catalog, menu, or price list document if available.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {uploadedAssets['pricelist'] ? (
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-300 font-medium">
+                        <Check size={13} /> {uploadedAssets['pricelist']}
+                      </div>
+                    ) : skippedAssets['pricelist'] ? (
+                      <div className="text-xs text-zinc-500 font-medium px-2 py-1">Skipped for now</div>
+                    ) : null}
 
-                {/* Media and texts content */}
-                <div className="p-4 rounded-xl border border-neutral-900 bg-black/40 text-left text-xs">
-                  <span className="text-neutral-500 font-mono block text-[9px] font-bold tracking-wider uppercase mb-1">Media, Copywriting & Content</span>
-                  <p className="text-white font-semibold flex items-center gap-2">
-                    <Check size={12} className="text-amber-500" />
-                    {formData.contentReady === 'yes' ? "Structured copy packages prepared" : formData.contentReady === 'progress' ? "Onboarding copy packages in progress" : "Integrated copywriting services requested"}
-                  </p>
-                  <p className="text-neutral-400 mt-1 leading-normal text-[11px]">
-                    {formData.contentReady === 'yes' ? "We will match your copy layout and text files to speed up delivery timelines." : "No worries. CodeFuser's copywriting directors are scheduled to draft headers, benefit structures, and descriptions with you on video."}
-                  </p>
+                    <label className="cursor-pointer px-3.5 py-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1.5">
+                      <Upload size={13} /> {uploadedAssets['pricelist'] ? 'Change' : 'Upload'}
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xlsx,.csv,image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploadedAssets(prev => ({ ...prev, pricelist: file.name }));
+                            setSkippedAssets(prev => ({ ...prev, pricelist: false }));
+                          }
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSkippedAssets(prev => ({ ...prev, pricelist: !prev['pricelist'] }));
+                        setUploadedAssets(prev => {
+                          const next = { ...prev };
+                          delete next['pricelist'];
+                          return next;
+                        });
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 text-zinc-400 hover:text-white text-xs font-medium transition-all"
+                    >
+                      {skippedAssets['pricelist'] ? 'Undo' : 'Skip'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4 border-t border-neutral-900 pt-6">
-                <button
-                  type="button"
-                  onClick={() => setOnboardingStage('schedule')}
-                  className="text-xs text-neutral-400 hover:text-white underline"
-                >
-                  ← Back to Next Phase Prep
-                </button>
+              {/* Bottom Reassurance Banner */}
+              <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] text-center mb-8">
+                <p className="text-xs sm:text-sm text-zinc-300 font-medium leading-relaxed">
+                  Don't worry if you don't have everything today.
+                </p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  You can upload more files anytime from your Client Dashboard.
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="space-y-4 text-center">
                 <button
                   type="button"
                   onClick={() => {
@@ -4321,10 +4683,20 @@ That's enough. We'll help with the rest.`}
                     }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="btn-pressure flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-black hover:shadow-[0_0_15px_rgba(16,185,129,0.25)] font-black text-xs uppercase tracking-wider px-8 py-3.5 rounded-full shadow-lg active:scale-95 transition-all cursor-pointer leading-none"
+                  className="w-full sm:w-auto min-w-[220px] inline-flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-full shadow-[0_10px_30px_rgba(255,255,255,0.1)] transition-all cursor-pointer leading-none active:scale-95"
                 >
-                  Complete Blueprint Setup <Check size={14} strokeWidth={2.5} />
+                  Finish Setup <Check size={14} strokeWidth={2.5} />
                 </button>
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingStage('schedule')}
+                    className="text-xs text-zinc-500 hover:text-zinc-300 underline"
+                  >
+                    ← Back to Previous Step
+                  </button>
+                </div>
               </div>
             </motion.div>
           ) : (

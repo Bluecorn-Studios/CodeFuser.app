@@ -115,12 +115,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithEmail = useCallback(async (email: string, pass: string) => {
     setIsLoading(true);
+    const cleanEmail = email.trim().toLowerCase();
+    console.log("email:", cleanEmail);
+    console.log("password.length:", pass.length);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) throw error;
+      const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password: pass });
+      if (error) {
+        console.log("Full Supabase error:", error);
+        throw error;
+      }
       updateAuthState(data.session);
       return { user: data.user, session: data.session };
     } catch (err: any) {
+      console.log("signInWithEmail caught error:", err);
       updateAuthState(null);
       throw err;
     } finally {
