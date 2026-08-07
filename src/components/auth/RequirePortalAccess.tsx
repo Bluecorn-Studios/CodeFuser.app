@@ -23,7 +23,7 @@ export const RequirePortalAccess: React.FC<RequirePortalAccessProps> = ({ childr
     );
   }
 
-  if (!project || !portalAccess) {
+  if (!project) {
     return <AccessDenied />;
   }
 

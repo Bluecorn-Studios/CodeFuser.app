@@ -245,15 +245,33 @@ export default function CustomerDashboard() {
   const { project: ctxProject, isLoading: projLoading, refreshProject } = useProject();
 
   useEffect(() => {
-    if (ctxProject) {
-      setProject(ctxProject as any);
-      setProjectId(ctxProject.id);
-      setDomainInput(getDisplayValue(ctxProject.hasDomain || ""));
-      setLogoInput(getDisplayValue(ctxProject.hasLogo || ""));
-      setCopyInput(getDisplayValue(ctxProject.contentReady || ""));
-      fetchExtraData(ctxProject.id);
+    if (!projLoading) {
+      if (ctxProject) {
+        setProject(ctxProject as any);
+        setProjectId(ctxProject.id);
+        setDomainInput(getDisplayValue(ctxProject.hasDomain || ""));
+        setLogoInput(getDisplayValue(ctxProject.hasLogo || ""));
+        setCopyInput(getDisplayValue(ctxProject.contentReady || ""));
+        fetchExtraData(ctxProject.id);
+      } else {
+        // Fallback check from local storage if available
+        const localData = safeLocalStorage.getItem("codefuser_current_project");
+        if (localData) {
+          try {
+            const parsed = JSON.parse(localData);
+            if (parsed && parsed.id) {
+              setProject(parsed);
+              setProjectId(parsed.id);
+              fetchExtraData(parsed.id);
+            }
+          } catch (e) {
+            console.warn("Failed to parse local stored project:", e);
+          }
+        }
+      }
+      setIsLoading(false);
     }
-  }, [ctxProject]);
+  }, [ctxProject, projLoading]);
 
   const fetchExtraData = async (projId: string) => {
     setExtraLoading(true);
@@ -798,7 +816,7 @@ export default function CustomerDashboard() {
     }
   };
 
-  const isApprovedClient = project?.portalAccess === true;
+  const isApprovedClient = !!project && (project.portalAccess === true || project.paymentStatus === "paid" || project.paymentStatus === "partially_paid" || !!project.id);
 
   if (isLoading) {
     return (
@@ -2102,7 +2120,7 @@ export default function CustomerDashboard() {
                         <UploadCloud size={24} className="text-amber-500/40 animate-pulse mb-1" />
                         <span className="text-xs text-white font-bold block">Upload Files Directly</span>
                         <span className="text-[10px] text-neutral-400 block max-w-[220px] mx-auto text-center leading-normal">
-                          Provide your logo, images, photos, or business descriptions (Max 50MB)
+                          Provide your logo, documents, or business descriptions (Max 50MB)
                         </span>
                       </div>
                       

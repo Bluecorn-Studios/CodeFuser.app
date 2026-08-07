@@ -1523,7 +1523,7 @@ ${formData.ownerName}
                           {step === 1 ? "Fill in your basic contact details in 2 minutes so we know who we're building for." :
                            step === 2 ? "Tell us what industry you're in and what you want your website to achieve for your business." :
                            step === 3 ? "Your selected package is ready. We'll now customize it for your business." :
-                           step === 4 ? "Let us know if you already have a domain name, logo, or website photos ready." :
+                           step === 4 ? "Let us know if you already have a domain name, logo, or website copy ready." :
                            "Your custom project blueprint is ready for final review."}
                         </p>
                       </>
@@ -2341,7 +2341,7 @@ ${formData.ownerName}
                         </span>
                       </div>
                       <h4 className="text-lg sm:text-xl font-bold text-white font-sans tracking-tight">
-                        Do you already have your photos and business information ready?
+                        Do you already have your business information ready?
                       </h4>
                     </div>
 
@@ -4292,8 +4292,6 @@ That's enough. We'll help with the rest.`}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-3">
                   {[
                     "Logo",
-                    "Business Photos",
-                    "Price List",
                     "Business Information",
                     "Social Media Links"
                   ].map((item, idx) => (
@@ -4559,106 +4557,6 @@ That's enough. We'll help with the rest.`}
                     </div>
                   </div>
                 )}
-
-                {/* 4. Business Photos */}
-                <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Business Photos</h4>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      Upload photos of your business, store, team, or past work.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {uploadedAssets['photos'] ? (
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-300 font-medium">
-                        <Check size={13} /> {uploadedAssets['photos']}
-                      </div>
-                    ) : skippedAssets['photos'] ? (
-                      <div className="text-xs text-zinc-500 font-medium px-2 py-1">Skipped for now</div>
-                    ) : null}
-
-                    <label className="cursor-pointer px-3.5 py-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1.5">
-                      <Upload size={13} /> {uploadedAssets['photos'] ? 'Change' : 'Upload'}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => {
-                          const files = e.target.files;
-                          if (files && files.length > 0) {
-                            const countText = files.length === 1 ? files[0].name : `${files.length} photos selected`;
-                            setUploadedAssets(prev => ({ ...prev, photos: countText }));
-                            setSkippedAssets(prev => ({ ...prev, photos: false }));
-                          }
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSkippedAssets(prev => ({ ...prev, photos: !prev['photos'] }));
-                        setUploadedAssets(prev => {
-                          const next = { ...prev };
-                          delete next['photos'];
-                          return next;
-                        });
-                      }}
-                      className="px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 text-zinc-400 hover:text-white text-xs font-medium transition-all"
-                    >
-                      {skippedAssets['photos'] ? 'Undo' : 'Skip'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* 5. Price List */}
-                <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Price List</h4>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      Upload your catalog, menu, or price list document if available.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {uploadedAssets['pricelist'] ? (
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-300 font-medium">
-                        <Check size={13} /> {uploadedAssets['pricelist']}
-                      </div>
-                    ) : skippedAssets['pricelist'] ? (
-                      <div className="text-xs text-zinc-500 font-medium px-2 py-1">Skipped for now</div>
-                    ) : null}
-
-                    <label className="cursor-pointer px-3.5 py-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1.5">
-                      <Upload size={13} /> {uploadedAssets['pricelist'] ? 'Change' : 'Upload'}
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.xlsx,.csv,image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setUploadedAssets(prev => ({ ...prev, pricelist: file.name }));
-                            setSkippedAssets(prev => ({ ...prev, pricelist: false }));
-                          }
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSkippedAssets(prev => ({ ...prev, pricelist: !prev['pricelist'] }));
-                        setUploadedAssets(prev => {
-                          const next = { ...prev };
-                          delete next['pricelist'];
-                          return next;
-                        });
-                      }}
-                      className="px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 text-zinc-400 hover:text-white text-xs font-medium transition-all"
-                    >
-                      {skippedAssets['pricelist'] ? 'Undo' : 'Skip'}
-                    </button>
-                  </div>
-                </div>
               </div>
 
               {/* Bottom Reassurance Banner */}
@@ -4877,7 +4775,7 @@ function getOnboardingFallbackUpgrades(
     "⭐ Online Booking",
     "✓ WhatsApp Chat",
     "✓ Client Reviews",
-    "✓ Price List",
+    "✓ Service Showcase",
     "✓ Special Offers",
     "✓ Client Portal"
   ];
@@ -4933,12 +4831,12 @@ function getOnboardingFallbackUpgrades(
     rationale = `Get new gym members.`;
   } else if (ind.includes("salon") || ind.includes("spa") || ind.includes("beauty") || ind.includes("parlour") || ind.includes("hair")) {
     packTitle = "Smart Booking Pack";
-    headline = `Salon booking and prices.`;
+    headline = `Salon booking and services.`;
     benefits = [
       "⭐ Online Booking",
       "✓ Style Gallery",
       "✓ WhatsApp Booking",
-      "✓ Price List",
+      "✓ Service Showcase",
       "✓ Gift Cards",
       "✓ Member Perks"
     ];
@@ -5021,7 +4919,7 @@ function getOnboardingFallbackSummary(
     "Online Booking",
     "WhatsApp Orders",
     "Customer Reviews",
-    "Service Price List",
+    "Service Catalogue",
     "Special Offers",
     "Client Login"
   ];
@@ -5112,7 +5010,7 @@ function getOnboardingFallbackSummary(
       "Online Booking",
       "Before & After Gallery",
       "WhatsApp Booking",
-      "Service Price List",
+      "Service Catalogue",
       "Gift Cards",
       "Membership System"
     ];
