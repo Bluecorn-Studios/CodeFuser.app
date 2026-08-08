@@ -1179,8 +1179,9 @@ export default function CustomerDashboard() {
         />
       </SectionErrorBoundary>
 
-      {/* Main Tab Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 font-sans">
+      {/* Main Tab Content with Left Sidebar offset */}
+      <main className="lg:pl-64 xl:pl-72 transition-all duration-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 font-sans">
         {successIndicator && (
           <div className="mb-6 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold">
             <Check size={14} className="text-emerald-400 animate-bounce" />
@@ -1271,6 +1272,7 @@ export default function CustomerDashboard() {
             />
           )}
         </SectionErrorBoundary>
+        </div>
       </main>
 
       {/* Workspace Settings Modal */}

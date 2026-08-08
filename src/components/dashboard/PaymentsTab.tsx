@@ -68,19 +68,19 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({
             </div>
 
             <div className="flex justify-between items-center pb-3 border-b border-neutral-900/80">
-              <span className="text-neutral-400">Total Website Price:</span>
-              <span className="font-bold text-[#EAE5D9] text-base">₹{Math.round(finalPrice).toLocaleString("en-IN")}</span>
+              <span className="text-neutral-400 font-medium">Total Website Price:</span>
+              <span className="font-black text-white text-xl">₹{Math.round(finalPrice).toLocaleString("en-IN")}</span>
             </div>
 
             <div className="flex justify-between items-center pb-3 border-b border-neutral-900/80">
-              <span className="text-emerald-400 font-semibold">Amount Paid:</span>
-              <span className="font-bold text-emerald-400 text-base">₹{Math.round(paidFunds).toLocaleString("en-IN")}</span>
+              <span className="text-emerald-400 font-bold">Amount Paid:</span>
+              <span className="font-black text-emerald-400 text-xl">₹{Math.round(paidFunds).toLocaleString("en-IN")}</span>
             </div>
 
             <div className="flex justify-between items-center pb-2">
-              <span className="text-neutral-300 font-semibold">Remaining Balance:</span>
-              <span className={`font-bold text-base ${unpaidFunds === 0 ? "text-emerald-400" : "text-amber-400"}`}>
-                {unpaidFunds === 0 ? "₹0 (Fully Paid)" : `₹${Math.round(unpaidFunds).toLocaleString("en-IN")}`}
+              <span className="text-neutral-300 font-bold">Remaining Balance:</span>
+              <span className={`font-black text-xl ${unpaidFunds === 0 ? "text-emerald-400" : "text-white"}`}>
+                {unpaidFunds === 0 ? "₹0 (Settled)" : `₹${Math.round(unpaidFunds).toLocaleString("en-IN")}`}
               </span>
             </div>
           </div>
@@ -97,7 +97,7 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({
               <button
                 onClick={handleFinalMilestonePayment}
                 disabled={paymentLoading}
-                className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs uppercase tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+                className="w-full py-4 bg-white hover:bg-[#EAE5D9] text-black font-extrabold text-xs uppercase tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xl shadow-white/5"
               >
                 {paymentLoading ? (
                   <span>Processing Payment...</span>
