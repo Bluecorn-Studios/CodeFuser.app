@@ -1,5 +1,5 @@
 import React from "react";
-import { MessageSquare, Mail, Clock, ShieldCheck, Sparkles, HelpCircle } from "lucide-react";
+import { MessageSquare, Mail, Clock, HelpCircle } from "lucide-react";
 import { ProjectRecord } from "./dashboardTypes";
 
 interface NeedHelpTabProps {
@@ -15,71 +15,67 @@ export const NeedHelpTab: React.FC<NeedHelpTabProps> = ({
 }) => {
   const faqs = [
     {
-      q: "When will my first design draft be ready?",
-      a: "Design drafts are prepared within 2-3 business days after you submit your basic business assets or domain preference.",
+      q: "When will my website draft be ready?",
+      a: "Design drafts are ready within 2-3 business days after you submit your business details or domain preference.",
     },
     {
-      q: "How do I request revisions or changes?",
-      a: "Simply click the WhatsApp button or message us directly. You can request design adjustments, text changes, or layout updates.",
+      q: "How do I request changes or edits?",
+      a: "Click the WhatsApp button to message us directly. You can request text, photo, or design updates anytime.",
     },
     {
-      q: "Can I connect my existing custom domain?",
-      a: "Yes! If you already own a domain name (like GoDaddy or Namecheap), simply provide the domain name in the 'My Project' tab or message us.",
+      q: "Can I use my existing domain name?",
+      a: "Yes! If you already own a domain (GoDaddy, Namecheap, etc.), enter it in 'My Website' or send us a message.",
     },
     {
-      q: "What happens after my website goes live?",
-      a: "We hand over your website, activate your free domain & hosting, and remain available for ongoing updates and support.",
+      q: "What support is included after launch?",
+      a: "We manage hosting, domain connections, and security updates so your website runs smoothly 24/7.",
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 py-2">
       {/* SECTION HEADER */}
-      <div className="bg-black border border-neutral-900 rounded-3xl p-6">
-        <span className="text-[10px] font-mono text-amber-500 uppercase tracking-widest font-bold block mb-1">
-          Concierge Support
+      <div className="space-y-1">
+        <span className="text-xs font-semibold text-neutral-400 uppercase tracking-widest block">
+          Support
         </span>
-        <h2 className="text-xl sm:text-2xl font-black text-white font-display tracking-tight uppercase">
-          Need Help? Talk to CodeFuser
-        </h2>
-        <p className="text-xs text-neutral-400 mt-1 font-sans">
-          You have direct, dedicated access to our lead web developers and design team.
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#EAE5D9] tracking-tight">
+          Talk to the CodeFuser Team
+        </h1>
+        <p className="text-sm text-neutral-300">
+          Have questions or need updates? You have direct access to your web design team.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* LEFT COLUMN: Direct Support Actions */}
-        <section className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-5">
-          <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-              <Sparkles size={15} className="text-amber-500" />
-              Direct Support Channels
-            </h3>
-            <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 uppercase font-bold">
-              Active Concierge
-            </span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        {/* LEFT COLUMN: Contact Channels */}
+        <section className="p-6 sm:p-8 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-6">
+          <div className="border-b border-neutral-900 pb-4">
+            <h2 className="text-base font-bold text-[#EAE5D9]">
+              Contact Options
+            </h2>
           </div>
 
-          <div className="space-y-3 font-sans">
+          <div className="space-y-4 font-sans">
             {/* WhatsApp */}
             <a
               href={getWhatsAppLink(
-                `Hi CodeFuser, I am logged into my dashboard for ${project.businessName || "My Business"} and need help with my website project.`
+                `Hi CodeFuser, I am logged into my dashboard for ${project.businessName || "My Business"} and need help with my website.`
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="block p-4 bg-neutral-950 hover:bg-neutral-900 border border-neutral-900 hover:border-amber-500/40 rounded-2xl transition-all group"
+              className="block p-5 bg-black/60 hover:bg-black border border-neutral-900 hover:border-[#EAE5D9]/40 rounded-2xl transition-all group cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <MessageSquare size={18} />
+              <div className="flex items-center gap-4">
+                <div className="h-11 w-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                  <MessageSquare size={20} />
                 </div>
                 <div>
-                  <span className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors block">
-                    Chat on WhatsApp (Fastest)
+                  <span className="text-sm font-bold text-[#EAE5D9] group-hover:text-amber-300 transition-colors block">
+                    Message Us on WhatsApp (Recommended)
                   </span>
-                  <span className="text-xs text-neutral-400 mt-0.5 block">
-                    Direct message with our team leads. Typical response: &lt; 15 mins.
+                  <span className="text-xs text-neutral-400 mt-1 block">
+                    Chat directly with your project manager. Fast replies within 15 minutes.
                   </span>
                 </div>
               </div>
@@ -93,45 +89,43 @@ export const NeedHelpTab: React.FC<NeedHelpTabProps> = ({
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="block p-4 bg-neutral-950 hover:bg-neutral-900 border border-neutral-900 hover:border-amber-500/40 rounded-2xl transition-all group"
+              className="block p-5 bg-black/60 hover:bg-black border border-neutral-900 hover:border-[#EAE5D9]/40 rounded-2xl transition-all group cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                  <Mail size={18} />
+              <div className="flex items-center gap-4">
+                <div className="h-11 w-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-[#EAE5D9] shrink-0">
+                  <Mail size={20} />
                 </div>
                 <div>
-                  <span className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors block">
-                    Send Email Inquiry
+                  <span className="text-sm font-bold text-[#EAE5D9] group-hover:text-amber-300 transition-colors block">
+                    Send Us an Email
                   </span>
-                  <span className="text-xs text-neutral-400 mt-0.5 block">
-                    aicodefuser@gmail.com • Mon-Sat (9 AM - 8 PM IST)
+                  <span className="text-xs text-neutral-400 mt-1 block">
+                    aicodefuser@gmail.com • Monday - Saturday (9 AM - 8 PM)
                   </span>
                 </div>
               </div>
             </a>
           </div>
 
-          <div className="p-4 bg-neutral-950 border border-neutral-900 rounded-2xl flex items-center gap-3 text-xs text-neutral-400 font-sans">
-            <Clock size={16} className="text-amber-500 shrink-0" />
-            <span>Support Hours: Monday to Saturday, 9:00 AM – 8:00 PM IST. Emergency launch support available 24/7.</span>
+          <div className="p-4 bg-black/40 border border-neutral-900 rounded-2xl flex items-center gap-3 text-xs text-neutral-400">
+            <Clock size={16} className="text-amber-400 shrink-0" />
+            <span>Support hours: Monday to Saturday, 9:00 AM – 8:00 PM IST.</span>
           </div>
         </section>
 
         {/* RIGHT COLUMN: Frequently Asked Questions */}
-        <section className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-5">
-          <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
-              <HelpCircle size={15} className="text-neutral-400" />
+        <section className="p-6 sm:p-8 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-6">
+          <div className="border-b border-neutral-900 pb-4">
+            <h2 className="text-base font-bold text-[#EAE5D9]">
               Frequently Asked Questions
-            </h3>
-            <span className="text-[9px] font-mono text-neutral-500 uppercase font-bold">Client Knowledge</span>
+            </h2>
           </div>
 
-          <div className="space-y-3 font-sans">
+          <div className="space-y-4 font-sans">
             {faqs.map((faq, idx) => (
-              <div key={idx} className="p-4 bg-neutral-950 border border-neutral-900 rounded-2xl space-y-1">
-                <h4 className="text-xs font-bold text-white leading-snug">{faq.q}</h4>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">{faq.a}</p>
+              <div key={idx} className="p-4 bg-black/60 border border-neutral-900 rounded-2xl space-y-1.5">
+                <h3 className="text-xs font-bold text-[#EAE5D9]">{faq.q}</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>
@@ -140,3 +134,4 @@ export const NeedHelpTab: React.FC<NeedHelpTabProps> = ({
     </div>
   );
 };
+
