@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { User, ChevronDown, Coins, MessageSquare, LogOut, Home, Globe, FolderOpen, CreditCard, HelpCircle, Menu, X } from "lucide-react";
+import { User, ChevronDown, Coins, MessageSquare, LogOut, Home, Globe, FolderOpen, CreditCard, HelpCircle, Menu, X, Code2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 export type TabType = "overview" | "project" | "files" | "payments" | "help";
@@ -58,23 +58,13 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
           >
             {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
-          <div className="flex items-center gap-2">
-            <img
-              src="/codefuser-logo-hd.jpg"
-              alt="CodeFuser Logo"
-              className="h-7 w-7 rounded-lg object-cover border border-neutral-800"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/logo.png";
-              }}
-            />
-            <div>
-              <span className="font-display text-sm font-black tracking-widest text-white uppercase block leading-tight">
-                CODEFUSER
-              </span>
-              <span className="text-[10px] text-neutral-400 truncate max-w-[130px] block font-medium">
-                {businessName || clientName || "Dashboard"}
-              </span>
-            </div>
+          <div>
+            <span className="font-display text-base font-black tracking-widest text-white uppercase block leading-tight">
+              CODEFUSER
+            </span>
+            <span className="text-[10px] text-neutral-400 truncate max-w-[130px] block font-medium">
+              {businessName || clientName || "Dashboard"}
+            </span>
           </div>
         </div>
 
@@ -103,23 +93,13 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/codefuser-logo-hd.jpg"
-                    alt="CodeFuser Logo"
-                    className="h-9 w-9 rounded-xl object-cover border border-neutral-800"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/logo.png";
-                    }}
-                  />
-                  <div>
-                    <span className="font-display text-base font-black tracking-widest text-white uppercase block leading-tight">
-                      CODEFUSER
-                    </span>
-                    <span className="text-xs text-neutral-400 font-medium block mt-0.5">
-                      {businessName || "Client Portal"}
-                    </span>
-                  </div>
+                <div>
+                  <span className="font-display text-lg font-black tracking-widest text-white uppercase block leading-tight">
+                    CODEFUSER
+                  </span>
+                  <span className="text-xs text-neutral-400 font-medium block mt-0.5">
+                    {businessName || "Client Portal"}
+                  </span>
                 </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -182,23 +162,13 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
         <div className="space-y-8">
           {/* Logo & Branding Header */}
           <div className="space-y-2 border-b border-neutral-900/80 pb-5">
-            <div className="flex items-center gap-3">
-              <img
-                src="/codefuser-logo-hd.jpg"
-                alt="CodeFuser Logo"
-                className="h-9 w-9 rounded-xl object-cover border border-neutral-800 shrink-0"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/logo.png";
-                }}
-              />
-              <div>
-                <span className="font-display text-base font-black tracking-widest text-white uppercase block leading-tight">
-                  CODEFUSER
-                </span>
-                <span className="text-[10px] font-semibold tracking-wider text-neutral-500 uppercase block mt-0.5">
-                  Client Portal
-                </span>
-              </div>
+            <div>
+              <span className="font-display text-lg font-black tracking-widest text-white uppercase block leading-none">
+                CODEFUSER
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-neutral-500 uppercase block mt-1.5">
+                Client Portal
+              </span>
             </div>
 
             {/* Business Badge */}
