@@ -136,9 +136,16 @@
 
 .reveal.is-visible,
 .reveal-title.is-visible,
-.reveal-card.is-visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
+.reveal-card.is-visible,
+.private-space .reveal,
+.private-space .reveal-title,
+.private-space .reveal-card,
+[data-private-space] .reveal,
+[data-private-space] .reveal-title,
+[data-private-space] .reveal-card {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  filter: none !important;
 }
 
 /* Stagger delay support for grid items and cards */

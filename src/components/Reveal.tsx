@@ -773,9 +773,40 @@ export const Oo: React.FC = () => {
 // Automatic Viewport Entrance Observer hook for section titles and cards
 export function useViewportEntranceObserver() {
   const { currentPath } = useAppRouter();
+  const isDashboard = currentPath === '/dashboard';
+  const isMissionControl = currentPath === '/mission-control';
+  const isLogin = currentPath === '/login';
+  const isPrivateSpace = isDashboard || isMissionControl || isLogin;
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    if (typeof window === 'undefined') return;
+
+    if (isPrivateSpace) {
+      const forceRevealAll = () => {
+        document.querySelectorAll('.reveal, .reveal-title, .reveal-card').forEach((el) => {
+          el.classList.add('is-visible');
+        });
+      };
+      forceRevealAll();
+      const t1 = setTimeout(forceRevealAll, 50);
+      const t2 = setTimeout(forceRevealAll, 200);
+      const t3 = setTimeout(forceRevealAll, 500);
+
+      const mutationObserver = new MutationObserver(forceRevealAll);
+      const targetNode = document.querySelector('main') || document.body;
+      if (targetNode) {
+        mutationObserver.observe(targetNode, { childList: true, subtree: true });
+      }
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        mutationObserver.disconnect();
+      };
+    }
+
+    if (!('IntersectionObserver' in window)) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -817,6 +848,8 @@ export function useViewportEntranceObserver() {
           el.closest('header') ||
           el.closest('nav') ||
           el.closest('#cookie-modal') ||
+          el.closest('.private-space') ||
+          el.closest('[data-private-space]') ||
           el.classList.contains('no-reveal')
         ) {
           return;
@@ -868,7 +901,7 @@ export function useViewportEntranceObserver() {
       observer.disconnect();
       mutationObserver.disconnect();
     };
-  }, [currentPath]);
+  }, [currentPath, isPrivateSpace]);
 }
 
 // Global Page Container layout controller
@@ -886,7 +919,7 @@ export const P: React.FC<PageContainerProps> = ({ children }) => {
 
   if (isPrivateSpace) {
     return (
-      <div className="relative min-h-screen bg-black text-white flex flex-col justify-between">
+      <div className="relative min-h-screen bg-black text-white flex flex-col justify-between private-space" data-private-space="true">
         <main className="w-full flex-grow">
           {children}
         </main>
