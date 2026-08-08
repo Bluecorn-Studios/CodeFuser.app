@@ -105,6 +105,32 @@ interface ExtraProjectData {
   assets: AssetFileRecord[];
 }
 
+class SectionErrorBoundary extends React.Component<{ name: string; children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { name: string; children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error(`[SECTION EXCEPTION] ${this.props.name} threw during render:`, error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs font-mono my-2">
+          <strong>Section Error ({this.props.name}):</strong> {this.state.error?.message || String(this.state.error)}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function parseMarkdown(text: string) {
   if (!text) return null;
   const lines = text.split("\n");
@@ -829,6 +855,7 @@ export default function CustomerDashboard() {
   const isApprovedClient = !!project && (project.portalAccess === true || project.paymentStatus === "paid" || project.paymentStatus === "partially_paid" || !!project.id);
 
   if (isLoading) {
+    console.log("[TRACING RENDER] CustomerDashboard rendering isLoading state");
     return (
       <div className="min-h-screen bg-[#030303] flex items-center justify-center font-sans">
         <div className="text-center space-y-4">
@@ -840,6 +867,7 @@ export default function CustomerDashboard() {
   }
 
   if (!isApprovedClient) {
+    console.log("[TRACING RENDER] CustomerDashboard rendering Access Denied state | project:", project);
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans">
         <motion.div 
@@ -1120,6 +1148,7 @@ export default function CustomerDashboard() {
 
   const notificationList = getNotificationsList();
 
+  console.log("[TRACING RENDER] Rendering CustomerDashboard main return");
   return (
     <div className="min-h-screen bg-black text-white font-sans select-none relative overflow-x-hidden pb-12">
       {/* Decorative premium ambient gradients */}
@@ -1127,6 +1156,7 @@ export default function CustomerDashboard() {
       <div className="absolute top-12 right-0 w-[240px] h-[240px] bg-amber-500/[0.012] rounded-full blur-[90px] pointer-events-none" />
 
       {/* Navigation Header */}
+      <SectionErrorBoundary name="Header">
       <header className="sticky top-0 z-40 border-b border-neutral-900 bg-black/85 backdrop-blur-md px-5 py-4 flex items-center justify-between">
         {/* Left Section: Branding */}
         <div className="flex items-center gap-3">
@@ -1242,6 +1272,7 @@ export default function CustomerDashboard() {
           </AnimatePresence>
         </div>
       </header>
+      </SectionErrorBoundary>
 
       {/* Main Container */}
       <div className="max-w-md mx-auto px-5 pt-6 space-y-6 sm:max-w-lg md:max-w-3xl">
@@ -1260,6 +1291,7 @@ export default function CustomerDashboard() {
         )}
 
         {/* 1. WELCOME HERO SECTION (IMMEDIATELY ANSWERS 5 CORE QUESTIONS) */}
+        <SectionErrorBoundary name="Hero/Progress">
         <section id="welcome-hero-card" className="bg-black border border-neutral-900 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
           <div className="absolute right-0 top-0 w-32 h-32 bg-gradient-to-bl from-amber-500/[0.04] to-transparent pointer-events-none" />
           
@@ -1456,6 +1488,7 @@ export default function CustomerDashboard() {
             );
           })()}
         </section>
+        </SectionErrorBoundary>
 
         {/* Dynamic Multi-Column Grid Layout for Desktop & Single Column for Mobile */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
@@ -1464,6 +1497,7 @@ export default function CustomerDashboard() {
           <div className="space-y-6">
 
             {/* 2. PROJECT TIMELINE */}
+            <SectionErrorBoundary name="Timeline">
             <section ref={timelineRef} id="project-timeline-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6">
               <div className="flex items-center justify-between mb-5 border-b border-neutral-900 pb-3">
                 <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
@@ -1509,8 +1543,10 @@ export default function CustomerDashboard() {
                 })}
               </div>
             </section>
+            </SectionErrorBoundary>
 
             {/* 3. AI STRATEGIC PROPOSAL & BLUEPRINT */}
+            <SectionErrorBoundary name="Blueprint/Checklist">
             {extraStore.quote?.proposal && extraStore.quote.proposal.status === "sent" && (
               <section id="ai-proposal-blueprint" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
@@ -1591,8 +1627,10 @@ export default function CustomerDashboard() {
                 </div>
               </section>
             )}
+            </SectionErrorBoundary>
 
             {/* 5. DELIVERABLES VAULT */}
+            <SectionErrorBoundary name="Deliverables">
             {extraStore.quote?.deliverables && extraStore.quote.deliverables.length > 0 && (
               <section id="deliverables-vault" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
@@ -1646,6 +1684,7 @@ export default function CustomerDashboard() {
                 </div>
               </section>
             )}
+            </SectionErrorBoundary>
 
           </div>
 
@@ -1653,6 +1692,7 @@ export default function CustomerDashboard() {
           <div className="space-y-6">
 
             {/* AI BUSINESS TIPS WIDGET - FOUNDER DECISION */}
+            <SectionErrorBoundary name="AITips">
             <section id="ai-business-tips-widget" className="bg-[#050505] border border-amber-500/25 rounded-3xl p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
                 <h3 className="text-xs font-mono font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5 font-bold">
@@ -1705,8 +1745,10 @@ export default function CustomerDashboard() {
                 })()}
               </div>
             </section>
+            </SectionErrorBoundary>
 
             {/* 1. PROJECT PACKAGE / QUOTATION STATUS CARD */}
+            <SectionErrorBoundary name="Package/Payment">
             {project.paymentStatus === "paid" || project.paymentStatus === "partially_paid" ? (
               <section id="project-package-confirmed-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
@@ -1851,8 +1893,10 @@ export default function CustomerDashboard() {
                 </section>
               )
             )}
+            </SectionErrorBoundary>
 
             {/* COLLAPSIBLE DIGITAL ASSET WORKSPACE (Controlled gracefully by Next Action / Quick Action) */}
+            <SectionErrorBoundary name="Assets/Intake">
             <AnimatePresence>
               {activeQuickAction === "assets" && (
                 <motion.section 
@@ -2193,8 +2237,10 @@ export default function CustomerDashboard() {
                 </motion.section>
               )}
             </AnimatePresence>
+            </SectionErrorBoundary>
 
             {/* 6. PAYMENTS & BILLING */}
+            <SectionErrorBoundary name="Billing">
             <section id="payment-summary-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6">
               <div className="flex items-center justify-between mb-4 border-b border-neutral-900 pb-3">
                 <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
@@ -2252,8 +2298,10 @@ export default function CustomerDashboard() {
                 </div>
               </div>
             </section>
+            </SectionErrorBoundary>
 
             {/* 7. ACTIONABLE NOTIFICATIONS */}
+            <SectionErrorBoundary name="Notifications">
             <section id="actionable-notifications-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6">
               <div className="flex items-center justify-between mb-4 border-b border-neutral-900 pb-3">
                 <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
@@ -2299,8 +2347,10 @@ export default function CustomerDashboard() {
                 ))}
               </div>
             </section>
+            </SectionErrorBoundary>
 
             {/* 8. QUICK ACTIONS BAR */}
+            <SectionErrorBoundary name="QuickActions">
             <section id="quick-actions-bar" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6">
               <div className="flex items-center justify-between mb-4 border-b border-neutral-900 pb-3">
                 <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
@@ -2340,6 +2390,7 @@ export default function CustomerDashboard() {
                 </button>
               </div>
             </section>
+            </SectionErrorBoundary>
 
           </div>
 
@@ -2348,6 +2399,7 @@ export default function CustomerDashboard() {
       </div>
 
       {/* Workspace Settings Modal */}
+      <SectionErrorBoundary name="Modals">
       <AnimatePresence>
         {activeWorkspaceModal === "settings" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" onClick={() => setActiveWorkspaceModal(null)}>
@@ -2611,6 +2663,7 @@ export default function CustomerDashboard() {
           </div>
         )}
       </AnimatePresence>
+      </SectionErrorBoundary>
     </div>
   );
 }

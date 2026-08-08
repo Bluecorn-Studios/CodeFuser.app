@@ -780,7 +780,7 @@ export function useViewportEntranceObserver() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
+          if (entry.isIntersecting || (entry.boundingClientRect && entry.boundingClientRect.top < window.innerHeight + 100)) {
             entry.target.classList.add('is-visible');
             observer.unobserve(entry.target);
           }
@@ -840,7 +840,12 @@ export function useViewportEntranceObserver() {
           }
         }
 
-        observer.observe(el);
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 50 && rect.bottom > -50) {
+          el.classList.add('is-visible');
+        } else {
+          observer.observe(el);
+        }
       });
     };
 

@@ -150,20 +150,20 @@ export default function App() {
         <ProjectProvider>
           <RouterContext.Provider value={{ currentPath, navigate }}>
             <PageContainer>
-              <Suspense fallback={<PageLoader />}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentPath}
-                    initial={{ opacity: 0, filter: "blur(18px)", scale: 0.98, y: 12 }}
-                    animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
-                    exit={{ opacity: 0, filter: "blur(14px)", scale: 1.01, y: -12 }}
-                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full"
-                  >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentPath}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full"
+                >
+                  <Suspense fallback={<PageLoader />}>
                     {renderPage()}
-                  </motion.div>
-                </AnimatePresence>
-              </Suspense>
+                  </Suspense>
+                </motion.div>
+              </AnimatePresence>
             </PageContainer>
           </RouterContext.Provider>
         </ProjectProvider>
