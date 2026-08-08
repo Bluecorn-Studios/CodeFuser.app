@@ -58,22 +58,34 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
           >
             {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
-          <div>
-            <span className="font-display text-base font-black tracking-widest text-white uppercase block leading-tight">
-              CODEFUSER
-            </span>
-            <span className="text-[10px] text-neutral-400 truncate max-w-[130px] block font-medium">
-              {businessName || clientName || "Dashboard"}
-            </span>
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-neutral-900 border border-amber-500/30 p-1 flex items-center justify-center shrink-0 shadow-sm">
+              <img
+                src="/logo.png"
+                alt="CodeFuser"
+                className="h-full w-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/logo.svg";
+                }}
+              />
+            </div>
+            <div>
+              <span className="font-display text-sm font-black tracking-widest text-[#EAE5D9] uppercase block leading-tight">
+                CODEFUSER
+              </span>
+              <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest block">
+                CLIENT PORTAL
+              </span>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-900 text-xs text-white"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-900 text-xs text-white cursor-pointer"
           >
-            <div className="h-5 w-5 rounded-full bg-white text-black flex items-center justify-center text-[10px] font-black">
+            <div className="h-5 w-5 rounded-full bg-amber-500 text-black flex items-center justify-center text-[10px] font-black">
               {clientName?.charAt(0).toUpperCase() || "C"}
             </div>
             <ChevronDown size={12} className={`text-neutral-400 transition-transform ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
@@ -93,17 +105,29 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
-                <div>
-                  <span className="font-display text-lg font-black tracking-widest text-white uppercase block leading-tight">
-                    CODEFUSER
-                  </span>
-                  <span className="text-xs text-neutral-400 font-medium block mt-0.5">
-                    {businessName || "Client Portal"}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-neutral-900 border border-amber-500/30 p-1 flex items-center justify-center shrink-0 shadow-sm">
+                    <img
+                      src="/logo.png"
+                      alt="CodeFuser"
+                      className="h-full w-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/logo.svg";
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <span className="font-display text-base font-black tracking-widest text-[#EAE5D9] uppercase block leading-none">
+                      CODEFUSER
+                    </span>
+                    <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase block mt-1">
+                      CLIENT PORTAL
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 text-neutral-400 hover:text-white"
+                  className="p-2 text-neutral-400 hover:text-white cursor-pointer"
                 >
                   <X size={20} />
                 </button>
@@ -123,7 +147,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                       onClick={() => handleTabClick(tab.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs transition-all text-left font-bold cursor-pointer ${
                         isActive
-                          ? "bg-white text-black shadow-md"
+                          ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20 font-black"
                           : "text-neutral-400 hover:text-white hover:bg-neutral-900"
                       }`}
                     >
@@ -147,7 +171,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                   setIsMobileMenuOpen(false);
                   logoutClient();
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-red-400 hover:bg-red-500/10 transition-all border border-red-500/20"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-red-400 hover:bg-red-500/10 transition-all border border-red-500/20 cursor-pointer"
               >
                 <LogOut size={14} />
                 <span>Log Out</span>
@@ -161,19 +185,31 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
       <aside className="hidden lg:flex w-64 xl:w-72 fixed top-0 bottom-0 left-0 bg-black border-r border-neutral-900/90 p-6 flex-col justify-between z-30 select-none">
         <div className="space-y-8">
           {/* Logo & Branding Header */}
-          <div className="space-y-2 border-b border-neutral-900/80 pb-5">
-            <div>
-              <span className="font-display text-lg font-black tracking-widest text-white uppercase block leading-none">
-                CODEFUSER
-              </span>
-              <span className="text-[10px] font-bold tracking-widest text-neutral-500 uppercase block mt-1.5">
-                Client Portal
-              </span>
+          <div className="space-y-3 border-b border-neutral-900/80 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-neutral-900 border border-amber-500/30 p-1 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/5">
+                <img
+                  src="/logo.png"
+                  alt="CodeFuser"
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/logo.svg";
+                  }}
+                />
+              </div>
+              <div>
+                <span className="font-display text-base font-black tracking-widest text-[#EAE5D9] uppercase block leading-none">
+                  CODEFUSER
+                </span>
+                <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase block mt-1">
+                  CLIENT PORTAL
+                </span>
+              </div>
             </div>
 
             {/* Business Badge */}
             <div className="pt-2">
-              <div className="px-3 py-2 bg-neutral-950 border border-neutral-900 rounded-2xl">
+              <div className="px-3.5 py-2.5 bg-neutral-950 border border-neutral-900 rounded-2xl">
                 <span className="text-[10px] text-neutral-500 font-bold block uppercase">Active Project</span>
                 <span className="text-xs font-bold text-[#EAE5D9] truncate block mt-0.5">
                   {businessName || clientName || "Web Project"}
@@ -196,7 +232,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs transition-all cursor-pointer group font-bold ${
                     isActive
-                      ? "bg-white text-black shadow-lg shadow-white/5"
+                      ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20 font-black"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/80"
                   }`}
                 >
