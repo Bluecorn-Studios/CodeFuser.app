@@ -33,6 +33,12 @@ import { useAuth } from "../context/AuthContext";
 import { useProject } from "../context/ProjectContext";
 import { apiClient } from "../lib/apiClient";
 import { PaymentSimulationPanel } from "../components/PaymentSimulationPanel";
+import { ClientHeader, TabType } from "../components/dashboard/ClientHeader";
+import { OverviewTab } from "../components/dashboard/OverviewTab";
+import { MyProjectTab } from "../components/dashboard/MyProjectTab";
+import { FilesTab } from "../components/dashboard/FilesTab";
+import { PaymentsTab } from "../components/dashboard/PaymentsTab";
+import { NeedHelpTab } from "../components/dashboard/NeedHelpTab";
 
 interface ProjectRecord {
   id: string;
@@ -73,6 +79,7 @@ interface AssetFileRecord {
 interface OfficialQuoteRecord {
   packageName: string;
   price: number;
+  finalPrice?: number;
   discount: number;
   features: string[];
   summary: string;
@@ -200,6 +207,7 @@ export default function CustomerDashboard() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   
   // Interactive Modal/Sections State
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [activeQuickAction, setActiveQuickAction] = useState<string | null>(null);
   const [domainInput, setDomainInput] = useState<string>("");
   const [logoInput, setLogoInput] = useState<string>("");
@@ -923,7 +931,7 @@ export default function CustomerDashboard() {
   
   const rawPackageName = quoteData ? quoteData.packageName : planInfo.name;
   const selectedPackageName = getCleanPackageName(rawPackageName);
-  const finalPrice = quoteData ? quoteData.price : planInfo.price;
+  const finalPrice = (quoteData?.finalPrice ?? quoteData?.price ?? planInfo?.price) || 0;
   const isFullySettled = project.ownershipChoice === "full";
   
   const paidFunds = isFullySettled ? finalPrice * 0.9 : finalPrice / 2;
@@ -1151,1252 +1159,119 @@ export default function CustomerDashboard() {
   console.log("[TRACING RENDER] Rendering CustomerDashboard main return");
   return (
     <div className="min-h-screen bg-black text-white font-sans select-none relative overflow-x-hidden pb-12">
-      {/* Decorative premium ambient gradients */}
-      <div className="absolute top-0 inset-x-0 h-[380px] bg-gradient-to-b from-amber-500/[0.03] to-transparent pointer-events-none" />
-      <div className="absolute top-12 right-0 w-[240px] h-[240px] bg-amber-500/[0.012] rounded-full blur-[90px] pointer-events-none" />
+      {/* Decorative subtle ambient backdrop */}
+      <div className="absolute top-0 inset-x-0 h-[300px] bg-gradient-to-b from-amber-500/[0.02] to-transparent pointer-events-none" />
 
-      {/* Navigation Header */}
+      {/* Navigation Header with 5 Tabs */}
       <SectionErrorBoundary name="Header">
-      <header className="sticky top-0 z-40 border-b border-neutral-900 bg-black/85 backdrop-blur-md px-5 py-4 flex items-center justify-between">
-        {/* Left Section: Branding */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-display text-base font-black tracking-widest text-white uppercase select-none">
-              CODEFUSER
-            </span>
-            <span className="text-[10px] font-bold text-neutral-400 font-mono tracking-tight select-none">x</span>
-            <span className="text-xs font-mono font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 max-w-[140px] truncate sm:max-w-none">
-              {project?.businessName || project?.clientName || "Workspace"}
-            </span>
-          </div>
-        </div>
-
-        {/* Center Section: Current Stage Badge */}
-        <div className="hidden sm:flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-neutral-900 border border-neutral-800 rounded-full">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-neutral-300">
-              Phase: {getCustomerStatusLabel(currentStageIndex)}
-            </span>
-          </div>
-        </div>
-
-        {/* Right Section: Profile / Avatar Menu */}
-        <div className="relative">
-          <button
-            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900 hover:border-neutral-700 transition-all cursor-pointer focus:outline-none"
-          >
-            <div className="h-5 w-5 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 font-mono text-xs font-black">
-              {project?.clientName?.charAt(0).toUpperCase() || <User size={12} />}
-            </div>
-            <span className="text-xs font-sans font-medium text-neutral-300 hidden sm:inline max-w-[100px] truncate">
-              {project?.clientName || "Client"}
-            </span>
-            <ChevronDown size={12} className={`text-neutral-500 transition-transform duration-300 ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
-          </button>
-
-          {/* Profile Dropdown Menu */}
-          <AnimatePresence>
-            {isProfileDropdownOpen && (
-              <>
-                {/* Click-away backdrop overlay */}
-                <div 
-                  className="fixed inset-0 z-40 bg-transparent"
-                  onClick={() => setIsProfileDropdownOpen(false)}
-                />
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-52 rounded-2xl border border-neutral-800 bg-neutral-950 p-2 shadow-2xl z-50 text-left overflow-hidden"
-                >
-                  <div className="px-3.5 py-2 border-b border-neutral-900">
-                    <p className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-widest">Signed in as</p>
-                    <p className="text-xs font-bold text-white truncate mt-0.5">{project?.email || "Client"}</p>
-                  </div>
-                  
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        setIsProfileDropdownOpen(false);
-                        setActiveWorkspaceModal("settings");
-                      }}
-                      className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left focus:outline-none"
-                    >
-                      <User size={13} className="text-amber-500/80" />
-                      Workspace Settings
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsProfileDropdownOpen(false);
-                        setActiveWorkspaceModal("billing");
-                      }}
-                      className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left focus:outline-none"
-                    >
-                      <Coins size={13} className="text-amber-500/80" />
-                      Billing & Payments
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsProfileDropdownOpen(false);
-                        setActiveWorkspaceModal("support");
-                      }}
-                      className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left focus:outline-none"
-                    >
-                      <MessageSquare size={13} className="text-amber-500/80" />
-                      Support & Concierge
-                    </button>
-                  </div>
-
-                  <div className="h-px bg-neutral-900 my-1" />
-
-                  <div className="p-1">
-                    <button
-                      onClick={() => {
-                        setIsProfileDropdownOpen(false);
-                        logoutClient();
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all cursor-pointer text-left focus:outline-none uppercase font-mono"
-                    >
-                      <LogOut size={13} />
-                      Logout
-                    </button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </div>
-      </header>
+        <ClientHeader
+          businessName={project?.businessName || ""}
+          clientName={project?.clientName || ""}
+          clientEmail={project?.email || ""}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          currentStageIndex={currentStageIndex}
+          getCustomerStatusLabel={getCustomerStatusLabel}
+          isProfileDropdownOpen={isProfileDropdownOpen}
+          setIsProfileDropdownOpen={setIsProfileDropdownOpen}
+          setActiveWorkspaceModal={setActiveWorkspaceModal}
+          logoutClient={logoutClient}
+        />
       </SectionErrorBoundary>
 
-      {/* Main Container */}
-      <div className="max-w-md mx-auto px-5 pt-6 space-y-6 sm:max-w-lg md:max-w-3xl">
-
-        {/* Global Feedback Action Banner */}
+      {/* Main Tab Content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 font-sans">
         {successIndicator && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center rounded-2xl flex items-center justify-center gap-2 text-xs"
-          >
-            <Check size={14} className="shrink-0 text-emerald-400 animate-bounce" />
-            <span className="font-semibold">{successIndicator}</span>
-          </motion.div>
+          <div className="mb-6 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold">
+            <Check size={14} className="text-emerald-400 animate-bounce" />
+            <span>{successIndicator}</span>
+          </div>
         )}
 
-        {/* 1. WELCOME HERO SECTION (IMMEDIATELY ANSWERS 5 CORE QUESTIONS) */}
-        <SectionErrorBoundary name="Hero/Progress">
-        <section id="welcome-hero-card" className="bg-black border border-neutral-900 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-gradient-to-bl from-amber-500/[0.04] to-transparent pointer-events-none" />
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-mono text-amber-500 uppercase tracking-widest block font-bold">Client Dashboard</span>
-              <h1 className="text-xl font-black tracking-tight text-white uppercase font-sans">
-                Welcome Jonathan!
-              </h1>
-            </div>
-            <span className="inline-flex items-center gap-1.5 text-[8.5px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full uppercase border border-emerald-500/20">
-              <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping" /> Project Active
-            </span>
-          </div>
+        <SectionErrorBoundary name="ActiveTab">
+          {activeTab === "overview" && (
+            <OverviewTab
+              project={project}
+              currentStageIndex={currentStageIndex}
+              getCustomerStatusLabel={getCustomerStatusLabel}
+              primaryActionDetails={primaryActionDetails}
+              selectedPackageName={selectedPackageName}
+              planInfo={planInfo}
+              hasEmptyAssets={hasEmptyAssets}
+              finalPrice={finalPrice}
+              paidFunds={paidFunds}
+              unpaidFunds={unpaidFunds}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+              handleFinalMilestonePayment={handleFinalMilestonePayment}
+              paymentLoading={paymentLoading}
+              paymentError={paymentError}
+              getWhatsAppLink={getWhatsAppLink}
+              getStageExpectations={getStageExpectations}
+            />
+          )}
 
-          <p className="text-xs text-neutral-400 mt-3 leading-relaxed">
-            Your website project has officially started! Let's work together to launch a beautiful online experience for <strong className="text-white">{project.businessName}</strong>.
-          </p>
+          {activeTab === "project" && (
+            <MyProjectTab
+              project={project}
+              currentStageIndex={currentStageIndex}
+              customerTimelineStages={customerTimelineStages}
+              getCustomerStatusLabel={getCustomerStatusLabel}
+              extraStore={extraStore}
+              handleUpdateAssetField={handleUpdateAssetField}
+              handleFileUpload={handleFileUpload}
+              uploadStatus={uploadStatus}
+              uploadProgress={uploadProgress}
+              uploadError={uploadError}
+              domainState={domainState}
+              logoState={logoState}
+              copyState={copyState}
+              domainInput={domainInput}
+              setDomainInput={setDomainInput}
+              logoInput={logoInput}
+              setLogoInput={setLogoInput}
+              copyInput={copyInput}
+              setCopyInput={setCopyInput}
+              isUpdatingField={isUpdatingField}
+              btnClass={btnClass}
+            />
+          )}
 
-          {/* WHAT'S HAPPENING TODAY? - FOUNDER DECISION FEATURE */}
-          <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-4.5 my-4 relative overflow-hidden">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={16} className="text-amber-400 animate-pulse" />
-              <span className="text-xs font-mono font-black uppercase tracking-wider text-amber-400">
-                ⚡ WHAT'S HAPPENING TODAY?
-              </span>
-            </div>
-            <p className="text-sm font-extrabold text-white font-sans">
-              {primaryActionDetails.title}
-            </p>
-            <p className="text-xs text-neutral-300 mt-1 leading-relaxed font-sans">
-              {primaryActionDetails.description}
-            </p>
-          </div>
+          {activeTab === "files" && (
+            <FilesTab
+              project={project}
+              extraStore={extraStore}
+              handleDownloadAsset={handleDownloadAsset}
+              handleFileUpload={handleFileUpload}
+              uploadStatus={uploadStatus}
+              uploadProgress={uploadProgress}
+              uploadError={uploadError}
+            />
+          )}
 
-          {/* CONGRATULATION MOMENTS BADGES - FOUNDER DECISION */}
-          <div className="bg-neutral-950/80 border border-neutral-900 rounded-2xl p-4 my-3">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-base">🎉</span>
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-300">
-                MILESTONES & CONGRATULATIONS
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl text-emerald-400 font-semibold">
-                <Check size={14} className="shrink-0 text-emerald-400" />
-                <span>Payment Received & Portal Activated</span>
-              </div>
-              <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl text-amber-300 font-semibold">
-                <Globe size={14} className="shrink-0 text-amber-400" />
-                <span>
-                  {selectedPackageName.includes("Ignite") ? "Free Hosting (1 Mo) Activated!" :
-                   selectedPackageName.includes("Fusion") ? "Free Domain (1 Yr) + Free Hosting (2 Mo) Activated!" :
-                   "Free Domain (2 Yr) + Free Hosting (3 Mo) Activated!"}
-                </span>
-              </div>
-            </div>
-          </div>
+          {activeTab === "payments" && (
+            <PaymentsTab
+              project={project}
+              selectedPackageName={selectedPackageName}
+              finalPrice={finalPrice}
+              paidFunds={paidFunds}
+              unpaidFunds={unpaidFunds}
+              handleFinalMilestonePayment={handleFinalMilestonePayment}
+              paymentLoading={paymentLoading}
+              paymentError={paymentError}
+              handleResetQuote={handleResetQuote}
+              extraStore={extraStore}
+            />
+          )}
 
-          {/* VISUAL PROJECT PROGRESS TRACKER - FOUNDER DECISION */}
-          <div className="bg-[#050505] border border-neutral-850 rounded-2xl p-4.5 my-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
-                <Clock size={13} className="text-amber-400" /> LIVE PROJECT PROGRESS
-              </span>
-              <span className="text-xs font-mono font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
-                {currentStageIndex === 0 ? "10% Complete" :
-                 currentStageIndex === 1 ? "25% Complete" :
-                 currentStageIndex === 2 ? "40% Complete" :
-                 currentStageIndex === 3 ? "60% Complete" :
-                 currentStageIndex === 4 ? "80% Complete" : "100% Live"}
-              </span>
-            </div>
-
-            {/* Visual Step Nodes */}
-            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 pt-2">
-              {[
-                { percent: "10%", title: "Requirements Received", stepIdx: 0 },
-                { percent: "25%", title: "Planning", stepIdx: 1 },
-                { percent: "40%", title: "Design Started", stepIdx: 2 },
-                { percent: "60%", title: "Development Started", stepIdx: 3 },
-                { percent: "80%", title: "Review Phase", stepIdx: 4 },
-                { percent: "100%", title: "Website Live", stepIdx: 5 },
-              ].map((st, idx) => {
-                const isActive = currentStageIndex === st.stepIdx;
-                const isPassed = currentStageIndex > st.stepIdx;
-                return (
-                  <div key={st.percent} className={`p-2.5 rounded-xl border transition-all ${
-                    isActive ? "bg-amber-500/15 border-amber-500 text-white shadow-[0_0_12px_rgba(245,158,11,0.25)]" :
-                    isPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300" :
-                    "bg-neutral-950 border-neutral-900 text-neutral-500"
-                  }`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] font-mono font-bold">{st.percent}</span>
-                      {isPassed ? (
-                        <Check size={11} className="text-emerald-400" />
-                      ) : isActive ? (
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      ) : null}
-                    </div>
-                    <div className="text-[10px] font-extrabold font-sans leading-tight">
-                      {st.title}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Quick Summary Bar for Instant Clarity within 5 Seconds */}
-          <div className="grid grid-cols-3 gap-3 border-t border-b border-neutral-900/80 my-5 py-4">
-            <div className="text-center md:text-left">
-              <span className="block text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Package Purchased</span>
-              <span className="text-xs font-black text-amber-500 font-sans block mt-1 uppercase">
-                {selectedPackageName.replace(" Package", "")}
-              </span>
-            </div>
-            <div className="text-center border-l border-r border-neutral-900/80 px-2">
-              <span className="block text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Current Status</span>
-              <span className="text-xs font-black text-white block mt-1 uppercase leading-tight">
-                {getCustomerStatusLabel(currentStageIndex)}
-              </span>
-            </div>
-            <div className="text-center md:text-right">
-              <span className="block text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Estimated Delivery</span>
-              <span className="text-xs font-bold text-white block mt-1 leading-tight">
-                {hasEmptyAssets ? (
-                  "Waiting for asset submission"
-                ) : (
-                  planInfo.timeline.replace(" after asset submission", "").replace("days", "Business Days")
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* NEXT ACTION: Featured Primary Call to Action */}
-          <div className="bg-amber-500/[0.02] border border-amber-500/20 rounded-2xl p-4.5 mt-2">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[9px] font-mono font-bold tracking-widest text-amber-500 uppercase block">RECOMMENDED NEXT STEP</span>
-            </div>
-            <h3 className="text-sm font-bold text-white tracking-tight leading-snug">
-              {primaryActionDetails.title}
-            </h3>
-            <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-              {primaryActionDetails.description}
-            </p>
-            
-            <button
-              onClick={primaryActionDetails.action}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-black py-3 rounded-xl font-bold uppercase tracking-wider text-xs font-sans mt-4 cursor-pointer flex items-center justify-center gap-1.5 transition-all shadow-[0_4px_12px_rgba(245,158,11,0.2)]"
-            >
-              <span>{primaryActionDetails.btnText}</span>
-              <ArrowRight size={13} strokeWidth={2.5} />
-            </button>
-          </div>
-
-          {/* ACTIVE STAGE STATUS GUIDANCE (Premium Concierge Experience) */}
-          {(() => {
-            const expectations = getStageExpectations(currentStageIndex);
-            return (
-              <div className="bg-[#050505]/45 border border-neutral-900/60 rounded-2xl p-4.5 mt-4 space-y-4 font-sans text-xs">
-                <div className="flex items-center gap-2 pb-2.5 border-b border-neutral-900/60">
-                  <Sparkles size={13} className="text-amber-500 animate-pulse" />
-                  <span className="text-[9px] font-mono font-bold tracking-widest text-neutral-300 uppercase">Concierge Project Guide</span>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-mono font-bold uppercase text-amber-500/80 tracking-wider block">1. What is happening?</span>
-                    <p className="text-neutral-300 leading-relaxed font-sans font-medium">{expectations.happening}</p>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-mono font-bold uppercase text-amber-500/80 tracking-wider block">2. What am I waiting for?</span>
-                    <p className="text-neutral-300 leading-relaxed font-sans font-medium">{expectations.waitingFor}</p>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-mono font-bold uppercase text-amber-500/80 tracking-wider block">3. What is CodeFuser doing?</span>
-                    <p className="text-neutral-300 leading-relaxed font-sans font-medium">{expectations.doing}</p>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-mono font-bold uppercase text-amber-500/80 tracking-wider block">4. What happens next?</span>
-                    <p className="text-neutral-300 leading-relaxed font-sans font-medium">{expectations.next}</p>
-                  </div>
-                </div>
-
-                <div className="text-[10px] text-neutral-500 font-mono text-center pt-1 block border-t border-neutral-900/30">
-                  📋 Premium Launch Policy: You will review & approve all draft stages before final live launch.
-                </div>
-              </div>
-            );
-          })()}
-        </section>
+          {activeTab === "help" && (
+            <NeedHelpTab
+              project={project}
+              getWhatsAppLink={getWhatsAppLink}
+              getComposeEmailLink={getComposeEmailLink}
+            />
+          )}
         </SectionErrorBoundary>
-
-        {/* Dynamic Multi-Column Grid Layout for Desktop & Single Column for Mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-
-          {/* LEFT COLUMN: Customer Journey Progress */}
-          <div className="space-y-6">
-
-            {/* 2. PROJECT TIMELINE */}
-            <SectionErrorBoundary name="Timeline">
-            <section ref={timelineRef} id="project-timeline-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6">
-              <div className="flex items-center justify-between mb-5 border-b border-neutral-900 pb-3">
-                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
-                  <Layers size={13} className="text-neutral-400" /> Project Progress
-                </h3>
-                <span className="text-[8px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase font-bold">Live Status</span>
-              </div>
-
-              {/* Customer Friendly Timeline */}
-              <div className="relative pl-6 space-y-5 font-sans">
-                {/* Vertical line connector */}
-                <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-neutral-900" />
-
-                {customerTimelineStages.map((stage, idx) => {
-                  const isCompleted = idx < currentStageIndex;
-                  const isActive = idx === currentStageIndex;
-                  
-                  return (
-                    <div key={idx} className="relative flex items-start gap-4">
-                      {/* Indicator dot */}
-                      <div className={`absolute -left-[24px] top-1 h-3.5 w-3.5 rounded-full border-2 flex items-center justify-center transition-all ${
-                        isCompleted 
-                          ? "bg-emerald-500 border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" 
-                          : isActive 
-                            ? "bg-amber-500 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.5)] scale-110" 
-                            : "bg-[#030303] border-neutral-800"
-                      }`} />
-
-                      <div className="flex-1">
-                        <span className={`text-[12.5px] font-bold tracking-wide block ${
-                          isActive ? "text-amber-400 font-black" : isCompleted ? "text-neutral-300" : "text-neutral-600"
-                        }`}>
-                          {stage.label}
-                        </span>
-                        {isActive && (
-                          <span className="text-[9px] font-mono text-amber-500 uppercase font-black block mt-0.5 animate-pulse">
-                            Active Stage
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-            </SectionErrorBoundary>
-
-            {/* 3. AI STRATEGIC PROPOSAL & BLUEPRINT */}
-            <SectionErrorBoundary name="Blueprint/Checklist">
-            {extraStore.quote?.proposal && extraStore.quote.proposal.status === "sent" && (
-              <section id="ai-proposal-blueprint" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
-                    📑 Website Blueprint
-                  </h3>
-                  <span className="text-[8px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase font-bold">Approved</span>
-                </div>
-
-                <div className="bg-[#020202] border border-neutral-900 rounded-2xl p-4 max-h-[250px] overflow-y-auto font-sans text-neutral-300">
-                  {parseMarkdown(extraStore.quote.proposal.content)}
-                </div>
-
-                <div className="flex justify-between items-center bg-[#090909] border border-neutral-900 px-3 py-2 rounded-2xl text-[9px] font-mono uppercase text-neutral-500">
-                  <span>Blueprint Status: <span className="text-emerald-400 font-bold">APPROVED</span></span>
-                  <span>Released: {new Date(extraStore.quote.proposal.timestamp).toLocaleDateString()}</span>
-                </div>
-              </section>
-            )}
-
-            {/* 4. CONFIGURABLE LAUNCH CHECKLIST */}
-            {extraStore.quote?.checklist && extraStore.quote.checklist.length > 0 && (
-              <section id="launch-checklist" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
-                    📋 Launch Checklist
-                  </h3>
-                  <span className="text-[8px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase font-bold">Live Synced</span>
-                </div>
-
-                <p className="text-[11px] text-zinc-400 leading-normal font-sans">
-                  Milestones and setups to complete for your website release. Toggle items as we finalise setups.
-                </p>
-
-                <div className="bg-neutral-950 border border-neutral-900 rounded-2xl p-3 space-y-2">
-                  {extraStore.quote.checklist.map((item: any) => (
-                    <div 
-                      key={item.id} 
-                      onClick={async () => {
-                        const updatedChecklist = extraStore.quote!.checklist!.map((c: any) => 
-                          c.id === item.id ? { ...c, completed: !c.completed } : c
-                        );
-                        const updatedQuote = {
-                          ...extraStore.quote,
-                          checklist: updatedChecklist
-                        };
-                        setExtraStore((prev: any) => ({ ...prev, quote: updatedQuote as any }));
-
-                        try {
-                          await fetch(`/api/projects/${project.id}/checklist/save`, {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                              "Authorization": `Bearer ${getAuthToken() || ""}`
-                            },
-                            body: JSON.stringify({ checklist: updatedChecklist })
-                          });
-                        } catch (err) {
-                          console.error("Failed to sync checklist:", err);
-                        }
-                      }}
-                      className="flex items-center gap-3 bg-[#050505] border border-neutral-900/60 p-2.5 rounded-xl hover:border-neutral-800 transition-all cursor-pointer group"
-                    >
-                      <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
-                        item.completed 
-                          ? "bg-amber-500 border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]" 
-                          : "border-neutral-800 group-hover:border-neutral-600"
-                      }`}>
-                        {item.completed && <Check size={11} className="text-black font-extrabold stroke-[3]" />}
-                      </div>
-                      <span className={`text-[11.5px] font-sans font-medium leading-relaxed transition-all ${
-                        item.completed ? "line-through text-zinc-600" : "text-zinc-200"
-                      }`}>
-                        {item.task}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-            </SectionErrorBoundary>
-
-            {/* 5. DELIVERABLES VAULT */}
-            <SectionErrorBoundary name="Deliverables">
-            {extraStore.quote?.deliverables && extraStore.quote.deliverables.length > 0 && (
-              <section id="deliverables-vault" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
-                    🔒 Website Files & Deliverables
-                  </h3>
-                  <span className="text-[8px] font-mono text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase font-bold">Encrypted</span>
-                </div>
-
-                <div className="space-y-4 font-sans">
-                  {(() => {
-                    const categories = ["Brand Assets", "Code Bundle", "Database Blueprint", "UI Layouts"];
-                    return categories.map((cat) => {
-                      const items = extraStore.quote!.deliverables!.filter((item: any) => item.category === cat);
-                      if (items.length === 0) return null;
-
-                      return (
-                        <div key={cat} className="space-y-1.5">
-                          <span className="block text-[8.5px] font-mono text-amber-500 uppercase tracking-wide font-extrabold">
-                            🏷️ {cat}
-                          </span>
-                          <div className="space-y-2">
-                            {items.map((item: any) => (
-                              <div key={item.id} className="p-3 bg-neutral-950 border border-neutral-900 rounded-2xl flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                  <span className="text-xs font-bold text-zinc-200 block truncate">{item.name}</span>
-                                  <span className="text-[8.5px] font-mono text-zinc-500 mt-0.5 block">
-                                    {(item.size / 1024).toFixed(1)} KB • Verified Deliverable
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={async () => {
-                                    const matchingAsset = extraStore.assets?.find((a: any) => a.url === item.url);
-                                    if (matchingAsset) {
-                                      handleDownloadAsset(matchingAsset.id, item.url);
-                                    } else {
-                                      window.open(item.url, "_blank");
-                                    }
-                                  }}
-                                  className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 text-[10px] font-mono font-bold uppercase rounded-xl text-amber-500 hover:text-white transition-all cursor-pointer"
-                                >
-                                  Download
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </section>
-            )}
-            </SectionErrorBoundary>
-
-          </div>
-
-          {/* RIGHT COLUMN: Payments, Assets, Notifications */}
-          <div className="space-y-6">
-
-            {/* AI BUSINESS TIPS WIDGET - FOUNDER DECISION */}
-            <SectionErrorBoundary name="AITips">
-            <section id="ai-business-tips-widget" className="bg-[#050505] border border-amber-500/25 rounded-3xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5 font-bold">
-                  <Sparkles size={14} className="text-amber-400 animate-pulse" /> AI Business Tips for {project.businessName}
-                </h3>
-                <span className="text-[8px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase font-bold">Local Growth</span>
-              </div>
-              <div className="space-y-3 font-sans text-xs">
-                {(() => {
-                  const ind = (String(project?.industry || project?.customIndustry || "")).toLowerCase();
-                  
-                  let tips = [
-                    { title: "Google Reviews Widget", desc: "Display real customer Google reviews to build instant trust with local visitors.", tag: "Trust" },
-                    { title: "1-Click WhatsApp Chat", desc: "Direct WhatsApp chat lets mobile visitors message or call you in 1 click.", tag: "Leads" },
-                    { title: "Authentic Photos & Gallery", desc: "Real photos of your work, shop, or team increase inquiries by over 40%.", tag: "Sales" }
-                  ];
-
-                  if (ind.includes("food") || ind.includes("restaurant") || ind.includes("cafe") || ind.includes("bakery")) {
-                    tips = [
-                      { title: "Online Menu & Table Reservations", desc: "Allow local guests to browse your menu and book tables online to boost weekend walk-ins.", tag: "Bookings" },
-                      { title: "Display Popular Dishes", desc: "Highlight your top 3 best-selling dishes with customer reviews to drive cravings.", tag: "Menu" },
-                      { title: "Google Reviews & Food Ratings", desc: "Show authentic 5-star customer ratings to outperform nearby restaurants.", tag: "Trust" }
-                    ];
-                  } else if (ind.includes("health") || ind.includes("clinic") || ind.includes("doctor") || ind.includes("dental") || ind.includes("salon") || ind.includes("spa") || ind.includes("gym") || ind.includes("fitness")) {
-                    tips = [
-                      { title: "24/7 Appointment Booking", desc: "Let clients schedule appointments anytime without calling your front desk.", tag: "Appointments" },
-                      { title: "Doctor / Specialist Profiles", desc: "Showcase practitioner expertise and certifications to build patient trust.", tag: "Credibility" },
-                      { title: "Enable WhatsApp Consultations", desc: "Allow new clients to ask quick questions before booking their first visit.", tag: "WhatsApp" }
-                    ];
-                  } else if (ind.includes("law") || ind.includes("legal") || ind.includes("consult") || ind.includes("finance") || ind.includes("agency") || ind.includes("real estate")) {
-                    tips = [
-                      { title: "Consultation Booking Form", desc: "Allow prospects to request confidential callbacks or book discovery meetings.", tag: "High Value" },
-                      { title: "Case Studies & Client Trust", desc: "Highlight successful case studies and client testimonials to prove expertise.", tag: "Authority" },
-                      { title: "Google Maps & Local Badges", desc: "Display verified office location and industry accreditations to stand out.", tag: "Verified" }
-                    ];
-                  }
-
-                  return tips.map((tip, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 bg-neutral-950 p-3 rounded-2xl border border-neutral-850">
-                      <span className="text-amber-400 font-bold shrink-0">{idx + 1}.</span>
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <strong className="text-white">{tip.title}:</strong>
-                          <span className="text-[8px] font-mono text-amber-300 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">{tip.tag}</span>
-                        </div>
-                        <p className="text-neutral-300 leading-relaxed font-sans">{tip.desc}</p>
-                      </div>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </section>
-            </SectionErrorBoundary>
-
-            {/* 1. PROJECT PACKAGE / QUOTATION STATUS CARD */}
-            <SectionErrorBoundary name="Package/Payment">
-            {project.paymentStatus === "paid" || project.paymentStatus === "partially_paid" ? (
-              <section id="project-package-confirmed-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#cbd5e1] flex items-center gap-1.5 font-bold">
-                    <Lock size={13} className="text-emerald-400" /> Project Package Confirmed
-                  </h3>
-                  <span className="text-[8px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase font-bold">Verified client</span>
-                </div>
-                <div className="space-y-3 font-sans text-sm">
-                  <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                    <span className="text-neutral-400 font-medium">Selected Package:</span>
-                    <span className="font-bold text-white uppercase">{selectedPackageName}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                    <span className="text-neutral-400 font-medium">Purchase Date:</span>
-                    <span className="font-bold text-neutral-300">
-                      {project.purchaseDate ? new Date(project.purchaseDate).toLocaleDateString() : (project.timestamp ? new Date(project.timestamp).toLocaleDateString() : "Verified")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                    <span className="text-neutral-400 font-medium">Payment Status:</span>
-                    <span className="font-extrabold text-emerald-400 uppercase flex items-center gap-1">
-                      {project.paymentStatus === "partially_paid" ? (
-                        <span className="text-amber-500 flex items-center gap-1">PARTIALLY PAID (50%)</span>
-                      ) : (
-                        <span className="text-emerald-400 flex items-center gap-1"><Check size={12} /> VERIFIED (100%)</span>
-                      )}
-                    </span>
-                  </div>
-                  
-                  {project.paymentStatus === "partially_paid" && (
-                    <div className="space-y-3 pt-2">
-                      <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                        <span className="text-neutral-400 font-medium">Remaining Due:</span>
-                        <span className="font-bold text-amber-500 font-mono">₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")}</span>
-                      </div>
-                      
-                      {paymentError && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 font-sans flex items-start gap-2">
-                          <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                          <span>{paymentError}</span>
-                        </div>
-                      )}
-                      
-                      <button
-                        onClick={handleFinalMilestonePayment}
-                        disabled={paymentLoading}
-                        className="w-full btn-pressure bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-extrabold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                      >
-                        {paymentLoading ? (
-                          <>
-                            <div className="h-4.5 w-4.5 rounded-full border-2 border-black/30 border-t-black animate-spin" />
-                            <span>Processing...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Coins size={14} />
-                            <span>{!verificationEnabled ? "Simulate Final 50% Milestone" : "Pay Final 50% Milestone"} (₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")})</span>
-                          </>
-                        )}
-                      </button>
-
-                      <PaymentSimulationPanel
-                        projectId={projectId || ''}
-                        term="final"
-                        getAuthToken={getAuthToken}
-                        onSuccess={async () => {
-                          await refreshProject();
-                          setSuccessIndicator("Milestone payment simulated successfully!");
-                          setTimeout(() => setSuccessIndicator(null), 5000);
-                        }}
-                        onStatusChange={(status, msg) => {
-                          if (status === 'failed' || status === 'cancelled') {
-                            setPaymentError(msg);
-                          } else {
-                            setPaymentError(null);
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center pb-1">
-                    <span className="text-neutral-400 font-medium">Project Status:</span>
-                    <span className="font-bold text-amber-500 uppercase">{getCustomerStatusLabel(currentStageIndex)}</span>
-                  </div>
-                </div>
-              </section>
-            ) : (
-              extraStore.quote && (
-                <section id="official-quotation-secured-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6 space-y-4">
-                  <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                    <h3 className="text-xs font-mono font-black uppercase tracking-widest text-amber-500 flex items-center gap-1.5 font-bold">
-                      <Sparkles size={13} className="text-amber-500 animate-pulse" /> Official Quotation Secured
-                    </h3>
-                    <span className="text-[8px] font-mono text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase font-bold">Action Required</span>
-                  </div>
-                  <div className="space-y-3 font-sans text-sm">
-                    <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                      <span className="text-neutral-400 font-medium">Package Quoted:</span>
-                      <span className="font-bold text-white uppercase">{selectedPackageName}</span>
-                    </div>
-                    <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                      <span className="text-neutral-400 font-medium">Price Rate:</span>
-                      <span className="font-bold text-neutral-300 font-mono">₹{Math.round(finalPrice).toLocaleString("en-IN")}</span>
-                    </div>
-                    {extraStore.quote.expiryDate && (
-                      <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                        <span className="text-neutral-400 font-medium">Quote Expiry Timer:</span>
-                        <span className="font-bold text-amber-500 font-mono text-xs uppercase animate-pulse flex items-center gap-1">
-                          <Clock size={12} /> {getQuoteTimeRemaining(extraStore.quote.expiryDate)}
-                        </span>
-                      </div>
-                    )}
-                    <div className="pt-2">
-                      <button
-                        onClick={handleResetQuote}
-                        className="w-full py-2 bg-neutral-900 hover:bg-red-950/40 hover:text-red-300 hover:border-red-950/60 text-[10px] font-mono font-bold text-neutral-400 uppercase rounded-xl border border-neutral-850 transition-all cursor-pointer"
-                      >
-                        Reset Quote
-                      </button>
-                    </div>
-
-                    <PaymentSimulationPanel
-                      projectId={projectId || ''}
-                      term="upfront"
-                      getAuthToken={getAuthToken}
-                      onSuccess={async () => {
-                        await refreshProject();
-                        setSuccessIndicator("Quotation payment simulated successfully!");
-                        setTimeout(() => setSuccessIndicator(null), 5000);
-                      }}
-                      onStatusChange={(status, msg) => {
-                        if (status === 'failed' || status === 'cancelled') {
-                          setPaymentError(msg);
-                        } else {
-                          setPaymentError(null);
-                        }
-                      }}
-                    />
-                  </div>
-                </section>
-              )
-            )}
-            </SectionErrorBoundary>
-
-            {/* COLLAPSIBLE DIGITAL ASSET WORKSPACE (Controlled gracefully by Next Action / Quick Action) */}
-            <SectionErrorBoundary name="Assets/Intake">
-            <AnimatePresence>
-              {activeQuickAction === "assets" && (
-                <motion.section 
-                  ref={assetCenterRef}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="bg-[#050505] border-2 border-neutral-850 rounded-3xl p-6 space-y-6">
-                    <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                      <h3 className="text-xs font-mono font-black uppercase tracking-widest text-amber-500 flex items-center gap-1.5 font-bold">
-                        <UploadCloud size={14} className="text-amber-500 animate-pulse" /> Upload Your Business Assets
-                      </h3>
-                      <button 
-                        onClick={() => setActiveQuickAction(null)}
-                        className="text-[10px] font-mono font-bold text-neutral-500 hover:text-white uppercase transition-colors focus:outline-none bg-transparent border-none cursor-pointer font-bold"
-                      >
-                        Close [×]
-                      </button>
-                    </div>
-
-                    <div className="space-y-6">
-                      {/* Field 1: Domain Setup */}
-                      <div className="space-y-2 border-b border-neutral-900 pb-4">
-                        <label className="block text-[10px] font-mono font-black uppercase tracking-widest text-neutral-300">
-                          Preferred Web Address (Domain)
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("domain", "no");
-                              setDomainInput("");
-                            }}
-                            className={btnClass(domainState === "pending")}
-                          >
-                            Incomplete
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("domain", "help");
-                            }}
-                            className={btnClass(domainState === "help")}
-                          >
-                            Need Help
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("domain", "not_required");
-                            }}
-                            className={btnClass(domainState === "not_required")}
-                          >
-                            Not Required
-                          </button>
-                        </div>
-                        
-                        {/* If provided or we want to provide it */}
-                        <div className="space-y-2 pt-1">
-                          <div className="flex gap-2">
-                            <input 
-                              type="text"
-                              value={domainInput}
-                              onChange={(e) => setDomainInput(e.target.value)}
-                              placeholder="e.g. mybusiness.com"
-                              className="flex-1 bg-[#030303] border border-neutral-900 focus:border-amber-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!domainInput.trim()) {
-                                  alert("Please enter your domain first, or select 'Need Help' or 'Not Required'.");
-                                  return;
-                                }
-                                handleUpdateAssetField("domain", domainInput.startsWith("Provided") ? domainInput : `Provided: ${domainInput}`);
-                              }}
-                              disabled={isUpdatingField === "domain"}
-                              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-850 text-white border border-neutral-800 text-[10px] font-mono font-bold uppercase rounded-xl transition-colors cursor-pointer shrink-0"
-                            >
-                              {isUpdatingField === "domain" ? "..." : "Settle"}
-                            </button>
-                          </div>
-                        </div>
-
-                        {domainState === "help" && (
-                          <div className="text-[11px] text-amber-500 font-sans font-medium flex items-center gap-1.5 bg-amber-500/5 p-2 rounded-xl border border-amber-500/10 mt-1 animate-pulse">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            Service requested: Our team will search, acquire, and configure your web domain.
-                          </div>
-                        )}
-                        {domainState === "not_required" && (
-                          <div className="text-[11px] text-zinc-400 font-sans font-medium flex items-center gap-1.5 bg-neutral-950 p-2 rounded-xl border border-neutral-900 mt-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
-                            Not required for this project lifecycle stage.
-                          </div>
-                        )}
-                        {domainState === "provided" && (
-                          <div className="text-[11px] text-emerald-400 font-sans font-medium flex items-center gap-1.5 bg-emerald-500/5 p-2 rounded-xl border border-emerald-500/10 mt-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            Provided by client: "{getDisplayValue(project.hasDomain)}"
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Field 2: Logo link */}
-                      <div className="space-y-2 border-b border-neutral-900 pb-4">
-                        <label className="block text-[10px] font-mono font-black uppercase tracking-widest text-neutral-300">
-                          Logo Folder Link (Drive / Dropbox)
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("logo", "no");
-                              setLogoInput("");
-                            }}
-                            className={btnClass(logoState === "pending")}
-                          >
-                            Incomplete
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("logo", "help");
-                            }}
-                            className={btnClass(logoState === "help")}
-                          >
-                            Need Help
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("logo", "not_required");
-                            }}
-                            className={btnClass(logoState === "not_required")}
-                          >
-                            Not Required
-                          </button>
-                        </div>
-                        
-                        <div className="space-y-2 pt-1">
-                          <div className="flex gap-2">
-                            <input 
-                              type="text"
-                              value={logoInput}
-                              onChange={(e) => setLogoInput(e.target.value)}
-                              placeholder="e.g. https://drive.google.com/..."
-                              className="flex-1 bg-[#030303] border border-neutral-900 focus:border-amber-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!logoInput.trim()) {
-                                  alert("Please enter your logo link first, or select 'Need Help' or 'Not Required'.");
-                                  return;
-                                }
-                                handleUpdateAssetField("logo", logoInput.startsWith("Provided") ? logoInput : `Provided: ${logoInput}`);
-                              }}
-                              disabled={isUpdatingField === "logo"}
-                              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-850 text-white border border-neutral-800 text-[10px] font-mono font-bold uppercase rounded-xl transition-colors cursor-pointer shrink-0"
-                            >
-                              {isUpdatingField === "logo" ? "..." : "Settle"}
-                            </button>
-                          </div>
-                        </div>
-
-                        {logoState === "help" && (
-                          <div className="text-[11px] text-amber-500 font-sans font-medium flex items-center gap-1.5 bg-amber-500/5 p-2 rounded-xl border border-amber-500/10 mt-1 animate-pulse">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            Service requested: Our custom visual brand designers will design a premium logo for you.
-                          </div>
-                        )}
-                        {logoState === "not_required" && (
-                          <div className="text-[11px] text-zinc-400 font-sans font-medium flex items-center gap-1.5 bg-neutral-950 p-2 rounded-xl border border-neutral-900 mt-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
-                            Not required for this project lifecycle stage.
-                          </div>
-                        )}
-                        {logoState === "provided" && (
-                          <div className="text-[11px] text-emerald-400 font-sans font-medium flex items-center gap-1.5 bg-emerald-500/5 p-2 rounded-xl border border-emerald-500/10 mt-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            Provided by client: Link submitted successfully
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Field 3: Copy documents file */}
-                      <div className="space-y-2 pb-2">
-                        <label className="block text-[10px] font-mono font-black uppercase tracking-widest text-neutral-300">
-                          Business Details & Text Link
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("copy", "no");
-                              setCopyInput("");
-                            }}
-                            className={btnClass(copyState === "pending")}
-                          >
-                            Incomplete
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("copy", "no_help");
-                            }}
-                            className={btnClass(copyState === "help")}
-                          >
-                            Need Help
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleUpdateAssetField("copy", "not_required");
-                            }}
-                            className={btnClass(copyState === "not_required")}
-                          >
-                            Not Required
-                          </button>
-                        </div>
-                        
-                        <div className="space-y-2 pt-1">
-                          <div className="flex gap-2">
-                            <input 
-                              type="text"
-                              value={copyInput}
-                              onChange={(e) => setCopyInput(e.target.value)}
-                              placeholder="e.g. https://docs.google.com/..."
-                              className="flex-1 bg-[#030303] border border-neutral-900 focus:border-amber-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!copyInput.trim()) {
-                                  alert("Please enter your copy details/link first, or select 'Need Help' or 'Not Required'.");
-                                  return;
-                                }
-                                handleUpdateAssetField("copy", copyInput.startsWith("Provided") ? copyInput : `Provided: ${copyInput}`);
-                              }}
-                              disabled={isUpdatingField === "copy"}
-                              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-850 text-white border border-neutral-800 text-[10px] font-mono font-bold uppercase rounded-xl transition-colors cursor-pointer shrink-0"
-                            >
-                              {isUpdatingField === "copy" ? "..." : "Settle"}
-                            </button>
-                          </div>
-                        </div>
-
-                        {copyState === "help" && (
-                          <div className="text-[11px] text-amber-500 font-sans font-medium flex items-center gap-1.5 bg-amber-500/5 p-2 rounded-xl border border-amber-500/10 mt-1 animate-pulse">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            Service requested: CodeFuser copywriters will write complete custom texts and content.
-                          </div>
-                        )}
-                        {copyState === "not_required" && (
-                          <div className="text-[11px] text-zinc-400 font-sans font-medium flex items-center gap-1.5 bg-neutral-950 p-2 rounded-xl border border-neutral-900 mt-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
-                            Not required for this project lifecycle stage.
-                          </div>
-                        )}
-                        {copyState === "provided" && (
-                          <div className="text-[11px] text-emerald-400 font-sans font-medium flex items-center gap-1.5 bg-emerald-500/5 p-2 rounded-xl border border-emerald-500/10 mt-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            Provided by client: Link submitted successfully
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Drag and Drop / Binary Uploader */}
-                    <div className="border border-dashed border-neutral-800 rounded-2xl p-5 bg-[#030303] text-center space-y-3">
-                      <div className="flex flex-col items-center justify-center gap-1">
-                        <UploadCloud size={24} className="text-amber-500/40 animate-pulse mb-1" />
-                        <span className="text-xs text-white font-bold block">Upload Files Directly</span>
-                        <span className="text-[10px] text-neutral-400 block max-w-[220px] mx-auto text-center leading-normal">
-                          Provide your logo, documents, or business descriptions (Max 50MB)
-                        </span>
-                      </div>
-                      
-                      <input 
-                        type="file" 
-                        id="local-file-uploader" 
-                        className="hidden" 
-                        onChange={handleFileUpload} 
-                      />
-                      <label 
-                        htmlFor="local-file-uploader"
-                        className="inline-block px-4 py-2 bg-neutral-900 border border-neutral-800 text-[10px] font-mono font-bold uppercase tracking-widest text-[#cbd5e1] rounded-xl hover:bg-neutral-800 hover:text-white transition-all cursor-pointer"
-                      >
-                        Browse Files
-                      </label>
-
-                      {uploadStatus && (
-                        <div className="space-y-1.5 pt-2">
-                          <span className="text-[9px] font-mono text-amber-500 block uppercase tracking-wider animate-pulse">{uploadStatus}</span>
-                          {uploadProgress !== null && (
-                            <div className="w-full bg-[#050505] rounded-full h-1 overflow-hidden border border-neutral-900">
-                              <div className="bg-amber-500 h-1 transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {uploadError && (
-                        <span className="text-[9px] font-mono text-red-400 block pt-1">⚠️ {uploadError}</span>
-                      )}
-                    </div>
-
-                    {/* Archive of Uploaded Files */}
-                    {extraStore.assets && extraStore.assets.length > 0 && (
-                      <div className="border-t border-neutral-900 pt-4">
-                        <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest block font-bold mb-3">
-                          UPLOADED ARCHIVE ({extraStore.assets.length})
-                        </span>
-                        <div className="grid grid-cols-1 gap-2 max-h-[150px] overflow-y-auto pr-1">
-                          {extraStore.assets.map((asset) => (
-                            <div key={asset.id} className="p-3 bg-[#030303] border border-neutral-900 rounded-xl flex items-center justify-between gap-3">
-                              <div className="truncate shrink min-w-0">
-                                <span className="text-xs font-semibold text-white block truncate">{asset.name}</span>
-                                <span className="text-[8px] font-mono text-neutral-500 block uppercase tracking-wide">
-                                  {Math.round(asset.size / 1024)} KB • {asset.type.split('/')[1]?.toUpperCase() || 'FILE'}
-                                </span>
-                              </div>
-                              <button 
-                                onClick={() => handleDownloadAsset(asset.id, asset.url)}
-                                className="p-1.5 px-3 bg-neutral-900 border border-neutral-800 text-[9px] font-mono font-bold uppercase text-amber-500 tracking-wider hover:bg-neutral-850 hover:text-white rounded-lg shrink-0 transition-colors cursor-pointer"
-                              >
-                                View File
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </motion.section>
-              )}
-            </AnimatePresence>
-            </SectionErrorBoundary>
-
-            {/* 6. PAYMENTS & BILLING */}
-            <SectionErrorBoundary name="Billing">
-            <section id="payment-summary-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6">
-              <div className="flex items-center justify-between mb-4 border-b border-neutral-900 pb-3">
-                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
-                  <Coins size={13} className="text-neutral-400" /> Payments & Billing
-                </h3>
-                <span className="text-[8px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase font-bold">Secure Gateway</span>
-              </div>
-
-              <div className="space-y-3.5 font-sans text-sm">
-                <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                  <span className="text-neutral-400">Project Price:</span>
-                  <span className="font-bold text-neutral-300">₹{Math.round(finalPrice).toLocaleString("en-IN")}</span>
-                </div>
-
-                <div className="flex justify-between items-center pb-2 border-b border-neutral-900/45">
-                  <span className="text-emerald-400 font-semibold">Amount Paid:</span>
-                  <span className="text-emerald-400 font-extrabold text-base">₹{Math.round(paidFunds).toLocaleString("en-IN")}</span>
-                </div>
-
-                <div className="flex justify-between items-center pb-2 border-b border-neutral-900">
-                  <span className="text-neutral-400">Remaining Amount:</span>
-                  <span className="font-black text-amber-500 text-base">
-                    {Math.round(unpaidFunds) === 0 ? "₹0 (Fully Paid)" : `₹${Math.round(unpaidFunds).toLocaleString("en-IN")}`}
-                  </span>
-                </div>
-
-                {/* Secure Lock Badge representing permanently locked quote & paid verification */}
-                <div className="bg-neutral-950 border border-neutral-900 p-4 rounded-2xl mt-4 space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <Check size={14} className="text-emerald-400" />
-                    <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest">Payment Verified & Package Locked</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    {Math.round(unpaidFunds) === 0 
-                      ? "Thank you! Your package rate and full payment is secured and locked on our servers." 
-                      : "Onboarding deposit verified. The final payment is collected before website launch."}
-                  </p>
-                </div>
-
-                {/* Receipt history */}
-                <div className="pt-3">
-                  <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest block mb-2 font-bold">Payment Statement</span>
-                  <div className="p-3 bg-neutral-950 border border-neutral-900 rounded-2xl flex items-center justify-between">
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-white block truncate">Receipt #{(project?.id || "PROJECT").slice(0, 8).toUpperCase()}</span>
-                      <span className="text-[9px] font-mono text-neutral-500">Razorpay Secure Transaction</span>
-                    </div>
-                    <button 
-                      onClick={() => alert("Your dynamic receipt is secured. You can request a PDF copy from support at any time.")}
-                      className="p-2 bg-neutral-900 hover:bg-neutral-850 rounded-xl text-neutral-400 hover:text-white transition-all focus:outline-none border border-neutral-800 cursor-pointer flex items-center justify-center"
-                    >
-                      <FileText size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-            </SectionErrorBoundary>
-
-            {/* 7. ACTIONABLE NOTIFICATIONS */}
-            <SectionErrorBoundary name="Notifications">
-            <section id="actionable-notifications-card" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6">
-              <div className="flex items-center justify-between mb-4 border-b border-neutral-900 pb-3">
-                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
-                  🔔 Notifications
-                </h3>
-                <span className="text-[8px] font-mono text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded uppercase font-bold">Latest</span>
-              </div>
-
-              <div className="space-y-3 font-sans">
-                {notificationList.map((notif) => (
-                  <div 
-                    key={notif.id}
-                    className={`p-3.5 rounded-2xl border flex gap-3 ${
-                      notif.type === "warning" 
-                        ? "bg-amber-500/[0.02] border-amber-500/20" 
-                        : notif.type === "success" 
-                          ? "bg-emerald-500/[0.02] border-emerald-500/20"
-                          : "bg-neutral-900/30 border-neutral-850"
-                    }`}
-                  >
-                    <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
-                      notif.type === "warning" 
-                        ? "bg-amber-500 animate-pulse" 
-                        : notif.type === "success" 
-                          ? "bg-emerald-500"
-                          : "bg-neutral-400"
-                    }`} />
-                    <div>
-                      <h4 className={`text-xs font-bold uppercase tracking-tight ${
-                        notif.type === "warning" 
-                          ? "text-amber-400" 
-                          : notif.type === "success" 
-                            ? "text-emerald-400"
-                            : "text-neutral-300"
-                      }`}>
-                        {notif.title}
-                      </h4>
-                      <p className="text-[11px] text-neutral-400 mt-0.5 leading-normal">
-                        {notif.text}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-            </SectionErrorBoundary>
-
-            {/* 8. QUICK ACTIONS BAR */}
-            <SectionErrorBoundary name="QuickActions">
-            <section id="quick-actions-bar" className="bg-[#050505] border border-neutral-900 rounded-3xl p-6">
-              <div className="flex items-center justify-between mb-4 border-b border-neutral-900 pb-3">
-                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[#94a3b8] flex items-center gap-1.5 font-bold">
-                  ⚡ Quick Support & Tools
-                </h3>
-                <span className="text-[8px] font-mono text-neutral-500 uppercase font-bold">Menu</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 font-sans">
-                <button
-                  onClick={() => {
-                    setActiveQuickAction(activeQuickAction === "assets" ? null : "assets");
-                    setTimeout(() => {
-                      assetCenterRef.current?.scrollIntoView({ behavior: "smooth" });
-                    }, 150);
-                  }}
-                  className="p-3 bg-neutral-950 hover:bg-neutral-900 border border-neutral-850 rounded-2xl flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer focus:outline-none"
-                >
-                  <UploadCloud size={16} className="text-amber-500" />
-                  <span className="text-[10px] font-bold text-white uppercase tracking-tight">Upload Assets</span>
-                </button>
-
-                <button
-                  onClick={() => alert("Your receipts are securely logged inside your payments panel above.")}
-                  className="p-3 bg-neutral-950 hover:bg-neutral-900 border border-neutral-850 rounded-2xl flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer focus:outline-none"
-                >
-                  <FileText size={16} className="text-neutral-400" />
-                  <span className="text-[10px] font-bold text-white uppercase tracking-tight">View Receipt</span>
-                </button>
-
-                <button
-                  onClick={() => window.open(getWhatsAppLink(`Hi CodeFuser, I'd like to ask a quick question about my website project: ${project.businessName}.`), "_blank")}
-                  className="p-3 bg-neutral-950 hover:bg-neutral-900 border border-neutral-850 rounded-2xl flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer focus:outline-none col-span-2"
-                >
-                  <MessageSquare size={16} className="text-emerald-400" />
-                  <span className="text-[10px] font-bold text-white uppercase tracking-tight">Contact Concierge Concierge</span>
-                </button>
-              </div>
-            </section>
-            </SectionErrorBoundary>
-
-          </div>
-
-        </div>
-
-      </div>
+      </main>
 
       {/* Workspace Settings Modal */}
       <SectionErrorBoundary name="Modals">
