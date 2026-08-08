@@ -361,18 +361,26 @@ export default function CustomerDashboard() {
   };
 
   const handleFinalMilestonePayment = async () => {
-    if (!project || !projectId) return;
+    const activeProj = project || ctxProject;
+    const activeProjectId = activeProj?.id || projectId;
+
+    if (!activeProj || !activeProjectId) {
+      console.warn("Payment initiation blocked: missing project or projectId context.", { project, ctxProject, projectId });
+      setPaymentError("Project information not found. Please refresh the page and try again.");
+      return;
+    }
+
     setPaymentLoading(true);
     setPaymentError(null);
-    
+    setSuccessIndicator(null);
+
     try {
       // 1. Check RAZORPAY_VERIFICATION configuration from server
       let isVerificationOn = verificationEnabled;
       try {
-        const modeRes = await fetch("/api/config/razorpay");
-        const modeData = await modeRes.json();
-        if (modeData && typeof modeData.verificationEnabled === 'boolean') {
-          isVerificationOn = modeData.verificationEnabled;
+        const modeRes = await apiClient<{ verificationEnabled: boolean }>("/api/config/razorpay");
+        if (modeRes && typeof modeRes.verificationEnabled === "boolean") {
+          isVerificationOn = modeRes.verificationEnabled;
           setVerificationEnabled(isVerificationOn);
         }
       } catch (err) {
@@ -381,67 +389,68 @@ export default function CustomerDashboard() {
 
       if (!isVerificationOn) {
         // AUTOMATIC SUCCESS SIMULATION MODE: Skip Razorpay checkout popup completely!
-        const simRes = await fetch(`/api/projects/${projectId}/simulate-payment`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${getAuthToken() || ""}`
-          },
-          body: JSON.stringify({ term: "final", action: "success" })
-        });
-        const simData = await simRes.json();
-        if (simData.success) {
+        const simData = await apiClient<{ success: boolean; project?: ProjectRecord; error?: string }>(
+          `/api/projects/${activeProjectId}/simulate-payment`,
+          {
+            method: "POST",
+            body: JSON.stringify({ term: "final", action: "success" })
+          }
+        );
+
+        if (simData && simData.success) {
+          if (simData.project) {
+            setProject(simData.project);
+            safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(simData.project));
+          }
           await refreshProject();
-          setSuccessIndicator("Milestone payment simulated successfully! Client portal fully unlocked.");
+          setSuccessIndicator("Final payment completed successfully! Your website payment is fully settled.");
           setTimeout(() => setSuccessIndicator(null), 5000);
         } else {
-          throw new Error("Automatic payment simulation failed: " + (simData.error || "Unknown error"));
+          throw new Error("Payment simulation failed: " + (simData?.error || "Unknown error"));
         }
         setPaymentLoading(false);
         return;
       }
 
+      // LIVE RAZORPAY MODE
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
         throw new Error("Unable to load the Razorpay checkout SDK. Please check your internet connection.");
       }
-      
-      const orderRes = await fetch(`/api/projects/${projectId}/razorpay-order`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAuthToken() || ""}`
-        },
-        body: JSON.stringify({ term: "final" })
-      });
-      
-      const orderData = await orderRes.json();
-      if (!orderData || !orderData.success) {
+
+      const orderData = await apiClient<{ success: boolean; order: any; error?: string }>(
+        `/api/projects/${activeProjectId}/razorpay-order`,
+        {
+          method: "POST",
+          body: JSON.stringify({ term: "final" })
+        }
+      );
+
+      if (!orderData || !orderData.success || !orderData.order) {
         throw new Error(orderData?.error || "Failed to create final milestone payment order.");
       }
-      
+
       const { order } = orderData;
-      
+
       let keyId = "";
       try {
-        const configRes = await fetch("/api/config/razorpay");
-        const configData = await configRes.json();
+        const configData = await apiClient<{ keyId: string }>("/api/config/razorpay");
         keyId = configData.keyId;
       } catch (err) {
         console.warn("Could not load public key configuration.");
       }
-      
+
       const options = {
         key: keyId || "rzp_test_placeholder",
         amount: order.amount,
         currency: order.currency,
         name: "CodeFuser",
-        description: `${extraStore.quote?.packageName || "Custom Package"} (Final 50% Milestone)`,
+        description: `${extraStore.quote?.packageName || "Website Package"} (Final Milestone Payment)`,
         order_id: order.id,
         prefill: {
-          name: project.clientName || "",
-          email: project.email || "",
-          contact: project.whatsapp || ""
+          name: activeProj.clientName || "",
+          email: activeProj.email || "",
+          contact: activeProj.whatsapp || ""
         },
         theme: {
           color: "#F59E0B"
@@ -449,29 +458,32 @@ export default function CustomerDashboard() {
         handler: async function (response: any) {
           setPaymentLoading(true);
           try {
-            const verifyRes = await fetch(`/api/projects/${projectId}/verify-payment`, {
-              method: "POST",
-              headers: { 
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${getAuthToken() || ""}`
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                term: "final"
-              })
-            });
-            const verifyData = await verifyRes.json();
-            if (verifyData.success) {
+            const verifyData = await apiClient<{ success: boolean; project?: ProjectRecord; error?: string }>(
+              `/api/projects/${activeProjectId}/verify-payment`,
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  term: "final"
+                })
+              }
+            );
+
+            if (verifyData && verifyData.success) {
+              if (verifyData.project) {
+                setProject(verifyData.project);
+                safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(verifyData.project));
+              }
               await refreshProject();
-              setSuccessIndicator("Milestone payment successful! Thank you.");
+              setSuccessIndicator("Final milestone payment verified successfully! Thank you.");
               setTimeout(() => setSuccessIndicator(null), 5000);
             } else {
-              setPaymentError("Payment verification failed: " + (verifyData.error || "Please contact support."));
+              setPaymentError("Payment verification failed: " + (verifyData?.error || "Please contact support."));
             }
-          } catch (err) {
-            setPaymentError("Could not verify transaction signature.");
+          } catch (err: any) {
+            setPaymentError(err?.message || "Could not verify transaction signature.");
           } finally {
             setPaymentLoading(false);
           }
@@ -483,14 +495,15 @@ export default function CustomerDashboard() {
           }
         }
       };
-      
+
       const rzp = new (window as any).Razorpay(options);
       rzp.on("payment.failed", function (resp: any) {
-        setPaymentError(`Transaction failed: ${resp.error.description || "Action rejected"}`);
+        setPaymentError(`Transaction failed: ${resp.error?.description || "Action rejected"}`);
         setPaymentLoading(false);
       });
       rzp.open();
     } catch (err: any) {
+      console.error("Payment error:", err);
       setPaymentError(err.message || "Failed to initiate payment. Please try again.");
       setPaymentLoading(false);
     }
@@ -932,10 +945,10 @@ export default function CustomerDashboard() {
   const rawPackageName = quoteData ? quoteData.packageName : planInfo.name;
   const selectedPackageName = getCleanPackageName(rawPackageName);
   const finalPrice = (quoteData?.finalPrice ?? quoteData?.price ?? planInfo?.price) || 0;
-  const isFullySettled = project.ownershipChoice === "full";
+  const isFullySettled = project.paymentStatus === "paid" || project.ownershipChoice === "full";
   
-  const paidFunds = isFullySettled ? finalPrice * 0.9 : finalPrice / 2;
-  const unpaidFunds = isFullySettled ? 0 : finalPrice / 2;
+  const paidFunds = isFullySettled ? (project.ownershipChoice === "full" ? finalPrice * 0.9 : finalPrice) : (project.paymentStatus === "partially_paid" ? finalPrice / 2 : 0);
+  const unpaidFunds = isFullySettled ? 0 : Math.max(0, finalPrice - paidFunds);
 
   const isDomainComplete = getAssetCategory(project.hasDomain) !== "pending";
   const isLogoComplete = getAssetCategory(project.hasLogo) !== "pending";
