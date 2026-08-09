@@ -32,6 +32,20 @@ export interface ProjectRecord {
   paymentStatus?: string;
   websiteUrl?: string;
   stagingUrl?: string;
+  receiptNumber?: string;
+  paymentProvider?: string;
+  paymentId?: string;
+  orderId?: string;
+  purchasedPlan?: string;
+  payment?: {
+    provider?: string;
+    paymentId?: string;
+    orderId?: string;
+    purchasedPlan?: string;
+    purchaseDate?: string;
+    receiptNumber?: string;
+    [key: string]: any;
+  };
 }
 
 export interface ExtraStore {

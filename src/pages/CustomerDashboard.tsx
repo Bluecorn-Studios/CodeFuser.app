@@ -1022,107 +1022,107 @@ export default function CustomerDashboard() {
 
     if (currentStageIndex === 0) {
       return {
-        title: "Payment Received & Confirmed",
-        description: "Thank you! We've successfully received and verified your payment. We are setting up your project space.",
-        btnText: "Configure Onboarding Assets",
+        title: "Payment Received! Welcome Aboard 🎉",
+        description: "Thank you for choosing CodeFuser! We've received your payment and our team is excited to build your new website.",
+        btnText: "Share Your Business Details",
         action: handleOpenAssets
       };
     }
     if (currentStageIndex === 1) {
       return {
-        title: "Your Project Sandbox is Active",
-        description: "Your secure workspace has been initialized. Let's configure your branding assets and copywriting preferences.",
-        btnText: "Configure Onboarding Assets Now",
+        title: "Your Website Workspace is Ready",
+        description: "Your project space is set up. Let's add your business logo, photos, and contact info so we can start building.",
+        btnText: "Send Your Details Now",
         action: handleOpenAssets
       };
     }
     if (currentStageIndex === 2) {
       return {
-        title: "Waiting for Onboarding Assets",
-        description: "Please complete your asset selections (logo, domain, and copy) or request our professional help below.",
-        btnText: "Provide Onboarding Assets",
+        title: "Tell Us About Your Business",
+        description: "Please share your business details, photos, and logo below so we can add them to your custom website.",
+        btnText: "Provide Business Details",
         action: handleOpenAssets
       };
     }
     if (currentStageIndex === 3) {
       return {
-        title: "Your Website Design is in Progress",
-        description: "Our professional design specialists are drafting custom high-fidelity visuals, mock layouts, and typography grids.",
-        btnText: "Discuss Styling on WhatsApp",
+        title: "We Are Designing Your Custom Website 🎨",
+        description: "Our design team is currently creating clean, professional page layouts tailored to your business.",
+        btnText: "Chat On WhatsApp",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I'd like to check on the design layouts for my website project: ${project.businessName}.`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, I'd like to check on the design layouts for my website: ${project.businessName}.`), "_blank");
         }
       };
     }
     if (currentStageIndex === 4) {
       return {
-        title: "Your Website is in Active Development",
-        description: "Our software engineers are writing clean React code and adding fluid motion animations. No actions are required.",
-        btnText: "Request Progress Update",
+        title: "Building & Coding Your Website 💻",
+        description: "Our web developers are actively building your pages for desktop and mobile phones. You don't need to do anything right now!",
+        btnText: "Ask For Progress Update",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, let's sync on the website development progress for ${project.businessName}.`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, how is the website development coming along for ${project.businessName}?`), "_blank");
         }
       };
     }
     if (currentStageIndex === 5) {
       return {
-        title: "Review Your Website Draft Link",
-        description: "Your interactive draft website is ready! Please review the layout and either submit revision requests or approve it.",
-        btnText: "Review Interactive Website Draft",
+        title: "Your Website Preview is Ready! 🚀",
+        description: "Great news! Your website draft is ready for you to view. Take a look and let us know if you'd like any changes.",
+        btnText: "Review Website Preview",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I am ready to review my website draft and live sandbox for ${project.businessName}!`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, I'm ready to look at my website preview for ${project.businessName}!`), "_blank");
         }
       };
     }
     if (currentStageIndex === 6) {
       return {
-        title: "Revisions in Progress",
-        description: "We are actively implementing your revision feedback, polishing layouts, and updating content assets.",
-        btnText: "Submit Additional Feedback",
+        title: "Updating Website Based On Your Feedback ✍️",
+        description: "We are fine-tuning your pages, updating text and images according to your request.",
+        btnText: "Send Additional Notes",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I have some additional feedback/revisions for ${project.businessName}.`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, I have a quick note regarding edits for ${project.businessName}.`), "_blank");
         }
       };
     }
     if (currentStageIndex === 7) {
       return {
-        title: "Performing Quality Testing Audits",
-        description: "Our QA team is conducting cross-device audits, page speed metrics checks, SSL activations, and contact form tests.",
-        btnText: "Chat with QA Coordinator",
+        title: "Testing Your Website Before Launch 🔍",
+        description: "We are testing your site on phones, tablets, and computers to ensure high speed, security, and smooth performance.",
+        btnText: "Chat with Our Team",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I'd like to sync on the final QA testing status of my website ${project.businessName}.`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, checking in on final launch testing for my website ${project.businessName}.`), "_blank");
         }
       };
     }
     if (currentStageIndex === 8) {
       return {
-        title: "Your Website is Ready to Go Live!",
-        description: "All audits passed! We are ready to launch your live website and map it to your custom production domain address.",
-        btnText: "Authorize Live Launch",
+        title: "Your Website is Ready To Launch! 🌟",
+        description: "Everything looks great and all tests are complete! Click below to publish your website live on the web.",
+        btnText: "Launch My Website Live",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I'm ready to take my website live! Please propagate the DNS routing for ${project.businessName}.`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, I'm ready to launch my website live for ${project.businessName}!`), "_blank");
         }
       };
     }
     if (currentStageIndex === 9) {
       return {
-        title: "Congratulations! Your Project is Delivered",
-        description: "Your premium website is fully live, secure, and completed. You can access your final delivered assets below.",
-        btnText: "Visit Live Production Website",
+        title: "Congratulations! Your Website is Live 🎉",
+        description: "Your official business website is fully live, secure, and ready for your customers to visit!",
+        btnText: "Visit Your Live Website",
         action: () => {
           const domain = typeof project?.hasDomain === "string" && project.hasDomain !== "no" ? project.hasDomain.replace("Provided: ", "").trim() : "";
           if (domain && domain !== "help" && domain !== "not_required") {
             window.open(domain.startsWith("http") ? domain : `https://${domain}`, "_blank");
           } else {
-            window.open(getWhatsAppLink(`Hi CodeFuser, my website is launched! Can you send me the final live link?`), "_blank");
+            window.open(getWhatsAppLink(`Hi CodeFuser, my website is launched! Can you send me the direct live link?`), "_blank");
           }
         }
       };
     }
     return {
-      title: "Onboarding In Progress",
-      description: "Welcome to CodeFuser! We are setting up your website project space.",
-      btnText: "Configure Your Assets",
+      title: "Welcome To Your Website Studio",
+      description: "Welcome to CodeFuser! We're glad to partner with you to grow your business online.",
+      btnText: "Share Business Info",
       action: handleOpenAssets
     };
   };

@@ -63,12 +63,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // Simple human progress steps
   const humanSteps = [
-    { label: "Project started", index: 0 },
-    { label: "Business details", index: 1 },
-    { label: "Website design", index: 2 },
-    { label: "Website development", index: 3 },
-    { label: "Review website", index: 4 },
-    { label: "Website live", index: 5 },
+    { label: "Project Started", index: 0 },
+    { label: "Business Info", index: 1 },
+    { label: "Website Design", index: 2 },
+    { label: "Development", index: 3 },
+    { label: "Website Review", index: 4 },
+    { label: "Website Live", index: 5 },
   ];
 
   const handleOpenStep = (stepKey: AssetStepKey) => {
@@ -87,47 +87,47 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       status: project.businessName && (project.whatsapp || project.email) ? "provided" : "needed",
       detail: project.businessName
         ? `${project.businessName} (${project.whatsapp || project.email || "Contact details saved"})`
-        : "Provide business name, phone, email & address",
+        : "Provide business name, phone number, email & address",
     },
     {
       stepKey: "2" as AssetStepKey,
-      title: "2. Your Business Logo",
+      title: "2. Business Logo or Shop Signboard",
       status: project.hasLogo && project.hasLogo !== "pending" ? "provided" : "needed",
       detail: project.hasLogo === "help"
-        ? "🪄 CodeFuser logo design requested"
+        ? "🪄 CodeFuser custom logo design requested"
         : project.hasLogo && project.hasLogo !== "pending"
         ? "Logo provided"
-        : "Upload your logo file or request CodeFuser custom design",
+        : "Upload your logo file, shop sign image, or ask us to design one",
     },
     {
       stepKey: "3" as AssetStepKey,
-      title: "3. Business Photos & Gallery",
+      title: "3. Photos of Your Work, Shop or Products",
       status: project.galleryReady && project.galleryReady !== "pending" ? "provided" : "needed",
       detail: project.galleryReady === "help"
-        ? "🪄 Stock photos selected"
+        ? "🪄 Professional stock photos selected"
         : project.galleryReady && project.galleryReady !== "pending"
         ? project.galleryReady
-        : "Upload photos, Drive folder, or use stock photos",
+        : "Upload store/work photos, Drive link, or use stock images",
     },
     {
       stepKey: "4" as AssetStepKey,
-      title: "4. Services / Products Provided",
+      title: "4. Services, Products & Price List",
       status: project.contentReady && project.contentReady !== "pending" ? "provided" : "needed",
       detail: project.contentReady === "help"
         ? "🪄 CodeFuser copywriting requested"
         : project.contentReady && project.contentReady !== "pending"
         ? "Services & text provided"
-        : "Type services/products or request copywriting help",
+        : "Type your offerings & prices or ask us for writing help",
     },
     {
       stepKey: "5" as AssetStepKey,
       title: "5. Preferred Website Address (Domain)",
       status: project.hasDomain && project.hasDomain !== "pending" ? "provided" : "needed",
       detail: project.hasDomain === "help"
-        ? "🪄 CodeFuser domain setup requested"
+        ? "🪄 CodeFuser domain concierge setup requested"
         : project.hasDomain && project.hasDomain !== "pending"
         ? project.hasDomain
-        : "Provide domain name or request domain setup",
+        : "Provide your domain name or let us register one for you",
     },
   ];
 
@@ -389,10 +389,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 <p className="text-xs text-neutral-400 pl-1">{item.detail}</p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => handleOpenStep(item.stepKey)}
-                  className="px-3.5 py-2 bg-neutral-900 hover:bg-white hover:text-black text-xs font-bold text-white rounded-xl border border-neutral-800 transition-all cursor-pointer flex items-center gap-1"
+                  className="px-3.5 py-2.5 bg-neutral-900 hover:bg-white hover:text-black text-xs font-bold text-white rounded-xl border border-neutral-800 transition-all cursor-pointer flex items-center justify-center gap-1"
                 >
                   <span>{item.status === "provided" ? "Edit Details" : "Send Details"}</span>
                   <ChevronRight size={14} />
@@ -401,7 +401,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   href={getWhatsAppLink(`Hi CodeFuser, I need help with ${item.title} for my website.`)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-xs text-neutral-300 hover:text-white font-bold rounded-xl border border-neutral-800 transition-all flex items-center gap-1"
+                  className="px-3 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-xs text-neutral-300 hover:text-white font-bold rounded-xl border border-neutral-800 transition-all flex items-center justify-center gap-1"
                 >
                   <span>Need Help</span>
                 </a>

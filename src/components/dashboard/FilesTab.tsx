@@ -29,22 +29,22 @@ export const FilesTab: React.FC<FilesTabProps> = ({
       {/* SECTION HEADER */}
       <div className="space-y-1">
         <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-widest block">
-          Files & Assets
+          Photos & Documents
         </span>
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          My Files & Deliverables
+          Your Uploaded Files & Downloads
         </h1>
         <p className="text-xs sm:text-sm text-neutral-400">
-          Access files you've uploaded or view deliverables created by CodeFuser.
+          Upload shop photos, logos, and documents or download preview files provided by our web team.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* GROUP 1: Things You Sent Us */}
-        <section className="p-6 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
+        <section className="p-5 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
           <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
             <h2 className="text-base font-bold text-white">
-              Files You Sent Us ({clientFiles.length})
+              Files You Shared ({clientFiles.length})
             </h2>
           </div>
 
@@ -52,7 +52,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
           <div className="border border-dashed border-neutral-800 rounded-2xl p-5 bg-black/40 text-center space-y-3">
             <div className="flex items-center justify-center gap-2 text-xs text-white font-semibold">
               <UploadCloud size={18} className="text-white" />
-              <span>Send New File</span>
+              <span>Send New File or Photo</span>
             </div>
 
             <input
@@ -63,9 +63,9 @@ export const FilesTab: React.FC<FilesTabProps> = ({
             />
             <label
               htmlFor="files-tab-uploader"
-              className="inline-block px-4 py-2 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition-all cursor-pointer shadow-md"
+              className="inline-block px-5 py-2.5 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition-all cursor-pointer shadow-md"
             >
-              Browse & Upload
+              Browse & Upload File
             </label>
 
             {uploadStatus && (
@@ -77,7 +77,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
           {/* File List */}
           {clientFiles.length === 0 ? (
             <div className="p-6 text-center text-xs text-neutral-500">
-              No uploaded files yet. Use the button above to upload logos or images.
+              No uploaded files yet. Use the button above to upload logos, shop photos, or documents.
             </div>
           ) : (
             <div className="space-y-3 font-sans max-h-[350px] overflow-y-auto pr-1">
@@ -86,7 +86,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
                   key={asset.id}
                   className="p-3.5 bg-black/60 border border-neutral-800 rounded-2xl flex items-center justify-between gap-3 hover:border-neutral-700 transition-all"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <span className="text-xs font-bold text-white block truncate">{asset.name}</span>
                     <span className="text-[10px] font-mono text-neutral-500 block mt-0.5">
                       {Math.round(asset.size / 1024)} KB
@@ -95,7 +95,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
 
                   <button
                     onClick={() => handleDownloadAsset(asset.id, asset.url)}
-                    className="px-3.5 py-1.5 bg-neutral-900 border border-neutral-800 text-xs font-bold text-white hover:bg-neutral-800 rounded-xl cursor-pointer transition-all"
+                    className="px-3.5 py-2 bg-neutral-900 border border-neutral-800 text-xs font-bold text-white hover:bg-neutral-800 rounded-xl cursor-pointer transition-all shrink-0"
                   >
                     View File
                   </button>
@@ -106,10 +106,10 @@ export const FilesTab: React.FC<FilesTabProps> = ({
         </section>
 
         {/* GROUP 2: Deliverables From CodeFuser */}
-        <section className="p-6 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
+        <section className="p-5 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
           <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
             <h2 className="text-base font-bold text-white">
-              Files From CodeFuser ({codefuserDeliverables.length})
+              Website Files From CodeFuser ({codefuserDeliverables.length})
             </h2>
           </div>
 
@@ -128,7 +128,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
                   key={item.id}
                   className="p-3.5 bg-black/60 border border-neutral-800 rounded-2xl flex items-center justify-between gap-3 hover:border-neutral-700 transition-all"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <span className="text-xs font-bold text-white block truncate">{item.name}</span>
                     <span className="text-[10px] font-mono text-neutral-500 block mt-0.5">
                       {item.category || "Deliverable"} • {Math.round((item.size || 1024) / 1024)} KB
@@ -144,7 +144,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
                         window.open(item.url, "_blank");
                       }
                     }}
-                    className="px-3.5 py-1.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md"
+                    className="px-3.5 py-2 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md"
                   >
                     <Download size={13} />
                     <span>Download</span>

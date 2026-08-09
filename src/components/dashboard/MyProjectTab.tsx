@@ -59,17 +59,17 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
           Website Creation
         </span>
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          My Website Journey
+          Your Website Progress
         </h1>
         <p className="text-xs sm:text-sm text-neutral-400">
-          Track your website creation milestones and launch the onboarding setup wizard.
+          Follow your website progress step-by-step and share your business details with our team.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* LEFT COLUMN: Human Timeline */}
         <div className="space-y-6">
-          <section className="p-6 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
+          <section className="p-5 sm:p-7 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
             <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <Globe size={18} className="text-neutral-400" />
@@ -100,7 +100,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                     />
 
                     <div className="flex-1">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
                         <span
                           className={`text-sm font-bold ${
                             isActive ? "text-white" : isCompleted ? "text-neutral-300" : "text-neutral-500"
@@ -127,7 +127,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
           {/* Approved Plan & Scope */}
           {extraStore.quote?.proposal && (
-            <section className="p-6 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-3">
+            <section className="p-5 sm:p-7 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-3">
               <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <FileText size={16} className="text-neutral-400" />
@@ -147,45 +147,45 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
         {/* RIGHT COLUMN: Easy Setup Wizard Launchpad */}
         <div className="space-y-6">
-          <section id="information-request-center" className="p-6 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6 shadow-2xl relative overflow-hidden">
+          <section id="information-request-center" className="p-5 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6 shadow-2xl relative overflow-hidden">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[11px] font-mono font-bold uppercase tracking-widest">
                 <Sparkles size={13} />
-                <span>Onboarding Asset Wizard</span>
+                <span>Simple Setup Guide</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Provide Your Website Assets
+                Share Your Business Details
               </h2>
               <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                Use our guided setup wizard to submit your domain details, logo files, business information, and website preferences in minutes.
+                Send your website photos, logo, contact info, or shop details in 5 easy steps. You can also ask our team to write or design anything for you!
               </p>
             </div>
 
             {/* Steps Preview Grid */}
-            <div className="p-5 bg-black/60 border border-neutral-800/80 rounded-2xl space-y-3">
+            <div className="p-4 sm:p-5 bg-black/60 border border-neutral-800/80 rounded-2xl space-y-3">
               <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
-                5 Quick Setup Steps
+                5 Simple Steps
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-neutral-300">
-                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">1</span>
-                  <span className="font-medium text-neutral-200">Website Address</span>
+                  <span className="font-medium text-neutral-200">Website Address (Domain)</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">2</span>
-                  <span className="font-medium text-neutral-200">Logo & Visuals</span>
+                  <span className="font-medium text-neutral-200">Logo or Shop Sign</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">3</span>
-                  <span className="font-medium text-neutral-200">Business Copy</span>
+                  <span className="font-medium text-neutral-200">Services & Price List</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">4</span>
-                  <span className="font-medium text-neutral-200">Contact & Socials</span>
+                  <span className="font-medium text-neutral-200">Phone & Address</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850 sm:col-span-2">
+                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850 sm:col-span-2">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">5</span>
-                  <span className="font-medium text-neutral-200">Special Requests & Documents</span>
+                  <span className="font-medium text-neutral-200">Shop Photos & Requests</span>
                 </div>
               </div>
             </div>
@@ -198,7 +198,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                 className="w-full py-4 bg-white hover:bg-neutral-200 text-black font-black text-xs uppercase tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xl hover:scale-[1.01]"
               >
                 <Sparkles size={16} />
-                <span>Launch Easy Setup Wizard</span>
+                <span>Open 5-Step Setup Guide</span>
                 <ChevronRight size={16} />
               </button>
             )}

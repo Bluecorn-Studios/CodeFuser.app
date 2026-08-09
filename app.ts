@@ -9,6 +9,7 @@ import { getExtraData, updateQuote, addAssetFile } from "./server/extra_store.js
 import { verifyPaymentSignature, verifyWebhookSignature, getRazorpayInstance } from "./server/razorpay.js";
 import { sendEmailAsync, getProjectCreatedTemplate, getPaymentSuccessTemplate, getPortalActivatedTemplate, getDeliverablesReadyTemplate } from "./server/email.js";
 import { withRetry } from "./server/retry.js";
+import { generatePaymentReceiptPDF } from "./server/receipt_pdf.js";
 import {
   triggerStatusChangeAutomation,
   triggerAdminNotification,
@@ -2330,6 +2331,185 @@ app.post("/api/projects/:id/simulate-payment", requestTimeout(15000, "Simulate P
     if (res.headersSent) return;
     console.error("Failed to process payment simulation:", error);
     return res.status(500).json({ success: false, error: error.message || "Simulation failed." });
+  }
+});
+
+// API: Generate & Download Official CodeFuser Payment Receipt PDF
+app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Payment Receipt"), validateProjectIdParam, requireAuth, verifyProjectOwnership, projectsRateLimiter, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    checkAbort(req);
+
+    // Retrieve project by ID (from ownership middleware context)
+    let project = req.project || await getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: "Project not found." });
+    }
+
+    // Retrieve extra quote / package details
+    const extra = await getExtraData(id);
+
+    // 1. Retrieve or generate & persist persistent receipt number
+    let receiptNumber = project.payment?.receiptNumber || project.payment?.receipt_number;
+    if (!receiptNumber) {
+      receiptNumber = "CF-REC-" + (id || "CF").substring(0, 8).toUpperCase();
+      try {
+        const updatedPaymentObj = {
+          ...(project.payment || {}),
+          receiptNumber
+        };
+        project = await updateProject(id, { payment: updatedPaymentObj }, req.reqId);
+      } catch (err) {
+        logger.warn(`Notice: Could not persist receiptNumber to project ${id}:`, err);
+      }
+    }
+
+    // 2. Determine Package Name & Project Total from authoritative data
+    let packageName = extra?.quote?.packageName || project.selectedPackage || "Fusion Package";
+    if (packageName === "foundation") packageName = "Ignite Package (Foundation)";
+    else if (packageName === "growth") packageName = "Fusion Package (Growth)";
+    else if (packageName === "dominance") packageName = "Scale Package (Dominance)";
+
+    let projectTotal = 19999; // Fallback
+    if (extra?.quote?.price) {
+      projectTotal = Number(extra.quote.price);
+    } else if (project.selectedPackage === "foundation" || project.selectedPackage?.toLowerCase().includes("ignite")) {
+      projectTotal = 9999;
+    } else if (project.selectedPackage === "growth" || project.selectedPackage?.toLowerCase().includes("fusion")) {
+      projectTotal = 19999;
+    } else if (project.selectedPackage === "dominance" || project.selectedPackage?.toLowerCase().includes("scale")) {
+      projectTotal = 39999;
+    }
+
+    // 3. Determine Payment Method & Identifiers
+    const provider = String(project.paymentProvider || project.payment?.provider || "").toLowerCase();
+    const paymentId = String(project.paymentId || project.payment?.paymentId || "").trim();
+    const orderId = String(project.orderId || project.payment?.orderId || "").trim();
+    const purchasedPlan = String(project.purchasedPlan || project.payment?.purchasedPlan || "").trim();
+
+    const isSimulated = provider.includes("simulat") || 
+      paymentId.startsWith("sim_pay_") || 
+      orderId.startsWith("sim_order_") || 
+      purchasedPlan.includes("[SIMULATED]");
+
+    let paymentMethod = "Pending Payment";
+    if (isSimulated) {
+      paymentMethod = "CodeFuser Payment Simulation";
+    } else if (provider.includes("razorpay") || paymentId.startsWith("pay_")) {
+      paymentMethod = "Razorpay Online Gateway";
+    } else if (project.paymentStatus === "paid" || project.paymentStatus === "partially_paid") {
+      paymentMethod = "CodeFuser Direct Payment";
+    }
+
+    // 4. Determine Payment Term & Settlement Amounts dynamically
+    const status = project.paymentStatus || "unpaid";
+    const purchasedPlanLower = purchasedPlan.toLowerCase();
+
+    let paymentType = "Full Project Contract";
+    if (purchasedPlanLower.includes("upfront")) {
+      paymentType = "100% Upfront Settlement";
+    } else if (purchasedPlanLower.includes("milestone")) {
+      paymentType = "50% Milestone Settlement";
+    } else if (status === "partially_paid") {
+      paymentType = "Milestone Phase 1 (50%)";
+    } else if (status === "paid") {
+      paymentType = "Full Contract Settlement";
+    }
+
+    let previousPaid = 0;
+    let currentPayment = 0;
+    let totalPaid = 0;
+    let balanceRemaining = projectTotal;
+
+    if (status === "paid") {
+      if (purchasedPlanLower.includes("upfront") || (!purchasedPlanLower.includes("milestone") && status === "paid")) {
+        previousPaid = 0;
+        currentPayment = projectTotal;
+        totalPaid = projectTotal;
+        balanceRemaining = 0;
+      } else {
+        // Milestone final payment completed
+        previousPaid = Math.round(projectTotal * 0.5);
+        currentPayment = projectTotal - previousPaid;
+        totalPaid = projectTotal;
+        balanceRemaining = 0;
+      }
+    } else if (status === "partially_paid") {
+      previousPaid = 0;
+      currentPayment = Math.round(projectTotal * 0.5);
+      totalPaid = currentPayment;
+      balanceRemaining = projectTotal - totalPaid;
+    } else {
+      previousPaid = 0;
+      currentPayment = 0;
+      totalPaid = 0;
+      balanceRemaining = projectTotal;
+    }
+
+    // 5. Date Formatting
+    const rawPurchaseDate = project.purchaseDate || project.payment?.purchaseDate || project.timestamp || new Date().toISOString();
+    let formattedDate = "N/A";
+    try {
+      formattedDate = new Date(rawPurchaseDate).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+    } catch (e) {
+      formattedDate = new Date().toLocaleDateString("en-IN");
+    }
+
+    // 6. GST / Tax details (do not fabricate GST if missing)
+    const gstin = project.onboarding?.gstin || project.gstin || undefined;
+
+    // 7. Compile Receipt Data
+    const receiptData = {
+      receiptNumber,
+      receiptDate: formattedDate,
+      clientName: project.clientName || "Valued Client",
+      businessName: project.businessName || "Business Account",
+      projectName: `${project.businessName} Digital Platform`,
+      packageName,
+      ownershipChoice: project.ownershipChoice === "subscription" ? "Subscription Plan" : "Buyout (Full Code Ownership)",
+      paymentType,
+      paymentStatus: status,
+      paymentDate: formattedDate,
+      transactionId: paymentId || (status === "unpaid" ? "PENDING" : "VERIFIED_RECORD"),
+      orderId: orderId || "N/A",
+      paymentMethod,
+      currency: "INR",
+      projectTotal,
+      previousPaid,
+      currentPayment,
+      totalPaid,
+      balanceRemaining,
+      gstin
+    };
+
+    // Log download event in Audit Trail
+    await logAuditEvent({
+      projectId: id,
+      eventType: "Payment Statement Downloaded",
+      requestId: req.reqId,
+      actor: req.isAdmin ? "Admin" : "Client",
+      status: "Success",
+      notes: `Generated official PDF receipt #${receiptNumber} for ${project.businessName}`
+    });
+
+    const pdfBuffer = await generatePaymentReceiptPDF(receiptData);
+
+    if (res.headersSent || req.timedOut) return;
+
+    const safeFilename = `CodeFuser-Receipt-${receiptNumber.replace(/[^a-zA-Z0-9_-]/g, "")}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    return res.send(pdfBuffer);
+  } catch (error: any) {
+    if (res.headersSent) return;
+    logger.error("Failed to generate payment receipt PDF:", error);
+    return res.status(500).json({ success: false, error: error.message || "Failed to generate receipt PDF." });
   }
 });
 
