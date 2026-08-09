@@ -855,9 +855,18 @@ export const StartProjectPage: React.FC = () => {
       try {
         const token = getAuthToken();
         const emailVal = authUser?.email || formData.email;
-        const emailParam = emailVal ? `?email=${encodeURIComponent(emailVal)}` : '';
-        const userParam = authUser?.id ? `${emailParam ? '&' : '?'}userId=${authUser.id}` : '';
-        const url = `/api/projects/active${emailParam || userParam ? `${emailParam}${userParam.replace('?', '&')}` : ''}`;
+        const validUserId = authUser?.id && authUser.id !== "undefined" && authUser.id !== "null" ? authUser.id : undefined;
+
+        const params = new URLSearchParams();
+        if (validUserId) {
+          params.append("userId", validUserId);
+        }
+        if (emailVal && emailVal !== "undefined" && emailVal !== "null") {
+          params.append("email", emailVal);
+        }
+
+        const queryString = params.toString();
+        const url = `/api/projects/active${queryString ? `?${queryString}` : ''}`;
 
         const res = await fetch(url, {
           headers: token ? { "Authorization": `Bearer ${token}` } : {}

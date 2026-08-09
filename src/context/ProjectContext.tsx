@@ -50,8 +50,16 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return;
     }
 
-    const emailParam = encodeURIComponent(user.email || "");
-    const url = `/api/projects?userId=${user.id}&email=${emailParam}`;
+    const params = new URLSearchParams();
+    if (user.id && user.id !== "undefined" && user.id !== "null") {
+      params.append("userId", user.id);
+    }
+    if (user.email && user.email !== "undefined" && user.email !== "null") {
+      params.append("email", user.email);
+    }
+
+    const queryString = params.toString();
+    const url = `/api/projects${queryString ? `?${queryString}` : ''}`;
     console.log("calling /api/projects", url);
 
     updateIsLoading(true, "fetchProject start");

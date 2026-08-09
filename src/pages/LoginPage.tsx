@@ -32,9 +32,28 @@ export default function LoginPage() {
 
   const handlePostAuthRedirect = async (userObj: any) => {
     try {
+      const actualUser = userObj?.user || userObj || user;
+      if (!actualUser) {
+        console.warn("[LoginPage] Post-login redirect skipped: user object unavailable.");
+        navigate("/start-project");
+        return;
+      }
+
+      const validUserId = actualUser.id && actualUser.id !== "undefined" && actualUser.id !== "null" ? actualUser.id : "";
+      const validEmail = actualUser.email && actualUser.email !== "undefined" && actualUser.email !== "null" ? actualUser.email : "";
+
+      if (!validUserId && !validEmail) {
+        console.warn("[LoginPage] Post-login redirect skipped: no valid userId or email.");
+        navigate("/start-project");
+        return;
+      }
+
       const token = session?.access_token;
-      const emailParam = encodeURIComponent(userObj.email || "");
-      const res = await fetch(`/api/projects/active?userId=${userObj.id}&email=${emailParam}`, {
+      const params = new URLSearchParams();
+      if (validUserId) params.append("userId", validUserId);
+      if (validEmail) params.append("email", validEmail);
+
+      const res = await fetch(`/api/projects/active?${params.toString()}`, {
         headers: token ? { "Authorization": `Bearer ${token}` } : {}
       });
 
@@ -43,10 +62,14 @@ export default function LoginPage() {
         const project = data.project;
 
         if (project) {
-          if (project.paymentStatus === "paid" || project.portalAccess === true) {
+          if (
+            project.paymentStatus === "paid" || 
+            project.paymentStatus === "partially_paid" || 
+            project.portalAccess === true
+          ) {
             navigate("/dashboard");
           } else {
-            // Resume project where left off in Supabase
+            // Unpaid/draft project -> resume onboarding
             navigate("/start-project");
           }
           return;
@@ -79,11 +102,11 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const loggedInUser = await signInWithEmail(email, password);
+      const authResult = await signInWithEmail(email, password);
       setSuccessMsg("Welcome back! Loading your project session...");
 
       setTimeout(() => {
-        handlePostAuthRedirect(loggedInUser || user);
+        handlePostAuthRedirect(authResult?.user || user);
       }, 500);
 
     } catch (err: any) {

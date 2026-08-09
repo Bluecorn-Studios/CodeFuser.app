@@ -877,8 +877,21 @@ app.get("/api/projects/active", projectsRateLimiter, async (req: any, res) => {
       }
     }
 
-    const queryUserId = authUser?.id || req.query.userId || "";
-    const queryEmail = String(req.query.email || authUser?.email || "").trim().toLowerCase();
+    let queryUserId = authUser?.id || req.query.userId || "";
+    if (queryUserId === "undefined" || queryUserId === "null") {
+      queryUserId = authUser?.id || "";
+    }
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (queryUserId && !uuidRegex.test(queryUserId)) {
+      console.warn(`[API /projects/active] Invalid userId received: "${queryUserId}". Ignoring invalid userId string.`);
+      queryUserId = authUser?.id && uuidRegex.test(authUser.id) ? authUser.id : "";
+    }
+
+    let queryEmail = String(req.query.email || authUser?.email || "").trim().toLowerCase();
+    if (queryEmail === "undefined" || queryEmail === "null") {
+      queryEmail = authUser?.email ? String(authUser.email).trim().toLowerCase() : "";
+    }
     const queryWhatsapp = String(req.query.whatsapp || "").trim();
 
     if (!queryUserId && !queryEmail && !queryWhatsapp) {

@@ -248,13 +248,19 @@ export async function getProjects(reqId: string = "N/A", filter?: { userId?: str
       .select("*");
 
     if (filter) {
-      if (filter.userId && filter.email) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const rawUserId = String(filter.userId || "").trim();
+      const validUserId = rawUserId && rawUserId !== "undefined" && rawUserId !== "null" && uuidRegex.test(rawUserId) ? rawUserId : undefined;
+      const rawEmail = String(filter.email || "").trim().toLowerCase();
+      const validEmail = rawEmail && rawEmail !== "undefined" && rawEmail !== "null" ? rawEmail : undefined;
+
+      if (validUserId && validEmail) {
         // Find projects matching either the user ID OR the email address
-        query = query.or(`user_id.eq.${filter.userId},email.eq.${filter.email.trim().toLowerCase()}`);
-      } else if (filter.userId) {
-        query = query.eq("user_id", filter.userId);
-      } else if (filter.email) {
-        query = query.eq("email", filter.email.trim().toLowerCase());
+        query = query.or(`user_id.eq.${validUserId},email.eq.${validEmail}`);
+      } else if (validUserId) {
+        query = query.eq("user_id", validUserId);
+      } else if (validEmail) {
+        query = query.eq("email", validEmail);
       }
     }
 
