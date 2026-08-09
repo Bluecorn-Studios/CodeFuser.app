@@ -214,11 +214,16 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({
             </div>
           </div>
 
-          {/* Statement */}
-          <div className="pt-2 border-t border-neutral-900 space-y-3">
-            <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase block">
-              Official Payment Statement
-            </span>
+          {/* Official Document Preview & Statement Download */}
+          <div className="pt-4 border-t border-neutral-900 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
+                Official Business Receipt Preview
+              </span>
+              <span className="text-[10px] font-mono text-neutral-500">
+                A4 PDF Ready
+              </span>
+            </div>
 
             {downloadError && (
               <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 flex items-center gap-2">
@@ -227,32 +232,105 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({
               </div>
             )}
 
-            <div className="p-4 bg-black/60 border border-neutral-800 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-bold text-white block truncate">
-                  CodeFuser Receipt #{displayReceiptNumber}
-                </span>
-                <span className="text-[10px] font-mono text-neutral-500 block mt-0.5">
-                  Verified Payment Record
-                </span>
+            {/* Document Card Preview */}
+            <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl">
+              {/* Header Dark Bar with CodeFuser Vector Logo */}
+              <div className="bg-slate-950 p-4 sm:p-5 border-b border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <svg className="h-5 w-auto" viewBox="0 0 741 100" fill="none">
+                      <g stroke="#ffffff" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M 75,18 L 47,18 A 32,32 0 0 0 47,82 L 75,82" />
+                        <path stroke="#f59e0b" d="M 126,16.4 C 107,16.4 104,29 104,40.5 C 104,46.8 99,50 88,50 C 99,50 104,53.2 104,59.5 C 104,71 107,83.6 126,83.6" />
+                        <path stroke="#f59e0b" d="M 144,16.4 C 163,16.4 166,29 166,40.5 C 166,46.8 171,50 182,50 C 171,50 166,53.2 166,59.5 C 166,71 163,83.6 144,83.6" />
+                        <path d="M 210,18 L 210,82 M 210,18 L 235,18 A 32,32 0 0 1 235,82 L 210,82" />
+                        <path d="M 295,18 L 343,18 M 295,50 L 370,50 M 295,82 L 343,82" />
+                        <path d="M 370,18 L 370,82 M 370,18 L 420,18 M 370,50 L 410,50" />
+                        <path d="M 448,18 L 448,53 A 27,27 0 0 0 502,53 L 502,18" />
+                        <path d="M 572,28 C 572,18 530,18 530,33 C 530,47 572,53 572,67 C 572,82 530,82 530,72" />
+                        <path d="M 604,18 L 604,82 M 604,18 L 654,18 M 604,50 L 654,50 M 604,82 L 654,82" />
+                        <path d="M 682,18 L 682,82 M 682,18 L 710,18 A 16,16 0 0 1 710,50 L 682,50 M 694,50 L 728,82" />
+                      </g>
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-400 block">
+                    Digital Growth & Web Engineering
+                  </span>
+                </div>
+
+                <div className="text-left sm:text-right">
+                  <span className="text-xs font-extrabold text-white block uppercase tracking-wider">
+                    PAYMENT RECEIPT
+                  </span>
+                  <span className="text-[11px] font-mono font-bold text-amber-400 block">
+                    #{displayReceiptNumber}
+                  </span>
+                </div>
               </div>
-              <button
-                onClick={handleDownloadReceipt}
-                disabled={downloadingReceipt}
-                className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 border border-neutral-800 hover:border-neutral-700 text-xs font-bold text-white rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-2 shadow-lg"
-              >
-                {downloadingReceipt ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin text-amber-400" />
-                    <span>Generating PDF...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download size={14} className="text-amber-400" />
-                    <span>Download Statement</span>
-                  </>
-                )}
-              </button>
+
+              {/* Document Body Details */}
+              <div className="p-4 sm:p-5 space-y-4 text-xs">
+                {/* FROM & BILL TO Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-3 border-b border-neutral-800">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-amber-500 uppercase block mb-1">
+                      FROM / ISSUED BY
+                    </span>
+                    <span className="font-bold text-white block">CodeFuser Studio</span>
+                    <span className="text-[11px] text-neutral-400 block">support@codefuser.com</span>
+                    <span className="text-[11px] text-neutral-400 block">https://codefuser.in</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-amber-500 uppercase block mb-1">
+                      BILLED TO / CUSTOMER
+                    </span>
+                    <span className="font-bold text-white block">{project.clientName || "Valued Client"}</span>
+                    <span className="text-[11px] text-neutral-300 font-medium block">{project.businessName || "Business Account"}</span>
+                  </div>
+                </div>
+
+                {/* Status & Confirmation Banner */}
+                <div className={`p-3.5 rounded-xl border flex items-start justify-between gap-3 ${
+                  isFullyPaid 
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                    : "bg-amber-500/10 border-amber-500/20 text-amber-300"
+                }`}>
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-mono font-extrabold uppercase block tracking-wider">
+                      {isFullyPaid ? "✓ PAYMENT CONFIRMED — PAID IN FULL" : "✓ PARTIAL PAYMENT RECORDED"}
+                    </span>
+                    <p className="text-[11px] opacity-90">
+                      {isFullyPaid
+                        ? `Full project contract total of ₹${Math.round(finalPrice).toLocaleString("en-IN")} is settled. Balance due is ₹0.`
+                        : `Received ₹${Math.round(paidFunds).toLocaleString("en-IN")}. Remaining balance due before launch is ₹${Math.round(unpaidFunds).toLocaleString("en-IN")}.`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Bar */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <span className="text-[10px] font-mono text-neutral-500">
+                    Official System Generated Receipt • Instant PDF
+                  </span>
+                  <button
+                    onClick={handleDownloadReceipt}
+                    disabled={downloadingReceipt}
+                    className="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+                  >
+                    {downloadingReceipt ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin text-slate-950" />
+                        <span>Generating PDF...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download size={14} className="text-slate-950" />
+                        <span>Download Official PDF Receipt</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
