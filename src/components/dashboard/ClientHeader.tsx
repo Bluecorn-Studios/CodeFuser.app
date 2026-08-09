@@ -71,7 +71,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
       </div>
 
       {/* CENTER: Navigation Tabs (Desktop) */}
-      <nav className="hidden lg:flex items-center gap-1 bg-neutral-950/90 border border-neutral-900 p-1 rounded-full">
+      <nav className="hidden lg:flex items-center gap-1 bg-neutral-950/90 border border-neutral-900 p-1.5 rounded-full">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -79,10 +79,10 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all cursor-pointer ${
                 isActive
-                  ? "bg-amber-500 text-black shadow-md shadow-amber-500/10 font-black"
-                  : "text-neutral-400 hover:text-[#EAE5D9] hover:bg-neutral-900/60"
+                  ? "bg-white text-black shadow-lg shadow-white/10 font-extrabold scale-[1.02]"
+                  : "text-neutral-400 hover:text-white hover:bg-neutral-900/80 font-semibold"
               }`}
             >
               <Icon size={15} className={isActive ? "text-black" : "text-neutral-400"} />
@@ -95,9 +95,9 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
       {/* RIGHT: Status Badge & Client Profile */}
       <div className="flex items-center gap-3">
         {/* Project Status Badge */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-neutral-950 border border-neutral-900 rounded-full text-xs">
-          <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-          <span className="text-[11px] font-medium text-neutral-300 truncate max-w-[140px]">
+        <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 bg-neutral-950 border border-neutral-800 rounded-full text-xs">
+          <span className="h-2 w-2 rounded-full bg-white animate-pulse shrink-0" />
+          <span className="text-[11px] font-semibold text-neutral-300 truncate max-w-[140px]">
             {getCustomerStatusLabel(currentStageIndex)}
           </span>
         </div>
@@ -108,10 +108,10 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
             onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
             className="flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-950 hover:bg-neutral-900 text-xs text-white cursor-pointer transition-all"
           >
-            <div className="h-6 w-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-[11px] font-black shrink-0">
+            <div className="h-6 w-6 rounded-full bg-white text-black flex items-center justify-center text-[11px] font-black shrink-0">
               {clientName?.charAt(0).toUpperCase() || "C"}
             </div>
-            <span className="hidden md:inline text-xs font-bold text-[#EAE5D9] truncate max-w-[120px]">
+            <span className="hidden md:inline text-xs font-bold text-white truncate max-w-[120px]">
               {clientName || businessName || "Client"}
             </span>
             <ChevronDown size={12} className={`text-neutral-400 transition-transform ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
@@ -236,7 +236,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                       onClick={() => handleTabClick(tab.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs transition-all text-left font-bold cursor-pointer ${
                         isActive
-                          ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20 font-black"
+                          ? "bg-white text-black shadow-lg shadow-white/10 font-extrabold"
                           : "text-neutral-400 hover:text-white hover:bg-neutral-900"
                       }`}
                     >

@@ -1006,7 +1006,7 @@ export default function CustomerDashboard() {
   const btnClass = (isActive: boolean) => 
     `flex-1 py-1.5 px-2 text-[10px] font-mono font-bold uppercase rounded-lg border text-center transition-all cursor-pointer ${
       isActive 
-        ? "bg-amber-500 text-black border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)] font-extrabold" 
+        ? "bg-white text-black border-white shadow-md font-extrabold" 
         : "bg-[#050505] text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850"
     }`;
 

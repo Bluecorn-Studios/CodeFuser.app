@@ -294,15 +294,15 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
       <div className="relative w-full max-w-3xl bg-neutral-950 border border-neutral-800 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-neutral-900 bg-black/60 flex items-center justify-between shrink-0">
+        <div className="p-5 sm:p-6 border-b border-neutral-900 bg-black/80 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
               <Sparkles size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-[#EAE5D9] flex items-center gap-2">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <span>Provide Onboarding Assets</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-200 text-[10px] font-mono uppercase tracking-widest font-extrabold">
                   Quick Setup
                 </span>
               </h2>
@@ -330,9 +330,9 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
               <button
                 key={s.key}
                 onClick={() => setActiveStep(s.key)}
-                className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer border ${
+                className={`px-3.5 py-2 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 shrink-0 cursor-pointer border ${
                   isActive
-                    ? "bg-[#EAE5D9] text-black border-[#EAE5D9] shadow-lg shadow-amber-500/5"
+                    ? "bg-white text-black border-white shadow-lg shadow-white/10 scale-[1.02]"
                     : status === "done"
                     ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
                     : "bg-neutral-900/90 text-neutral-400 border-neutral-800 hover:text-neutral-200"
@@ -883,7 +883,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
             href={getWhatsAppLink(`Hi CodeFuser, I am filling out my onboarding assets for ${project?.businessName || "My Business"} and have a question about Step ${activeStep}.`)}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-amber-400 hover:text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <HelpCircle size={15} />
             <span className="hidden sm:inline">Ask Concierge Help</span>
@@ -903,7 +903,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
               type="button"
               onClick={() => handleSaveCurrentStep(true)}
               disabled={isSaving}
-              className="px-5 py-2.5 bg-[#EAE5D9] hover:bg-white text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <span>{activeStep === "5" ? "Save & Complete All" : "Save & Continue"}</span>
               <ChevronRight size={15} />

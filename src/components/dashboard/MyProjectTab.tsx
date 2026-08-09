@@ -69,10 +69,10 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* LEFT COLUMN: Human Timeline */}
         <div className="space-y-6">
-          <section className="p-6 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-6">
+          <section className="p-6 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
             <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
-              <h2 className="text-base font-bold text-[#EAE5D9] flex items-center gap-2">
-                <Globe size={18} className="text-amber-400" />
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <Globe size={18} className="text-neutral-400" />
                 <span>Website Creation Stages</span>
               </h2>
               <span className="text-xs font-semibold text-neutral-400 bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
@@ -94,7 +94,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                         isCompleted
                           ? "bg-emerald-400 border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
                           : isActive
-                          ? "bg-amber-400 border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.5)] scale-110"
+                          ? "bg-white border-white shadow-[0_0_12px_rgba(255,255,255,0.5)] scale-110"
                           : "bg-neutral-950 border-neutral-800"
                       }`}
                     />
@@ -103,7 +103,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                       <div className="flex items-center justify-between">
                         <span
                           className={`text-sm font-bold ${
-                            isActive ? "text-[#EAE5D9]" : isCompleted ? "text-neutral-300" : "text-neutral-500"
+                            isActive ? "text-white" : isCompleted ? "text-neutral-300" : "text-neutral-500"
                           }`}
                         >
                           {stage.label}
@@ -112,7 +112,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                           <span className="text-xs font-semibold text-emerald-400">✓ Completed</span>
                         )}
                         {isActive && (
-                          <span className="text-xs font-semibold text-amber-400 animate-pulse">
+                          <span className="text-xs font-semibold text-white animate-pulse">
                             ● Active Stage
                           </span>
                         )}
@@ -127,9 +127,9 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
           {/* Approved Plan & Scope */}
           {extraStore.quote?.proposal && (
-            <section className="p-6 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-3">
+            <section className="p-6 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-3">
               <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                <h3 className="text-sm font-bold text-[#EAE5D9] flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <FileText size={16} className="text-neutral-400" />
                   Approved Website Plan
                 </h3>
@@ -138,7 +138,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                 </span>
               </div>
 
-              <div className="p-4 bg-black/60 rounded-2xl border border-neutral-900 max-h-[220px] overflow-y-auto text-xs text-neutral-300 leading-relaxed whitespace-pre-wrap">
+              <div className="p-4 bg-black/60 rounded-2xl border border-neutral-800 max-h-[220px] overflow-y-auto text-xs text-neutral-300 leading-relaxed whitespace-pre-wrap">
                 {extraStore.quote.proposal.content}
               </div>
             </section>
@@ -147,16 +147,16 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
         {/* RIGHT COLUMN: Information Request Center */}
         <div className="space-y-6">
-          <section id="information-request-center" className="p-6 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-6 scroll-mt-24">
+          <section id="information-request-center" className="p-6 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6 scroll-mt-24">
             <div className="border-b border-neutral-900 pb-4 space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-[#EAE5D9]">
+                <h2 className="text-base font-bold text-white">
                   We Need This From You
                 </h2>
                 {onOpenAssetModal && (
                   <button
                     onClick={() => onOpenAssetModal("1")}
-                    className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer"
+                    className="px-3.5 py-1.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-md"
                   >
                     <Sparkles size={13} />
                     <span>Easy Setup Wizard</span>
@@ -171,7 +171,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
             <div className="space-y-6">
               {/* Field 1: Domain */}
               <div className="space-y-3 border-b border-neutral-900/80 pb-5">
-                <label className="block text-xs font-bold text-[#EAE5D9]">
+                <label className="block text-xs font-bold text-white">
                   1. Your Website Address (Domain)
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -180,7 +180,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                     onClick={() => handleUpdateAssetField("domain", "help")}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                       domainState === "help"
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/40 font-semibold"
+                        ? "bg-white/10 text-white border-white/40 font-semibold"
                         : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
                     }`}
                   >
@@ -205,7 +205,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                     value={domainInput}
                     onChange={(e) => setDomainInput(e.target.value)}
                     placeholder="e.g. mybusiness.com"
-                    className="flex-1 bg-black border border-neutral-800 focus:border-[#EAE5D9] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
+                    className="flex-1 bg-black border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
                   />
                   <button
                     type="button"
@@ -217,7 +217,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                       handleUpdateAssetField("domain", domainInput.startsWith("Provided") ? domainInput : `Provided: ${domainInput}`);
                     }}
                     disabled={isUpdatingField === "domain"}
-                    className="px-4 py-2.5 bg-[#EAE5D9] hover:bg-white text-black font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0"
+                    className="px-4 py-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer shrink-0"
                   >
                     {isUpdatingField === "domain" ? "Saving..." : "Save Address"}
                   </button>
@@ -238,7 +238,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
               {/* Field 2: Logo */}
               <div className="space-y-3 border-b border-neutral-900/80 pb-5">
-                <label className="block text-xs font-bold text-[#EAE5D9]">
+                <label className="block text-xs font-bold text-white">
                   2. Your Logo & Photos (Google Drive or Dropbox Link)
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -247,7 +247,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                     onClick={() => handleUpdateAssetField("logo", "help")}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                       logoState === "help"
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/40 font-semibold"
+                        ? "bg-white/10 text-white border-white/40 font-semibold"
                         : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
                     }`}
                   >
@@ -272,7 +272,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                     value={logoInput}
                     onChange={(e) => setLogoInput(e.target.value)}
                     placeholder="Paste link to Google Drive or Drive folder..."
-                    className="flex-1 bg-black border border-neutral-800 focus:border-[#EAE5D9] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
+                    className="flex-1 bg-black border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
                   />
                   <button
                     type="button"
@@ -284,14 +284,14 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                       handleUpdateAssetField("logo", logoInput.startsWith("Provided") ? logoInput : `Provided: ${logoInput}`);
                     }}
                     disabled={isUpdatingField === "logo"}
-                    className="px-4 py-2.5 bg-[#EAE5D9] hover:bg-white text-black font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0"
+                    className="px-4 py-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer shrink-0"
                   >
                     {isUpdatingField === "logo" ? "Saving..." : "Save Link"}
                   </button>
                 </div>
 
                 {logoState === "help" && (
-                  <p className="text-xs text-amber-300 bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20">
+                  <p className="text-xs text-neutral-300 bg-neutral-900/80 p-3 rounded-2xl border border-neutral-800">
                     💡 Our design team will create clean logo concepts and visual graphics for your business.
                   </p>
                 )}
@@ -305,7 +305,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
               {/* Field 3: Business Information */}
               <div className="space-y-3 pb-2">
-                <label className="block text-xs font-bold text-[#EAE5D9]">
+                <label className="block text-xs font-bold text-white">
                   3. Your Business Information & Description
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -314,7 +314,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                     onClick={() => handleUpdateAssetField("copy", "no_help")}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                       copyState === "help"
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/40 font-semibold"
+                        ? "bg-white/10 text-white border-white/40 font-semibold"
                         : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
                     }`}
                   >
@@ -339,7 +339,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                     value={copyInput}
                     onChange={(e) => setCopyInput(e.target.value)}
                     placeholder="Paste website text, services, or document link..."
-                    className="flex-1 bg-black border border-neutral-800 focus:border-[#EAE5D9] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
+                    className="flex-1 bg-black border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
                   />
                   <button
                     type="button"
@@ -351,14 +351,14 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                       handleUpdateAssetField("copy", copyInput.startsWith("Provided") ? copyInput : `Provided: ${copyInput}`);
                     }}
                     disabled={isUpdatingField === "copy"}
-                    className="px-4 py-2.5 bg-[#EAE5D9] hover:bg-white text-black font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0"
+                    className="px-4 py-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer shrink-0"
                   >
                     {isUpdatingField === "copy" ? "Saving..." : "Save Details"}
                   </button>
                 </div>
 
                 {copyState === "help" && (
-                  <p className="text-xs text-amber-300 bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20">
+                  <p className="text-xs text-neutral-300 bg-neutral-900/80 p-3 rounded-2xl border border-neutral-800">
                     💡 CodeFuser copywriters will write clear, professional text tailored for your website.
                   </p>
                 )}
