@@ -55,14 +55,14 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
     <div className="space-y-8 py-2">
       {/* SECTION HEADER */}
       <div className="space-y-1">
-        <span className="text-xs font-semibold text-neutral-400 uppercase tracking-widest block">
+        <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-widest block">
           Website Creation
         </span>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#EAE5D9] tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
           My Website Journey
         </h1>
-        <p className="text-sm text-neutral-300">
-          Follow your website development stages and provide any required information.
+        <p className="text-xs sm:text-sm text-neutral-400">
+          Track your website creation milestones and launch the onboarding setup wizard.
         </p>
       </div>
 
@@ -145,268 +145,63 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
           )}
         </div>
 
-        {/* RIGHT COLUMN: Information Request Center */}
+        {/* RIGHT COLUMN: Easy Setup Wizard Launchpad */}
         <div className="space-y-6">
-          <section id="information-request-center" className="p-6 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6 scroll-mt-24">
-            <div className="border-b border-neutral-900 pb-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-white">
-                  We Need This From You
-                </h2>
-                {onOpenAssetModal && (
-                  <button
-                    onClick={() => onOpenAssetModal("1")}
-                    className="px-3.5 py-1.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-md"
-                  >
-                    <Sparkles size={13} />
-                    <span>Easy Setup Wizard</span>
-                  </button>
-                )}
+          <section id="information-request-center" className="p-6 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[11px] font-mono font-bold uppercase tracking-widest">
+                <Sparkles size={13} />
+                <span>Onboarding Asset Wizard</span>
               </div>
-              <p className="text-xs text-neutral-400 leading-relaxed">
-                Provide your details below so we can add them to your website. Click the buttons below or launch our guided setup.
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Provide Your Website Assets
+              </h2>
+              <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                Use our guided setup wizard to submit your domain details, logo files, business information, and website preferences in minutes.
               </p>
             </div>
 
-            <div className="space-y-6">
-              {/* Field 1: Domain */}
-              <div className="space-y-3 border-b border-neutral-900/80 pb-5">
-                <label className="block text-xs font-bold text-white">
-                  1. Your Website Address (Domain)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateAssetField("domain", "help")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                      domainState === "help"
-                        ? "bg-white/10 text-white border-white/40 font-semibold"
-                        : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                    }`}
-                  >
-                    CodeFuser can help
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateAssetField("domain", "not_required")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                      domainState === "not_required"
-                        ? "bg-neutral-800 text-neutral-200 border-neutral-700"
-                        : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                    }`}
-                  >
-                    I don't have this
-                  </button>
+            {/* Steps Preview Grid */}
+            <div className="p-5 bg-black/60 border border-neutral-800/80 rounded-2xl space-y-3">
+              <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
+                5 Quick Setup Steps
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-neutral-300">
+                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                  <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">1</span>
+                  <span className="font-medium text-neutral-200">Website Address</span>
                 </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={domainInput}
-                    onChange={(e) => setDomainInput(e.target.value)}
-                    placeholder="e.g. mybusiness.com"
-                    className="flex-1 bg-black border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!domainInput.trim()) {
-                        alert("Please enter a domain address or select 'CodeFuser can help'.");
-                        return;
-                      }
-                      handleUpdateAssetField("domain", domainInput.startsWith("Provided") ? domainInput : `Provided: ${domainInput}`);
-                    }}
-                    disabled={isUpdatingField === "domain"}
-                    className="px-4 py-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer shrink-0"
-                  >
-                    {isUpdatingField === "domain" ? "Saving..." : "Save Address"}
-                  </button>
+                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                  <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">2</span>
+                  <span className="font-medium text-neutral-200">Logo & Visuals</span>
                 </div>
-
-                {domainState === "help" && (
-                  <p className="text-xs text-amber-300 bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20">
-                    💡 CodeFuser will assist you in purchasing and connecting your website domain.
-                  </p>
-                )}
-                {domainState === "provided" && (
-                  <p className="text-xs text-emerald-400 bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20 flex items-center gap-2">
-                    <Check size={14} />
-                    <span>Domain submitted: {project.hasDomain}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Field 2: Logo */}
-              <div className="space-y-3 border-b border-neutral-900/80 pb-5">
-                <label className="block text-xs font-bold text-white">
-                  2. Your Logo & Photos (Google Drive or Dropbox Link)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateAssetField("logo", "help")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                      logoState === "help"
-                        ? "bg-white/10 text-white border-white/40 font-semibold"
-                        : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                    }`}
-                  >
-                    CodeFuser can help
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateAssetField("logo", "not_required")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                      logoState === "not_required"
-                        ? "bg-neutral-800 text-neutral-200 border-neutral-700"
-                        : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                    }`}
-                  >
-                    I don't have this
-                  </button>
+                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                  <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">3</span>
+                  <span className="font-medium text-neutral-200">Business Copy</span>
                 </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={logoInput}
-                    onChange={(e) => setLogoInput(e.target.value)}
-                    placeholder="Paste link to Google Drive or Drive folder..."
-                    className="flex-1 bg-black border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!logoInput.trim()) {
-                        alert("Please paste a link or select 'CodeFuser can help'.");
-                        return;
-                      }
-                      handleUpdateAssetField("logo", logoInput.startsWith("Provided") ? logoInput : `Provided: ${logoInput}`);
-                    }}
-                    disabled={isUpdatingField === "logo"}
-                    className="px-4 py-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer shrink-0"
-                  >
-                    {isUpdatingField === "logo" ? "Saving..." : "Save Link"}
-                  </button>
+                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                  <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">4</span>
+                  <span className="font-medium text-neutral-200">Contact & Socials</span>
                 </div>
-
-                {logoState === "help" && (
-                  <p className="text-xs text-neutral-300 bg-neutral-900/80 p-3 rounded-2xl border border-neutral-800">
-                    💡 Our design team will create clean logo concepts and visual graphics for your business.
-                  </p>
-                )}
-                {logoState === "provided" && (
-                  <p className="text-xs text-emerald-400 bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20 flex items-center gap-2">
-                    <Check size={14} />
-                    <span>Logo & photo link submitted</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Field 3: Business Information */}
-              <div className="space-y-3 pb-2">
-                <label className="block text-xs font-bold text-white">
-                  3. Your Business Information & Description
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateAssetField("copy", "no_help")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                      copyState === "help"
-                        ? "bg-white/10 text-white border-white/40 font-semibold"
-                        : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                    }`}
-                  >
-                    CodeFuser can help
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateAssetField("copy", "not_required")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                      copyState === "not_required"
-                        ? "bg-neutral-800 text-neutral-200 border-neutral-700"
-                        : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                    }`}
-                  >
-                    I don't have this
-                  </button>
+                <div className="flex items-center gap-2.5 p-2 bg-neutral-900/60 rounded-xl border border-neutral-850 sm:col-span-2">
+                  <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">5</span>
+                  <span className="font-medium text-neutral-200">Special Requests & Documents</span>
                 </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={copyInput}
-                    onChange={(e) => setCopyInput(e.target.value)}
-                    placeholder="Paste website text, services, or document link..."
-                    className="flex-1 bg-black border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!copyInput.trim()) {
-                        alert("Please paste text or select 'CodeFuser can help'.");
-                        return;
-                      }
-                      handleUpdateAssetField("copy", copyInput.startsWith("Provided") ? copyInput : `Provided: ${copyInput}`);
-                    }}
-                    disabled={isUpdatingField === "copy"}
-                    className="px-4 py-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer shrink-0"
-                  >
-                    {isUpdatingField === "copy" ? "Saving..." : "Save Details"}
-                  </button>
-                </div>
-
-                {copyState === "help" && (
-                  <p className="text-xs text-neutral-300 bg-neutral-900/80 p-3 rounded-2xl border border-neutral-800">
-                    💡 CodeFuser copywriters will write clear, professional text tailored for your website.
-                  </p>
-                )}
-                {copyState === "provided" && (
-                  <p className="text-xs text-emerald-400 bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20 flex items-center gap-2">
-                    <Check size={14} />
-                    <span>Business details submitted</span>
-                  </p>
-                )}
               </div>
             </div>
 
-            {/* Direct Upload Box */}
-            <div className="border border-dashed border-neutral-800 rounded-3xl p-6 bg-black/40 text-center space-y-3">
-              <UploadCloud size={28} className="text-neutral-400 mx-auto" />
-              <div className="space-y-1">
-                <span className="text-xs text-[#EAE5D9] font-bold block">Upload Photos or Documents Directly</span>
-                <p className="text-xs text-neutral-400 max-w-xs mx-auto">
-                  Click below to send us files directly from your phone or computer.
-                </p>
-              </div>
-
-              <input
-                type="file"
-                id="my-project-file-uploader"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-              <label
-                htmlFor="my-project-file-uploader"
-                className="inline-block px-5 py-2.5 bg-neutral-900 border border-neutral-800 text-xs font-semibold text-white rounded-xl hover:bg-neutral-800 transition-all cursor-pointer"
+            {/* Launch CTA */}
+            {onOpenAssetModal && (
+              <button
+                type="button"
+                onClick={() => onOpenAssetModal("1")}
+                className="w-full py-4 bg-white hover:bg-neutral-200 text-black font-black text-xs uppercase tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xl hover:scale-[1.01]"
               >
-                Browse Files & Upload
-              </label>
-
-              {uploadStatus && (
-                <div className="space-y-1 pt-2">
-                  <span className="text-xs text-amber-400 block font-medium">{uploadStatus}</span>
-                  {uploadProgress !== null && (
-                    <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-[#EAE5D9] h-full transition-all" style={{ width: `${uploadProgress}%` }} />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {uploadError && <span className="text-xs text-red-400 block pt-1">⚠️ {uploadError}</span>}
-            </div>
+                <Sparkles size={16} />
+                <span>Launch Easy Setup Wizard</span>
+                <ChevronRight size={16} />
+              </button>
+            )}
           </section>
         </div>
       </div>
