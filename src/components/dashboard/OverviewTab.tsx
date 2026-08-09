@@ -1,7 +1,8 @@
 import React from "react";
-import { ArrowRight, Check, Globe, ExternalLink, MessageSquare, ChevronRight, Sparkles, Clock, ShieldCheck, AlertCircle, HelpCircle } from "lucide-react";
+import { ArrowRight, Check, Globe, ExternalLink, MessageSquare, ChevronRight, Sparkles, Clock, ShieldCheck, AlertCircle, HelpCircle, CheckCircle2 } from "lucide-react";
 import { ProjectRecord, PlanInfo } from "./dashboardTypes";
 import { TabType } from "./ClientHeader";
+import { AssetStepKey } from "./OnboardingAssetModal";
 
 interface OverviewTabProps {
   project: ProjectRecord;
@@ -20,6 +21,7 @@ interface OverviewTabProps {
   paidFunds: number;
   unpaidFunds: number;
   onNavigateTab: (tab: TabType) => void;
+  onOpenAssetModal?: (stepKey?: AssetStepKey) => void;
   handleFinalMilestonePayment: () => void;
   paymentLoading: boolean;
   paymentError: string | null;
@@ -44,6 +46,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   paidFunds,
   unpaidFunds,
   onNavigateTab,
+  onOpenAssetModal,
   handleFinalMilestonePayment,
   paymentLoading,
   paymentError,
@@ -68,44 +71,67 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     { label: "Website live", index: 5 },
   ];
 
-  const handleGoToAssets = () => {
-    onNavigateTab("project");
-    setTimeout(() => {
-      const el = document.getElementById("information-request-center");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 100);
+  const handleOpenStep = (stepKey: AssetStepKey) => {
+    if (onOpenAssetModal) {
+      onOpenAssetModal(stepKey);
+    } else {
+      onNavigateTab("project");
+    }
   };
 
   // What we need checklist state checks
   const checklistItems = [
     {
+      stepKey: "1" as AssetStepKey,
       title: "1. Business Name & Contact Details",
-      status: project.businessName ? "provided" : "needed",
-      detail: project.businessName || "Provide your official business name",
+      status: project.businessName && (project.whatsapp || project.email) ? "provided" : "needed",
+      detail: project.businessName
+        ? `${project.businessName} (${project.whatsapp || project.email || "Contact details saved"})`
+        : "Provide business name, phone, email & address",
     },
     {
+      stepKey: "2" as AssetStepKey,
       title: "2. Your Business Logo",
-      status: project.hasLogo && project.hasLogo !== "pending" && !project.hasLogo.includes("Need Help") ? "provided" : "needed",
-      detail: project.hasLogo && project.hasLogo !== "pending" ? project.hasLogo : "Upload your logo or request CodeFuser design help",
+      status: project.hasLogo && project.hasLogo !== "pending" ? "provided" : "needed",
+      detail: project.hasLogo === "help"
+        ? "🪄 CodeFuser logo design requested"
+        : project.hasLogo && project.hasLogo !== "pending"
+        ? "Logo provided"
+        : "Upload your logo file or request CodeFuser custom design",
     },
     {
+      stepKey: "3" as AssetStepKey,
       title: "3. Business Photos & Gallery",
-      status: hasEmptyAssets ? "needed" : "provided",
-      detail: hasEmptyAssets ? "Send photos of your business, services, or products" : "Photos uploaded",
+      status: project.galleryReady && project.galleryReady !== "pending" ? "provided" : "needed",
+      detail: project.galleryReady === "help"
+        ? "🪄 Stock photos selected"
+        : project.galleryReady && project.galleryReady !== "pending"
+        ? project.galleryReady
+        : "Upload photos, Drive folder, or use stock photos",
     },
     {
+      stepKey: "4" as AssetStepKey,
       title: "4. Services / Products Provided",
       status: project.contentReady && project.contentReady !== "pending" ? "provided" : "needed",
-      detail: project.contentReady && project.contentReady !== "pending" ? project.contentReady : "Describe what your business offers",
+      detail: project.contentReady === "help"
+        ? "🪄 CodeFuser copywriting requested"
+        : project.contentReady && project.contentReady !== "pending"
+        ? "Services & text provided"
+        : "Type services/products or request copywriting help",
     },
     {
+      stepKey: "5" as AssetStepKey,
       title: "5. Preferred Website Address (Domain)",
       status: project.hasDomain && project.hasDomain !== "pending" ? "provided" : "needed",
-      detail: project.hasDomain && project.hasDomain !== "pending" ? project.hasDomain : "e.g. mybusiness.com or let us help you buy one",
+      detail: project.hasDomain === "help"
+        ? "🪄 CodeFuser domain setup requested"
+        : project.hasDomain && project.hasDomain !== "pending"
+        ? project.hasDomain
+        : "Provide domain name or request domain setup",
     },
   ];
+
+  const completedCount = checklistItems.filter((i) => i.status === "provided").length;
 
   return (
     <div className="space-y-8 py-2">
@@ -304,37 +330,58 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
       {/* 4. "WHAT WE NEED FROM YOU" CHECKLIST */}
       <section className="p-6 sm:p-8 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-900 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-900 pb-4">
           <div>
-            <h2 className="text-lg font-bold text-[#EAE5D9]">What We Need From You</h2>
-            <p className="text-xs text-neutral-400 mt-0.5">
-              Providing these details speeds up your website launch. If you need assistance, click "I Need Help".
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-[#EAE5D9]">What We Need From You</h2>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-extrabold">
+                {completedCount} of 5 Complete
+              </span>
+            </div>
+            <p className="text-xs text-neutral-400 mt-1">
+              Click "Send / Edit Details" on any item below to quickly type info or upload files.
             </p>
           </div>
+
           <button
-            onClick={handleGoToAssets}
-            className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
+            onClick={() => handleOpenStep("1")}
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           >
-            <span>Update details</span>
-            <ChevronRight size={14} />
+            <Sparkles size={14} />
+            <span>Open Asset Wizard</span>
           </button>
         </div>
 
-        <div className="space-y-3">
+        {/* Completion Progress Bar */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-[11px] font-bold text-neutral-400">
+            <span>Onboarding Progress</span>
+            <span className="text-amber-400">{Math.round((completedCount / 5) * 100)}%</span>
+          </div>
+          <div className="w-full bg-neutral-900 rounded-full h-2.5 overflow-hidden border border-neutral-800">
+            <div
+              className="bg-amber-500 h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.max(5, (completedCount / 5) * 100)}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-3 pt-2">
           {checklistItems.map((item, idx) => (
             <div
               key={idx}
               className="p-4 bg-black/60 border border-neutral-900 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-neutral-800 transition-all"
             >
-              <div className="space-y-0.5 min-w-0">
+              <div className="space-y-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {item.status === "provided" ? (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                      ✓ Done
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center gap-1">
+                      <CheckCircle2 size={12} />
+                      Done
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold">
-                      ● Needed
+                      ● Action Needed
                     </span>
                   )}
                   <span className="text-xs font-bold text-[#EAE5D9] truncate">{item.title}</span>
@@ -344,10 +391,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={handleGoToAssets}
-                  className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-[#EAE5D9] rounded-xl border border-neutral-800 transition-all cursor-pointer"
+                  onClick={() => handleOpenStep(item.stepKey)}
+                  className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-[#EAE5D9] hover:text-white rounded-xl border border-neutral-800 transition-all cursor-pointer flex items-center gap-1"
                 >
-                  Send Details
+                  <span>{item.status === "provided" ? "Edit Details" : "Send Details"}</span>
+                  <ChevronRight size={14} />
                 </button>
                 <a
                   href={getWhatsAppLink(`Hi CodeFuser, I need help with ${item.title} for my website.`)}

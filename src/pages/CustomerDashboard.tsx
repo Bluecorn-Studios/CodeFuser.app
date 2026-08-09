@@ -39,6 +39,7 @@ import { MyProjectTab } from "../components/dashboard/MyProjectTab";
 import { FilesTab } from "../components/dashboard/FilesTab";
 import { PaymentsTab } from "../components/dashboard/PaymentsTab";
 import { NeedHelpTab } from "../components/dashboard/NeedHelpTab";
+import { OnboardingAssetModal, AssetStepKey } from "../components/dashboard/OnboardingAssetModal";
 
 interface ProjectRecord {
   id: string;
@@ -214,6 +215,50 @@ export default function CustomerDashboard() {
   const [copyInput, setCopyInput] = useState<string>("");
   const [isUpdatingField, setIsUpdatingField] = useState<string | null>(null);
   const [successIndicator, setSuccessIndicator] = useState<string | null>(null);
+
+  // Onboarding Asset Modal State
+  const [isAssetModalOpen, setIsAssetModalOpen] = useState<boolean>(false);
+  const [assetModalInitialStep, setAssetModalInitialStep] = useState<AssetStepKey>("1");
+
+  const handleOpenAssetModal = (stepKey: AssetStepKey = "1") => {
+    setAssetModalInitialStep(stepKey);
+    setIsAssetModalOpen(true);
+  };
+
+  const handleSaveModalProjectData = async (updatedData: Partial<ProjectRecord>) => {
+    if (!project) return;
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAuthToken() || ""}`
+        },
+        body: JSON.stringify(updatedData)
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setProject(result.data);
+          safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(result.data));
+          setSuccessIndicator("Onboarding details updated live!");
+        }
+      } else {
+        const mockUpdated = { ...project, ...updatedData };
+        setProject(mockUpdated);
+        safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(mockUpdated));
+        setSuccessIndicator("Onboarding details saved!");
+      }
+    } catch (err) {
+      console.warn("API offline, saved locally:", err);
+      const mockUpdated = { ...project, ...updatedData };
+      setProject(mockUpdated);
+      safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(mockUpdated));
+      setSuccessIndicator("Onboarding details saved!");
+    } finally {
+      setTimeout(() => setSuccessIndicator(null), 3000);
+    }
+  };
 
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState<boolean>(false);
   const [activeWorkspaceModal, setActiveWorkspaceModal] = useState<"settings" | "billing" | "support" | null>(null);
@@ -972,16 +1017,7 @@ export default function CustomerDashboard() {
   // Formulate exactly ONE primary action details
   const getPrimaryAction = () => {
     const handleOpenAssets = () => {
-      setActiveTab("project");
-      setActiveQuickAction("assets");
-      setTimeout(() => {
-        const el = document.getElementById("information-request-center") || assetCenterRef.current;
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-      }, 100);
+      handleOpenAssetModal("1");
     };
 
     if (currentStageIndex === 0) {
@@ -1209,6 +1245,7 @@ export default function CustomerDashboard() {
               paidFunds={paidFunds}
               unpaidFunds={unpaidFunds}
               onNavigateTab={(tab) => setActiveTab(tab)}
+              onOpenAssetModal={handleOpenAssetModal}
               handleFinalMilestonePayment={handleFinalMilestonePayment}
               paymentLoading={paymentLoading}
               paymentError={paymentError}
@@ -1240,6 +1277,7 @@ export default function CustomerDashboard() {
               setCopyInput={setCopyInput}
               isUpdatingField={isUpdatingField}
               btnClass={btnClass}
+              onOpenAssetModal={handleOpenAssetModal}
             />
           )}
 
@@ -1547,6 +1585,16 @@ export default function CustomerDashboard() {
         )}
       </AnimatePresence>
       </SectionErrorBoundary>
+
+      {/* Onboarding Asset Submission Modal */}
+      <OnboardingAssetModal
+        isOpen={isAssetModalOpen}
+        onClose={() => setIsAssetModalOpen(false)}
+        initialStep={assetModalInitialStep}
+        project={project}
+        onSaveProject={handleSaveModalProjectData}
+        getWhatsAppLink={getWhatsAppLink}
+      />
     </div>
   );
 }

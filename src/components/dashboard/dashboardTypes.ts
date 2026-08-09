@@ -17,7 +17,10 @@ export interface ProjectRecord {
   stageProgressPercent?: number;
   hasDomain?: string;
   hasLogo?: string;
+  galleryReady?: string;
   contentReady?: string;
+  businessDetails?: string;
+  address?: string;
   targetDate?: string;
   additionalNotes?: string;
   isApprovedClient?: boolean;

@@ -1,6 +1,7 @@
 import React from "react";
-import { Check, UploadCloud, FileText, Layers, Globe, ArrowRight, Clock, AlertCircle } from "lucide-react";
+import { Check, UploadCloud, FileText, Layers, Globe, ArrowRight, Clock, AlertCircle, Sparkles, Image as ImageIcon, Building2, Upload, ChevronRight } from "lucide-react";
 import { ProjectRecord, ExtraStore } from "./dashboardTypes";
+import { AssetStepKey } from "./OnboardingAssetModal";
 
 interface MyProjectTabProps {
   project: ProjectRecord;
@@ -24,6 +25,7 @@ interface MyProjectTabProps {
   setCopyInput: (v: string) => void;
   isUpdatingField: string | null;
   btnClass: (active: boolean) => string;
+  onOpenAssetModal?: (stepKey?: AssetStepKey) => void;
 }
 
 export const MyProjectTab: React.FC<MyProjectTabProps> = ({
@@ -47,6 +49,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
   copyInput,
   setCopyInput,
   isUpdatingField,
+  onOpenAssetModal,
 }) => {
   return (
     <div className="space-y-8 py-2">
@@ -145,12 +148,23 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
         {/* RIGHT COLUMN: Information Request Center */}
         <div className="space-y-6">
           <section id="information-request-center" className="p-6 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-6 scroll-mt-24">
-            <div className="border-b border-neutral-900 pb-4 space-y-1">
-              <h2 className="text-base font-bold text-[#EAE5D9]">
-                We Need This From You
-              </h2>
+            <div className="border-b border-neutral-900 pb-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-bold text-[#EAE5D9]">
+                  We Need This From You
+                </h2>
+                {onOpenAssetModal && (
+                  <button
+                    onClick={() => onOpenAssetModal("1")}
+                    className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles size={13} />
+                    <span>Easy Setup Wizard</span>
+                  </button>
+                )}
+              </div>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                Provide your details below so we can add them to your website. If you don't have them, select "CodeFuser can help".
+                Provide your details below so we can add them to your website. Click the buttons below or launch our guided setup.
               </p>
             </div>
 
