@@ -144,7 +144,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
         {/* RIGHT COLUMN: Information Request Center */}
         <div className="space-y-6">
-          <section className="p-6 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-6">
+          <section id="information-request-center" className="p-6 bg-neutral-950 border border-neutral-900 rounded-3xl space-y-6 scroll-mt-24">
             <div className="border-b border-neutral-900 pb-4 space-y-1">
               <h2 className="text-base font-bold text-[#EAE5D9]">
                 We Need This From You

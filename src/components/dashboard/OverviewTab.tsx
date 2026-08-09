@@ -68,6 +68,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     { label: "Website live", index: 5 },
   ];
 
+  const handleGoToAssets = () => {
+    onNavigateTab("project");
+    setTimeout(() => {
+      const el = document.getElementById("information-request-center");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  };
+
   // What we need checklist state checks
   const checklistItems = [
     {
@@ -302,7 +312,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </p>
           </div>
           <button
-            onClick={() => onNavigateTab("project")}
+            onClick={handleGoToAssets}
             className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
           >
             <span>Update details</span>
@@ -334,7 +344,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => onNavigateTab("project")}
+                  onClick={handleGoToAssets}
                   className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-[#EAE5D9] rounded-xl border border-neutral-800 transition-all cursor-pointer"
                 >
                   Send Details

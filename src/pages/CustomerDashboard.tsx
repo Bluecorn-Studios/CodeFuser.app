@@ -971,17 +971,25 @@ export default function CustomerDashboard() {
 
   // Formulate exactly ONE primary action details
   const getPrimaryAction = () => {
+    const handleOpenAssets = () => {
+      setActiveTab("project");
+      setActiveQuickAction("assets");
+      setTimeout(() => {
+        const el = document.getElementById("information-request-center") || assetCenterRef.current;
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }, 100);
+    };
+
     if (currentStageIndex === 0) {
       return {
         title: "Payment Received & Confirmed",
         description: "Thank you! We've successfully received and verified your payment. We are setting up your project space.",
         btnText: "Configure Onboarding Assets",
-        action: () => {
-          setActiveQuickAction("assets");
-          setTimeout(() => {
-            assetCenterRef.current?.scrollIntoView({ behavior: "smooth" });
-          }, 150);
-        }
+        action: handleOpenAssets
       };
     }
     if (currentStageIndex === 1) {
@@ -989,12 +997,7 @@ export default function CustomerDashboard() {
         title: "Your Project Sandbox is Active",
         description: "Your secure workspace has been initialized. Let's configure your branding assets and copywriting preferences.",
         btnText: "Configure Onboarding Assets Now",
-        action: () => {
-          setActiveQuickAction("assets");
-          setTimeout(() => {
-            assetCenterRef.current?.scrollIntoView({ behavior: "smooth" });
-          }, 150);
-        }
+        action: handleOpenAssets
       };
     }
     if (currentStageIndex === 2) {
@@ -1002,12 +1005,7 @@ export default function CustomerDashboard() {
         title: "Waiting for Onboarding Assets",
         description: "Please complete your asset selections (logo, domain, and copy) or request our professional help below.",
         btnText: "Provide Onboarding Assets",
-        action: () => {
-          setActiveQuickAction("assets");
-          setTimeout(() => {
-            assetCenterRef.current?.scrollIntoView({ behavior: "smooth" });
-          }, 150);
-        }
+        action: handleOpenAssets
       };
     }
     if (currentStageIndex === 3) {
@@ -1089,12 +1087,7 @@ export default function CustomerDashboard() {
       title: "Onboarding In Progress",
       description: "Welcome to CodeFuser! We are setting up your website project space.",
       btnText: "Configure Your Assets",
-      action: () => {
-        setActiveQuickAction("assets");
-        setTimeout(() => {
-          assetCenterRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 150);
-      }
+      action: handleOpenAssets
     };
   };
 
