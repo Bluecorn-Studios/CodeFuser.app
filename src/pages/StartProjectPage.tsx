@@ -3629,6 +3629,7 @@ That's enough. We'll help with the rest.`}
                       <label className="block text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-1.5 font-bold">Full Name</label>
                       <input
                         type="text"
+                        autoComplete="name"
                         value={authFullName}
                         onChange={(e) => setAuthFullName(e.target.value)}
                         placeholder="e.g. Jonathan Doe"
@@ -3640,6 +3641,7 @@ That's enough. We'll help with the rest.`}
                       <label className="block text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-1.5 font-bold">Business / Brand Name</label>
                       <input
                         type="text"
+                        autoComplete="organization"
                         value={authBusinessName}
                         onChange={(e) => setAuthBusinessName(e.target.value)}
                         placeholder="e.g. Acme Corp"
@@ -3654,6 +3656,7 @@ That's enough. We'll help with the rest.`}
                   <label className="block text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-1.5 font-bold">Email Address</label>
                   <input
                     type="email"
+                    autoComplete="username email"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     placeholder="you@example.com"
@@ -3667,6 +3670,7 @@ That's enough. We'll help with the rest.`}
                   <div className="relative">
                     <input
                       type={showAuthPassword ? "text" : "password"}
+                      autoComplete={authMode === 'signup' ? "new-password" : "current-password"}
                       value={authPassword}
                       onChange={(e) => setAuthPassword(e.target.value)}
                       placeholder="Min. 6 characters"
@@ -3691,6 +3695,7 @@ That's enough. We'll help with the rest.`}
                     <div className="relative">
                       <input
                         type={showAuthConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
                         value={authConfirmPassword}
                         onChange={(e) => setAuthConfirmPassword(e.target.value)}
                         placeholder="Repeat your password"

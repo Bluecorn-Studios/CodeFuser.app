@@ -387,6 +387,7 @@ export const MissionControl: React.FC = () => {
                 <input
                   id="admin-passcode"
                   type={showAdminPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   required
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
