@@ -50,6 +50,7 @@ import { supabase } from '../lib/supabase';
 import { safeLocalStorage } from '../utils/safeStorage';
 import { PaymentSimulationPanel } from '../components/PaymentSimulationPanel';
 import { normalizeProjectFormData } from '../lib/schemaNormalizer';
+import { useProject } from '../context/ProjectContext';
 
 interface StartProjectData {
   businessName: string;
@@ -445,6 +446,8 @@ function getDraftAgeDays(dateStr?: string): number {
 
 export const StartProjectPage: React.FC = () => {
   const { navigate, currentPath } = useAppRouter();
+  const { refreshProject } = useProject();
+  const [isNewProjectMode, setIsNewProjectMode] = useState<boolean>(false);
   const backgroundStars = React.useMemo(() => {
     return Array.from({ length: 45 }).map((_, i) => ({
       id: i,
@@ -470,6 +473,60 @@ export const StartProjectPage: React.FC = () => {
     existingCount?: number;
     draftProject?: any;
   } | null>(null);
+
+  const handleGoToDashboard = async () => {
+    const activeProj = step1Notice?.draftProject;
+    const existingId = activeProj?.id || createdProjectId || safeLocalStorage.getItem('fuser_client_project_id');
+
+    if (existingId) {
+      safeLocalStorage.setItem('fuser_client_project_id', existingId);
+    }
+    if (activeProj) {
+      safeLocalStorage.setItem('codefuser_current_project', JSON.stringify(activeProj));
+    }
+
+    setStep1Notice(null);
+
+    if (refreshProject) {
+      try {
+        await refreshProject();
+      } catch (e) {
+        console.warn("Failed to refresh project context before dashboard navigation:", e);
+      }
+    }
+
+    navigate('/dashboard');
+  };
+
+  const handleStartNewProject = () => {
+    setIsNewProjectMode(true);
+    setCreatedProjectId(null);
+    safeLocalStorage.removeItem('fuser_client_project_id');
+    safeLocalStorage.removeItem('codefuser_current_project');
+    safeLocalStorage.removeItem('codefuser_start_project_draft');
+
+    const authUser = getAuthUser();
+    setFormData({
+      ownerName: authUser?.user_metadata?.full_name || authUser?.fullName || '',
+      businessName: '',
+      email: authUser?.email || '',
+      whatsapp: '',
+      packageId: 'growth',
+      ownership: 'managed',
+      industry: '',
+      customIndustry: '',
+      goal: '',
+      customGoal: '',
+      hasDomain: 'no',
+      hasLogo: 'no',
+      contentReady: 'no_help',
+      aiPrompt: ''
+    });
+
+    setStep1Notice(null);
+    setStep(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleLogoutAndSwitch = async () => {
     try {
@@ -787,10 +844,14 @@ export const StartProjectPage: React.FC = () => {
 
   // Save project draft automatically to Supabase as single source of truth
   const saveDraftToSupabase = useCallback(async (extraData?: any) => {
+    if (step1Notice) return;
+    if (step === 1 && onboardingStage === 'form') return;
+
     try {
       const authUser = getAuthUser();
       const payload = {
         projectId: createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || undefined,
+        isNewProject: isNewProjectMode,
         userId: authUser?.id || undefined,
         ownerName: formData.ownerName,
         businessName: formData.businessName,
@@ -837,7 +898,7 @@ export const StartProjectPage: React.FC = () => {
     } catch (err) {
       console.warn("Auto-save to Supabase error:", err);
     }
-  }, [createdProjectId, formData, step, onboardingStage, recommendationCards, aiSummary, selectedCardId, selectedPaymentTerm, localPhone, selectedCountry]);
+  }, [createdProjectId, isNewProjectMode, formData, step, onboardingStage, recommendationCards, aiSummary, selectedCardId, selectedPaymentTerm, localPhone, selectedCountry, step1Notice]);
 
   // Restore active project state from Supabase on mount
   useEffect(() => {
@@ -982,13 +1043,16 @@ export const StartProjectPage: React.FC = () => {
 
   // Save changes automatically to Supabase with 800ms debouncing
   useEffect(() => {
+    if (step1Notice) return;
+    if (step === 1 && onboardingStage === 'form') return;
+
     if (formData.businessName || formData.ownerName || localPhone || step > 1 || onboardingStage !== 'form') {
       const saveTimer = setTimeout(() => {
         saveDraftToSupabase();
       }, 800);
       return () => clearTimeout(saveTimer);
     }
-  }, [formData, step, onboardingStage, selectedCardId, selectedPaymentTerm, localPhone, selectedCountry, recommendationCards, aiSummary, saveDraftToSupabase]);
+  }, [formData, step, onboardingStage, selectedCardId, selectedPaymentTerm, localPhone, selectedCountry, recommendationCards, aiSummary, step1Notice, saveDraftToSupabase]);
 
   // Memoized Validation Error Helper
   const validationErrors = React.useMemo(() => {
@@ -1706,11 +1770,7 @@ ${formData.ownerName}
                               <>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setStep1Notice(null);
-                                    setStep(2);
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                  }}
+                                  onClick={handleStartNewProject}
                                   className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2 cursor-pointer"
                                 >
                                   <Plus size={14} /> Start New Project
@@ -1718,7 +1778,7 @@ ${formData.ownerName}
 
                                 <button
                                   type="button"
-                                  onClick={() => navigate('/dashboard')}
+                                  onClick={handleGoToDashboard}
                                   className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold uppercase tracking-wider transition-all border border-zinc-700 flex items-center gap-2 cursor-pointer"
                                 >
                                   <LayoutDashboard size={14} /> Go to Dashboard

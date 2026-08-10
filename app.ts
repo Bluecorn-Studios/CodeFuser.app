@@ -752,8 +752,8 @@ app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) 
       existingProject = await getProjectById(projectId);
     }
 
-    // 2. If no project found by id, search by targetUserId or email/whatsapp
-    if (!existingProject && targetUserId) {
+    // 2. If no project found by id and NOT explicitly starting a new project, search by targetUserId or email/whatsapp
+    if (!existingProject && !req.body.isNewProject && targetUserId) {
       const { data: userProjects } = await supabase
         .from("projects")
         .select("*")
@@ -764,7 +764,7 @@ app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) 
       }
     }
 
-    if (!existingProject && cleanEmail) {
+    if (!existingProject && !req.body.isNewProject && cleanEmail) {
       const { data: emailProjects } = await supabase
         .from("projects")
         .select("*")
