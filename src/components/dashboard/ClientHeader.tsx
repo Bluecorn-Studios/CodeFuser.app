@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { User, ChevronDown, Coins, MessageSquare, LogOut, Home, Globe, FolderOpen, CreditCard, HelpCircle, Menu, X } from "lucide-react";
+import { User, ChevronDown, Coins, MessageSquare, LogOut, Home, Globe, FolderOpen, CreditCard, Server, HelpCircle, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
-export type TabType = "overview" | "project" | "files" | "payments" | "help";
+export type TabType = "overview" | "project" | "files" | "payments" | "hosting" | "help";
 
 interface ClientHeaderProps {
   businessName: string;
@@ -38,6 +38,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
     { id: "project", label: "My Website", icon: Globe },
     { id: "files", label: "My Files", icon: FolderOpen },
     { id: "payments", label: "Payments", icon: CreditCard },
+    { id: "hosting", label: "Hosting & Domain", icon: Server },
     { id: "help", label: "Help", icon: HelpCircle },
   ];
 

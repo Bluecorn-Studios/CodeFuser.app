@@ -38,8 +38,10 @@ import { OverviewTab } from "../components/dashboard/OverviewTab";
 import { MyProjectTab } from "../components/dashboard/MyProjectTab";
 import { FilesTab } from "../components/dashboard/FilesTab";
 import { PaymentsTab } from "../components/dashboard/PaymentsTab";
+import { HostingTab } from "../components/dashboard/HostingTab";
 import { NeedHelpTab } from "../components/dashboard/NeedHelpTab";
 import { OnboardingAssetModal, AssetStepKey } from "../components/dashboard/OnboardingAssetModal";
+import { HostingSetupModal } from "../components/dashboard/HostingSetupModal";
 
 interface ProjectRecord {
   id: string;
@@ -219,6 +221,28 @@ export default function CustomerDashboard() {
   // Onboarding Asset Modal State
   const [isAssetModalOpen, setIsAssetModalOpen] = useState<boolean>(false);
   const [assetModalInitialStep, setAssetModalInitialStep] = useState<AssetStepKey>("1");
+
+  // Hosting Setup Modal State
+  const [isHostingSetupModalOpen, setIsHostingSetupModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (project?.id) {
+      const shownKey = `fuser_hosting_modal_shown_${project.id}`;
+      if (!sessionStorage.getItem(shownKey)) {
+        fetch(`/api/projects/${project.id}/hosting`, {
+          headers: { "Authorization": `Bearer ${getAuthToken() || ""}` }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data?.success && data?.subscription?.status === "FREE_TRIAL_ACTIVE" && data?.subscription?.autopayStatus !== "active") {
+              setIsHostingSetupModalOpen(true);
+              sessionStorage.setItem(shownKey, "true");
+            }
+          })
+          .catch(e => console.log("Hosting modal check error:", e));
+      }
+    }
+  }, [project?.id]);
 
   const handleOpenAssetModal = (stepKey: AssetStepKey = "1") => {
     setAssetModalInitialStep(stepKey);
@@ -1308,6 +1332,10 @@ export default function CustomerDashboard() {
             />
           )}
 
+          {activeTab === "hosting" && (
+            <HostingTab project={project} />
+          )}
+
           {activeTab === "help" && (
             <NeedHelpTab
               project={project}
@@ -1594,6 +1622,14 @@ export default function CustomerDashboard() {
         project={project}
         onSaveProject={handleSaveModalProjectData}
         getWhatsAppLink={getWhatsAppLink}
+      />
+
+      {/* First Dashboard Visit Hosting Setup Modal */}
+      <HostingSetupModal
+        isOpen={isHostingSetupModalOpen}
+        onClose={() => setIsHostingSetupModalOpen(false)}
+        project={project}
+        onOpenHostingTab={() => setActiveTab("hosting")}
       />
     </div>
   );

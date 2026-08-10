@@ -42,16 +42,29 @@ export function verifyPaymentSignature(orderId: string, paymentId: string, signa
  * Verify webhook signature sent by Razorpay webhook event
  */
 export function verifyWebhookSignature(rawBody: string, signature: string): boolean {
-  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET;
   if (!secret) {
-    console.error("RAZORPAY_WEBHOOK_SECRET environment variable is not set.");
+    console.error("RAZORPAY_WEBHOOK_SECRET / RAZORPAY_SECRET environment variable is not set.");
     return false;
   }
   
+  if (!signature) {
+    return false;
+  }
+
   const generatedSignature = crypto
     .createHmac("sha256", secret)
     .update(rawBody)
     .digest("hex");
     
-  return generatedSignature === signature;
+  try {
+    const genBuffer = Buffer.from(generatedSignature, "utf-8");
+    const sigBuffer = Buffer.from(signature.trim(), "utf-8");
+    if (genBuffer.length !== sigBuffer.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(genBuffer, sigBuffer);
+  } catch {
+    return false;
+  }
 }

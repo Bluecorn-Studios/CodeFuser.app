@@ -665,7 +665,7 @@ export const Oo: React.FC = () => {
                   <ul className="list-disc pl-5 text-foreground space-y-1">
                     <li><span className="font-bold">Essential Plan:</span> ₹499/mo (optimized for ⚡ Ignite)</li>
                     <li><span className="font-bold">Growth Plan:</span> ₹999/mo (optimized for ✦ Fusion)</li>
-                    <li><span className="font-bold">Premium Plan:</span> ₹1499/mo (optimized for ⬢ Catalyst)</li>
+                    <li><span className="font-bold">Premium Plan:</span> ₹1,999/mo (optimized for ⬢ Catalyst)</li>
                   </ul>
                   <p className="text-foreground mt-2 font-medium">
                     according to their selected service plan.

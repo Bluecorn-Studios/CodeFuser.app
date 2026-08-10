@@ -60,6 +60,7 @@ interface ProjectRecord {
 }
 
 import { BusinessIntelligenceCRM } from "../components/BusinessIntelligenceCRM";
+import { HostingAdminManager } from "../components/admin/HostingAdminManager";
 
 export const MissionControl: React.FC = () => {
   const { navigate } = useAppRouter();
@@ -106,7 +107,7 @@ export const MissionControl: React.FC = () => {
   const [dbSource, setDbSource] = useState<string>("Supabase");
   
   // Controls
-  const [activeTab, setActiveTab] = useState<"projects" | "users" | "crm">("projects");
+  const [activeTab, setActiveTab] = useState<"projects" | "users" | "crm" | "hosting">("projects");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("all");
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -629,6 +630,16 @@ export const MissionControl: React.FC = () => {
             }`}
           >
             🛡️ User Roles & RBAC
+          </button>
+          <button
+            onClick={() => setActiveTab("hosting")}
+            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+              activeTab === "hosting"
+                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
+                : "text-zinc-500 hover:text-white"
+            }`}
+          >
+            🌐 Hosting & Subscriptions
           </button>
         </div>
 
@@ -2397,6 +2408,10 @@ export const MissionControl: React.FC = () => {
 
         {activeTab === "crm" && (
           <BusinessIntelligenceCRM projects={projects} />
+        )}
+
+        {activeTab === "hosting" && (
+          <HostingAdminManager getAdminHeaders={getAdminHeaders} />
         )}
         {activeAuditProjId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">

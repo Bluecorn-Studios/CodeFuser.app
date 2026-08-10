@@ -2,6 +2,7 @@ import { getSupabase } from "./supabase.js";
 import { sendEmailAsync } from "./email.js";
 import { getProjectById, updateProject, logAuditEvent } from "./db.js";
 import { getExtraData } from "./extra_store.js";
+import { runHostingLifecycleScan } from "./hosting_model.js";
 
 // Admin Email configuration
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "onboarding@resend.dev";
@@ -593,6 +594,14 @@ export async function runPeriodicAutomationScan(requestId: string = "scan-auto")
           stats.quoteExpiredNotificationsSent++;
         }
       }
+    }
+
+    // Execute Server-Side Hosting Lifecycle Automation Scanner
+    try {
+      const hostingScanStats = await runHostingLifecycleScan(requestId);
+      console.log(`[Automation Engine] Server-side hosting lifecycle scan result:`, hostingScanStats);
+    } catch (hErr: any) {
+      console.error(`[Automation Engine] Hosting lifecycle scan error:`, hErr?.message || hErr);
     }
 
     console.log(`[Automation Engine] Background scan completed. Stats:`, stats);

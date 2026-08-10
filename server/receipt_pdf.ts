@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { getHostingPlanConfig } from "./hosting_model.js";
 
 export interface PaymentReceiptData {
   receiptNumber: string;
@@ -154,7 +155,50 @@ export function generatePaymentReceiptPDF(data: PaymentReceiptData): Promise<Buf
       doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Ownership Terms:", pCol2, infoY);
       doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.ownershipChoice || "Buyout (Full Code Base & License)", pCol2 + 85, infoY, { width: 170 });
 
-      y += infoBoxHeight + 16;
+      y += infoBoxHeight + 12;
+
+      // --- 3B. DOMAIN & HOSTING BENEFITS BLOCK ---
+      let hostingFreeMonths = 1;
+      let monthlyHostingPrice = 499;
+      let domainBenefitText = "Included (CodeFuser Managed)";
+      try {
+        const planCfg = getHostingPlanConfig(data.packageName);
+        hostingFreeMonths = planCfg.freeHostingMonths;
+        monthlyHostingPrice = planCfg.monthlyHostingPrice;
+        if (planCfg.domainFreeYears > 0) {
+          domainBenefitText = `${planCfg.domainFreeYears} Year${planCfg.domainFreeYears > 1 ? "s" : ""} FREE Domain`;
+        } else {
+          domainBenefitText = "Google Search Setup / Included";
+        }
+      } catch (e) {
+        // Fallback safely if unmapped
+        hostingFreeMonths = 1;
+        monthlyHostingPrice = 499;
+      }
+
+      const benefitBoxH = 60;
+      doc.roundedRect(margin, y, contentWidth, benefitBoxH, 6).fill("#F0FDF4");
+      doc.roundedRect(margin, y, contentWidth, benefitBoxH, 6).lineWidth(0.75).stroke("#86EFAC");
+
+      let benY = y + 8;
+      doc.fillColor("#166534").fontSize(8).font("Helvetica-Bold").text("DOMAIN & HOSTING PROMOTIONAL BENEFITS INCLUDED", margin + 12, benY);
+      benY += 14;
+
+      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Hosting Period:", pCol1, benY);
+      doc.fillColor("#14532D").fontSize(8.5).font("Helvetica-Bold").text(`${hostingFreeMonths} Month${hostingFreeMonths > 1 ? "s" : ""} FREE (Promotional Discount)`, pCol1 + 75, benY);
+
+      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Domain Status:", pCol2, benY);
+      doc.fillColor("#14532D").fontSize(8.5).font("Helvetica-Bold").text(domainBenefitText, pCol2 + 85, benY);
+
+      benY += 16;
+
+      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Hosting Value:", pCol1, benY);
+      doc.fillColor("#14532D").fontSize(8.5).text(`Rs. ${monthlyHostingPrice.toLocaleString("en-IN")} (Discount: -Rs. ${monthlyHostingPrice.toLocaleString("en-IN")} • Paid: Rs. 0)`, pCol1 + 75, benY);
+
+      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Next Billing Rate:", pCol2, benY);
+      doc.fillColor("#14532D").fontSize(8.5).font("Helvetica-Bold").text(`Rs. ${monthlyHostingPrice.toLocaleString("en-IN")}/month (Starts in ${hostingFreeMonths * 30} days)`, pCol2 + 85, benY);
+
+      y += benefitBoxH + 16;
 
       // --- 4. FINANCIAL PAYMENT SUMMARY TABLE ---
       doc.fillColor("#0F172A").fontSize(10).font("Helvetica-Bold").text("FINANCIAL SETTLEMENT SUMMARY", margin, y);
