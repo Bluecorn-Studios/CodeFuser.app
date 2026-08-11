@@ -20,11 +20,19 @@ import { logAndMapAuthError } from "../utils/authErrors";
 
 export default function LoginPage() {
   const { navigate } = useAppRouter();
-  const { user, session, isLoading: authLoading, signInWithEmail, signInWithGoogle } = useAuth();
+  const { user, session, isLoading: authLoading, signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
   
+  // Read URL params to set initial mode
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>(searchParams.get("signup") === "true" ? 'signup' : 'signin');
+
+  const [fullName, setFullName] = useState<string>("");
+  const [businessName, setBusinessName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -34,8 +42,8 @@ export default function LoginPage() {
     try {
       const actualUser = userObj?.user || userObj || user;
       if (!actualUser) {
-        console.warn("[LoginPage] Post-login redirect skipped: user object unavailable.");
-        navigate("/start-project");
+        console.warn("[LoginPage] Post-login redirect: user object unavailable, directing to dashboard.");
+        navigate("/dashboard");
         return;
       }
 
@@ -43,8 +51,8 @@ export default function LoginPage() {
       const validEmail = actualUser.email && actualUser.email !== "undefined" && actualUser.email !== "null" ? actualUser.email : "";
 
       if (!validUserId && !validEmail) {
-        console.warn("[LoginPage] Post-login redirect skipped: no valid userId or email.");
-        navigate("/start-project");
+        console.warn("[LoginPage] Post-login redirect: no valid userId or email, directing to dashboard.");
+        navigate("/dashboard");
         return;
       }
 
@@ -59,27 +67,16 @@ export default function LoginPage() {
 
       if (res.ok) {
         const data = await res.json();
-        const project = data.project;
-
-        if (project) {
-          if (
-            project.paymentStatus === "paid" || 
-            project.paymentStatus === "partially_paid" || 
-            project.portalAccess === true
-          ) {
-            navigate("/dashboard");
-          } else {
-            // Unpaid/draft project -> resume onboarding
-            navigate("/start-project");
-          }
+        if (data.project) {
+          navigate("/dashboard");
           return;
         }
       }
     } catch (err) {
       console.warn("Post-login project lookup failed:", err);
     }
-    // No project found -> start new project
-    navigate("/start-project");
+    // Direct user to client dashboard
+    navigate("/dashboard");
   };
 
   // Auto-redirect if already authenticated with live Supabase session
@@ -99,18 +96,62 @@ export default function LoginPage() {
       return;
     }
 
+    if (password.length < 6) {
+      setErrorMsg("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (authMode === 'signup') {
+      if (!fullName.trim()) {
+        setErrorMsg("Full Name is required for client account setup.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMsg("Passwords do not match.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
-      const authResult = await signInWithEmail(email, password);
-      setSuccessMsg("Welcome back! Loading your project session...");
+      if (authMode === 'signup') {
+        // First try the custom API signup proxy endpoint
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, fullName, businessName }),
+        });
 
-      setTimeout(() => {
-        handlePostAuthRedirect(authResult?.user || user);
-      }, 500);
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          setSuccessMsg("Client account registered successfully! Entering your workspace...");
+          setTimeout(() => {
+            handlePostAuthRedirect(data.user);
+          }, 600);
+          return;
+        }
+
+        // Fallback to client Supabase signup
+        const signUpResult = await signUpWithEmail(email, password);
+        setSuccessMsg("Account created! Entering your workspace...");
+        setTimeout(() => {
+          handlePostAuthRedirect(signUpResult?.user || user);
+        }, 600);
+
+      } else {
+        // Sign In mode
+        const authResult = await signInWithEmail(email, password);
+        setSuccessMsg("Welcome back! Entering your client workspace...");
+
+        setTimeout(() => {
+          handlePostAuthRedirect(authResult?.user || user);
+        }, 500);
+      }
 
     } catch (err: any) {
-      const friendlyError = logAndMapAuthError(err, "Manual Credentials Submit");
+      const friendlyError = logAndMapAuthError(err, authMode === 'signup' ? "Account Registration" : "Manual Credentials Submit");
       setErrorMsg(friendlyError);
       setIsSubmitting(false);
     }
@@ -200,6 +241,40 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Tab Switcher: Sign In vs Create Account */}
+          <div className="flex bg-zinc-900/90 p-1 rounded-2xl border border-zinc-800 mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('signin');
+                setErrorMsg(null);
+                setSuccessMsg(null);
+              }}
+              className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+                authMode === 'signin'
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('signup');
+                setErrorMsg(null);
+                setSuccessMsg(null);
+              }}
+              className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+                authMode === 'signup'
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Register
+            </button>
+          </div>
+
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             {/* Status alerts */}
             <AnimatePresence mode="wait">
@@ -227,8 +302,43 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
 
+            {authMode === 'signup' && (
+              <>
+                <div>
+                  <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Full Name *</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="John Doe"
+                      className="w-full bg-zinc-900/90 border border-zinc-800 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-sans placeholder:text-zinc-600"
+                      disabled={isLoading}
+                      required
+                    />
+                    <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Business / Brand Name</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      placeholder="Acme Corp"
+                      className="w-full bg-zinc-900/90 border border-zinc-800 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-sans placeholder:text-zinc-600"
+                      disabled={isLoading}
+                    />
+                    <Briefcase size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  </div>
+                </div>
+              </>
+            )}
+
             <div>
-              <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Email Address</label>
+              <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Email Address *</label>
               <div className="relative">
                 <input
                   type="email"
@@ -245,11 +355,11 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Password</label>
+              <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Password *</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
+                  autoComplete={authMode === 'signup' ? "new-password" : "current-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -270,6 +380,33 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {authMode === 'signup' && (
+              <div>
+                <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Confirm Password *</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-zinc-900/90 border border-zinc-800 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 pr-10 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-sans placeholder:text-zinc-600"
+                    disabled={isLoading}
+                    required
+                  />
+                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-amber-400 transition-colors focus:outline-none cursor-pointer"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
@@ -278,11 +415,11 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 size={16} className="animate-spin text-black" />
-                  <span>Authenticating...</span>
+                  <span>{authMode === 'signup' ? "Creating Account..." : "Authenticating..."}</span>
                 </>
               ) : (
                 <>
-                  <span>Access Portal</span>
+                  <span>{authMode === 'signup' ? "Create Client Account" : "Access Portal"}</span>
                   <ArrowRight size={15} />
                 </>
               )}

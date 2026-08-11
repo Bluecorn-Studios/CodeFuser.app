@@ -27,9 +27,9 @@ import {
 } from "lucide-react";
 import { useAppRouter } from "../components/Reveal";
 import { getAuthUser, clearAuthSession, getAuthToken } from "../utils/auth";
+import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { safeLocalStorage } from "../utils/safeStorage";
-import { useAuth } from "../context/AuthContext";
 import { useProject } from "../context/ProjectContext";
 import { apiClient } from "../lib/apiClient";
 import { PaymentSimulationPanel } from "../components/PaymentSimulationPanel";
@@ -172,6 +172,7 @@ function parseMarkdown(text: string) {
 
 export default function CustomerDashboard() {
   const { navigate } = useAppRouter();
+  const { user } = useAuth();
   const [projectId, setProjectId] = useState<string | null>(null);
   
   const handleDownloadAsset = async (assetId: string, fallbackUrl: string) => {
@@ -942,7 +943,30 @@ export default function CustomerDashboard() {
     }
   };
 
-  const isApprovedClient = !!project && (project.portalAccess === true || project.paymentStatus === "paid" || project.paymentStatus === "partially_paid" || !!project.id);
+  const activeAuthUser = (getAuthUser() || user) as any;
+  const effectiveProject: ProjectRecord = project || (activeAuthUser ? {
+    id: `proj_${activeAuthUser.id || 'draft'}`,
+    clientName: activeAuthUser.fullName || activeAuthUser.user_metadata?.full_name || activeAuthUser.email?.split("@")[0] || "Valued Client",
+    businessName: activeAuthUser.businessName || activeAuthUser.user_metadata?.business_name || "My Business Project",
+    email: activeAuthUser.email || "",
+    whatsapp: "",
+    selectedPackage: "fusion_baseline",
+    ownershipChoice: "milestone",
+    industry: "General",
+    customIndustry: "",
+    goal: "Build Website",
+    customGoal: "",
+    hasDomain: "pending",
+    hasLogo: "pending",
+    contentReady: "pending",
+    timestamp: new Date().toISOString(),
+    status: "Onboarding In Progress",
+    paymentStatus: "pending",
+    portalAccess: true
+  } : null as any);
+
+  const activeProject = effectiveProject;
+  const isApprovedClient = !!activeProject;
 
   if (isLoading) {
     console.log("[TRACING RENDER] CustomerDashboard rendering isLoading state");
@@ -974,59 +998,49 @@ export default function CustomerDashboard() {
             Access Denied
           </h2>
           <p className="text-sm text-neutral-300 mt-4 leading-relaxed font-sans">
-            This account is not linked to an active website project.
-          </p>
-          <p className="text-xs text-neutral-500 mt-2 leading-relaxed font-sans">
-            Please make sure you are signed in with your registered email, or contact us to authorize your workspace.
+            Please sign in to access your client portal.
           </p>
 
           <div className="mt-8 space-y-3">
             <button
+              onClick={() => navigate("/login")}
+              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs font-sans cursor-pointer transition-all shadow-md"
+            >
+              Sign In / Register
+            </button>
+
+            <button
               onClick={() => navigate("/")}
-              className="w-full bg-white hover:bg-neutral-100 text-black py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs font-sans cursor-pointer transition-all"
+              className="w-full bg-neutral-900 hover:bg-neutral-800 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs border border-neutral-800 font-sans cursor-pointer transition-all"
             >
               Return Home
             </button>
-            
-            <button
-              onClick={() => window.open(`https://wa.me/917449100307?text=${encodeURIComponent("Hi, I am trying to access my client dashboard and need help.")}`, "_blank")}
-              className="w-full bg-neutral-900 hover:bg-neutral-850 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs border border-neutral-800 font-sans cursor-pointer transition-all"
-            >
-              Contact Support
-            </button>
           </div>
-
-          <button 
-            onClick={logoutClient}
-            className="text-xs text-neutral-500 hover:text-red-400 transition-colors uppercase font-mono tracking-widest mt-6 block mx-auto cursor-pointer"
-          >
-            Switch Accounts
-          </button>
         </motion.div>
       </div>
     );
   }
 
   // Pre-calculate financial details
-  const planInfo = getPlanDetails(project.selectedPackage);
+  const planInfo = getPlanDetails(activeProject.selectedPackage);
   const quoteData = extraStore.quote;
   
   const rawPackageName = quoteData ? quoteData.packageName : planInfo.name;
   const selectedPackageName = getCleanPackageName(rawPackageName);
   const finalPrice = (quoteData?.finalPrice ?? quoteData?.price ?? planInfo?.price) || 0;
-  const isFullySettled = project.paymentStatus === "paid";
-  const isPartiallyPaid = project.paymentStatus === "partially_paid";
+  const isFullySettled = activeProject.paymentStatus === "paid";
+  const isPartiallyPaid = activeProject.paymentStatus === "partially_paid";
   
   const paidFunds = isFullySettled ? finalPrice : (isPartiallyPaid ? Math.round(finalPrice * 0.5) : 0);
   const unpaidFunds = isFullySettled ? 0 : Math.max(0, finalPrice - paidFunds);
 
-  const isDomainComplete = getAssetCategory(project.hasDomain) !== "pending";
-  const isLogoComplete = getAssetCategory(project.hasLogo) !== "pending";
-  const isCopyComplete = getAssetCategory(project.contentReady) !== "pending";
+  const isDomainComplete = getAssetCategory(activeProject.hasDomain) !== "pending";
+  const isLogoComplete = getAssetCategory(activeProject.hasLogo) !== "pending";
+  const isCopyComplete = getAssetCategory(activeProject.contentReady) !== "pending";
 
-  const domainState = getAssetCategory(project.hasDomain);
-  const logoState = getAssetCategory(project.hasLogo);
-  const copyState = getAssetCategory(project.contentReady);
+  const domainState = getAssetCategory(activeProject.hasDomain);
+  const logoState = getAssetCategory(activeProject.hasLogo);
+  const copyState = getAssetCategory(activeProject.contentReady);
 
   const btnClass = (isActive: boolean) => 
     `flex-1 py-1.5 px-2 text-[10px] font-mono font-bold uppercase rounded-lg border text-center transition-all cursor-pointer ${
@@ -1037,7 +1051,7 @@ export default function CustomerDashboard() {
 
   const hasEmptyAssets = !isDomainComplete || !isLogoComplete || !isCopyComplete;
 
-  const currentStageIndex = getCustomerStageIndex(project.status, hasEmptyAssets);
+  const currentStageIndex = getCustomerStageIndex(activeProject.status, hasEmptyAssets);
 
   // Formulate exactly ONE primary action details
   const getPrimaryAction = () => {
@@ -1075,7 +1089,7 @@ export default function CustomerDashboard() {
         description: "Our design team is currently creating clean, professional page layouts tailored to your business.",
         btnText: "Chat On WhatsApp",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I'd like to check on the design layouts for my website: ${project.businessName}.`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, I'd like to check on the design layouts for my website: ${activeProject.businessName}.`), "_blank");
         }
       };
     }
@@ -1085,7 +1099,7 @@ export default function CustomerDashboard() {
         description: "Our web developers are actively building your pages for desktop and mobile phones. You don't need to do anything right now!",
         btnText: "Ask For Progress Update",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, how is the website development coming along for ${project.businessName}?`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, how is the website development coming along for ${activeProject.businessName}?`), "_blank");
         }
       };
     }
@@ -1095,7 +1109,7 @@ export default function CustomerDashboard() {
         description: "Great news! Your website draft is ready for you to view. Take a look and let us know if you'd like any changes.",
         btnText: "Review Website Preview",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I'm ready to look at my website preview for ${project.businessName}!`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, I'm ready to look at my website preview for ${activeProject.businessName}!`), "_blank");
         }
       };
     }
@@ -1105,7 +1119,7 @@ export default function CustomerDashboard() {
         description: "We are fine-tuning your pages, updating text and images according to your request.",
         btnText: "Send Additional Notes",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I have a quick note regarding edits for ${project.businessName}.`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, I have a quick note regarding edits for ${activeProject.businessName}.`), "_blank");
         }
       };
     }
@@ -1115,7 +1129,7 @@ export default function CustomerDashboard() {
         description: "We are testing your site on phones, tablets, and computers to ensure high speed, security, and smooth performance.",
         btnText: "Chat with Our Team",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, checking in on final launch testing for my website ${project.businessName}.`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, checking in on final launch testing for my website ${activeProject.businessName}.`), "_blank");
         }
       };
     }
@@ -1125,7 +1139,7 @@ export default function CustomerDashboard() {
         description: "Everything looks great and all tests are complete! Click below to publish your website live on the web.",
         btnText: "Launch My Website Live",
         action: () => {
-          window.open(getWhatsAppLink(`Hi CodeFuser, I'm ready to launch my website live for ${project.businessName}!`), "_blank");
+          window.open(getWhatsAppLink(`Hi CodeFuser, I'm ready to launch my website live for ${activeProject.businessName}!`), "_blank");
         }
       };
     }
@@ -1135,7 +1149,7 @@ export default function CustomerDashboard() {
         description: "Your official business website is fully live, secure, and ready for your customers to visit!",
         btnText: "Visit Your Live Website",
         action: () => {
-          const domain = typeof project?.hasDomain === "string" && project.hasDomain !== "no" ? project.hasDomain.replace("Provided: ", "").trim() : "";
+          const domain = typeof activeProject?.hasDomain === "string" && activeProject.hasDomain !== "no" ? activeProject.hasDomain.replace("Provided: ", "").trim() : "";
           if (domain && domain !== "help" && domain !== "not_required") {
             window.open(domain.startsWith("http") ? domain : `https://${domain}`, "_blank");
           } else {
@@ -1232,9 +1246,9 @@ export default function CustomerDashboard() {
       {/* Navigation Header with 5 Tabs */}
       <SectionErrorBoundary name="Header">
         <ClientHeader
-          businessName={project?.businessName || ""}
-          clientName={project?.clientName || ""}
-          clientEmail={project?.email || ""}
+          businessName={activeProject?.businessName || ""}
+          clientName={activeProject?.clientName || ""}
+          clientEmail={activeProject?.email || ""}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           currentStageIndex={currentStageIndex}
@@ -1259,7 +1273,7 @@ export default function CustomerDashboard() {
         <SectionErrorBoundary name="ActiveTab">
           {activeTab === "overview" && (
             <OverviewTab
-              project={project}
+              project={activeProject}
               currentStageIndex={currentStageIndex}
               getCustomerStatusLabel={getCustomerStatusLabel}
               primaryActionDetails={primaryActionDetails}
@@ -1281,7 +1295,7 @@ export default function CustomerDashboard() {
 
           {activeTab === "project" && (
             <MyProjectTab
-              project={project}
+              project={activeProject}
               currentStageIndex={currentStageIndex}
               customerTimelineStages={customerTimelineStages}
               getCustomerStatusLabel={getCustomerStatusLabel}
@@ -1308,7 +1322,7 @@ export default function CustomerDashboard() {
 
           {activeTab === "files" && (
             <FilesTab
-              project={project}
+              project={activeProject}
               extraStore={extraStore}
               handleDownloadAsset={handleDownloadAsset}
               handleFileUpload={handleFileUpload}
@@ -1320,7 +1334,7 @@ export default function CustomerDashboard() {
 
           {activeTab === "payments" && (
             <PaymentsTab
-              project={project}
+              project={activeProject}
               selectedPackageName={selectedPackageName}
               finalPrice={finalPrice}
               paidFunds={paidFunds}
@@ -1334,12 +1348,12 @@ export default function CustomerDashboard() {
           )}
 
           {activeTab === "hosting" && (
-            <HostingTab project={project} />
+            <HostingTab project={activeProject} />
           )}
 
           {activeTab === "help" && (
             <NeedHelpTab
-              project={project}
+              project={activeProject}
               getWhatsAppLink={getWhatsAppLink}
               getComposeEmailLink={getComposeEmailLink}
             />
@@ -1592,7 +1606,7 @@ export default function CustomerDashboard() {
                   </a>
 
                   <a
-                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=aicodefuser@gmail.com&su=${encodeURIComponent(`Priority Support Request: ${project?.businessName || "My Business"}`)}&body=${encodeURIComponent(`Hi CodeFuser Concierge Team,\n\nI need priority support for my active website project.\n\nProject ID: ${project?.id}`)}`}
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=aicodefuser@gmail.com&su=${encodeURIComponent(`Priority Support Request: ${activeProject?.businessName || "My Business"}`)}&body=${encodeURIComponent(`Hi CodeFuser Concierge Team,\n\nI need priority support for my active website project.\n\nProject ID: ${activeProject?.id}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block p-4 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-amber-500/35 rounded-2xl transition-all group"

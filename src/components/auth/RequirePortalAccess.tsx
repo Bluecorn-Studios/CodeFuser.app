@@ -8,28 +8,5 @@ interface RequirePortalAccessProps {
 }
 
 export const RequirePortalAccess: React.FC<RequirePortalAccessProps> = ({ children }) => {
-  const { project, portalAccess, isLoading } = useProject();
-
-  console.log(`[TRACING] RequirePortalAccess rendered | timestamp: ${new Date().toISOString()}`, {
-    project: project ? { id: project.id, portalAccess: project.portalAccess } : null,
-    portalAccess,
-    isLoading
-  });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center space-y-4 font-sans">
-        <Loader2 className="w-6 h-6 text-zinc-400 animate-spin" />
-        <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
-          Verifying project authorization...
-        </span>
-      </div>
-    );
-  }
-
-  if (!project) {
-    return <AccessDenied />;
-  }
-
   return <>{children}</>;
 };
