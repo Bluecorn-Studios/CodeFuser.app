@@ -2633,8 +2633,9 @@ app.post("/api/projects/:id/hosting/setup-autopay", requireAuth, validateProject
     if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
       try {
         const razorpay = getRazorpayInstance();
+        const startAtSeconds = Math.floor(new Date(sub.nextBillingDate).getTime() / 1000);
         
-        razorpaySubscription = await razorpay.subscriptions.create({
+        const createPayload: any = {
           plan_id: planId,
           customer_notify: 1,
           total_count: 12, // 1 Year auto-renewing
@@ -2646,7 +2647,13 @@ app.post("/api/projects/:id/hosting/setup-autopay", requireAuth, validateProject
             clientName: project.clientName || "",
             businessName: project.businessName || ""
           }
-        });
+        };
+
+        if (startAtSeconds > Math.floor(Date.now() / 1000)) {
+          createPayload.start_at = startAtSeconds;
+        }
+
+        razorpaySubscription = await razorpay.subscriptions.create(createPayload);
         isRealRazorpay = true;
       } catch (rzpErr: any) {
         console.warn("Razorpay API call for subscription creation returned error, using verified test mandate mode:", rzpErr.message || rzpErr);
