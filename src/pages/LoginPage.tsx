@@ -17,6 +17,7 @@ import {
 import { useAppRouter } from "../components/Reveal";
 import { useAuth } from "../context/AuthContext";
 import { logAndMapAuthError } from "../utils/authErrors";
+import { supabase } from "../lib/supabase";
 
 export default function LoginPage() {
   const { navigate } = useAppRouter();
@@ -38,53 +39,16 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const handlePostAuthRedirect = async (userObj: any) => {
-    try {
-      const actualUser = userObj?.user || userObj || user;
-      if (!actualUser) {
-        console.warn("[LoginPage] Post-login redirect: user object unavailable, directing to dashboard.");
-        navigate("/dashboard");
-        return;
-      }
-
-      const validUserId = actualUser.id && actualUser.id !== "undefined" && actualUser.id !== "null" ? actualUser.id : "";
-      const validEmail = actualUser.email && actualUser.email !== "undefined" && actualUser.email !== "null" ? actualUser.email : "";
-
-      if (!validUserId && !validEmail) {
-        console.warn("[LoginPage] Post-login redirect: no valid userId or email, directing to dashboard.");
-        navigate("/dashboard");
-        return;
-      }
-
-      const token = session?.access_token;
-      const params = new URLSearchParams();
-      if (validUserId) params.append("userId", validUserId);
-      if (validEmail) params.append("email", validEmail);
-
-      const res = await fetch(`/api/projects/active?${params.toString()}`, {
-        headers: token ? { "Authorization": `Bearer ${token}` } : {}
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.project) {
-          navigate("/dashboard");
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Post-login project lookup failed:", err);
-    }
-    // Direct user to client dashboard
+  const handlePostAuthRedirect = async (userObj?: any) => {
     navigate("/dashboard");
   };
 
   // Auto-redirect if already authenticated with live Supabase session
   useEffect(() => {
     if (!authLoading && user) {
-      handlePostAuthRedirect(user);
+      navigate("/dashboard");
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate]);
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,27 +90,41 @@ export default function LoginPage() {
         const data = await res.json();
 
         if (res.ok && data.success) {
+          if (data.session?.access_token && data.session?.refresh_token) {
+            await supabase.auth.setSession({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+            });
+          } else {
+            await signInWithEmail(email, password).catch(() => {});
+          }
           setSuccessMsg("Client account registered successfully! Entering your workspace...");
           setTimeout(() => {
-            handlePostAuthRedirect(data.user);
-          }, 600);
+            navigate("/dashboard");
+          }, 500);
           return;
         }
 
         // Fallback to client Supabase signup
         const signUpResult = await signUpWithEmail(email, password);
+        if (signUpResult?.session) {
+          await supabase.auth.setSession(signUpResult.session);
+        }
         setSuccessMsg("Account created! Entering your workspace...");
         setTimeout(() => {
-          handlePostAuthRedirect(signUpResult?.user || user);
-        }, 600);
+          navigate("/dashboard");
+        }, 500);
 
       } else {
         // Sign In mode
         const authResult = await signInWithEmail(email, password);
+        if (authResult?.session) {
+          await supabase.auth.setSession(authResult.session);
+        }
         setSuccessMsg("Welcome back! Entering your client workspace...");
 
         setTimeout(() => {
-          handlePostAuthRedirect(authResult?.user || user);
+          navigate("/dashboard");
         }, 500);
       }
 

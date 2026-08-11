@@ -668,6 +668,12 @@ export const StartProjectPage: React.FC = () => {
       if (!sessionToken) {
         throw new Error("Authentication succeeded but no active session was returned. Please try signing in.");
       }
+      if (data.session?.access_token && data.session?.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        }).catch(() => {});
+      }
       setAuthSession(userObj, sessionToken);
 
       // Sync formData with registered/logged in info
