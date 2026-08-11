@@ -181,7 +181,13 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
 
       const json = await res.json();
       if (json.success) {
-        alert("✓ Hosting AutoPay Mandate successfully activated!");
+        if (json.subscription?.autopayStatus === "active" || json.subscription?.status === "AUTOPAY_ACTIVE") {
+          alert("✓ Hosting AutoPay Mandate successfully activated!");
+        } else if (json.subscription?.mandateStatus === "authenticated") {
+          alert("✓ AutoPay Mandate authorization recorded (Status: Authenticated / Pending First Charge). Activation will complete upon Razorpay charge confirmation.");
+        } else {
+          alert(`AutoPay setup recorded (Mandate Status: ${json.subscription?.mandateStatus || "Created"}).`);
+        }
         fetchHostingData();
       } else {
         throw new Error(json.error || "AutoPay verification failed.");
@@ -257,7 +263,9 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
   }
 
   const isFreeTrial = subData?.status === "FREE_TRIAL_ACTIVE";
-  const isAutoPayActive = subData?.status === "AUTOPAY_ACTIVE";
+  const isAutoPayActive = subData?.status === "AUTOPAY_ACTIVE" || subData?.autopayStatus === "active";
+  const isMandateAuthenticated = subData?.mandateStatus === "authenticated";
+  const isMandatePending = subData?.status === "MANDATE_PENDING" || subData?.mandateStatus === "created";
   const isSuspended = subData?.status === "HOSTING_SUSPENDED";
   const isGracePeriod = subData?.status === "GRACE_PERIOD";
 
@@ -352,6 +360,10 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
               className={`text-[10px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
                 isAutoPayActive
                   ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                  : isMandateAuthenticated
+                  ? "text-blue-400 bg-blue-500/10 border-blue-500/20"
+                  : isMandatePending
+                  ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
                   : isFreeTrial
                   ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
                   : isSuspended
@@ -359,7 +371,13 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
                   : "text-neutral-400 bg-neutral-900 border-neutral-800"
               }`}
             >
-              {subData?.status?.replace(/_/g, " ") || "ACTIVE"}
+              {isAutoPayActive
+                ? "AUTOPAY ACTIVE"
+                : isMandateAuthenticated
+                ? "MANDATE AUTHENTICATED"
+                : isMandatePending
+                ? "MANDATE PENDING"
+                : (subData?.status?.replace(/_/g, " ") || "ACTIVE")}
             </span>
           </div>
 
@@ -417,12 +435,22 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
             </div>
 
             <div className="p-4 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 space-y-1">
-              <span className="text-neutral-500 text-[10px] font-mono uppercase block">AutoPay Status</span>
+              <span className="text-neutral-500 text-[10px] font-mono uppercase block">AutoPay Mandate Status</span>
               <span className="text-white font-bold text-sm flex items-center gap-1.5">
-                <ShieldCheck size={16} className={subData?.autopayStatus === "active" ? "text-emerald-400" : "text-amber-400"} />
-                <span className="capitalize">{subData?.autopayStatus || "Inactive"}</span>
+                <ShieldCheck size={16} className={isAutoPayActive ? "text-emerald-400" : isMandateAuthenticated ? "text-blue-400" : isMandatePending ? "text-amber-400" : "text-neutral-400"} />
+                <span className="capitalize">
+                  {isAutoPayActive
+                    ? "Active"
+                    : isMandateAuthenticated
+                    ? "Authenticated (Pending Charge)"
+                    : isMandatePending
+                    ? "Pending Authorization"
+                    : (subData?.autopayStatus || "Inactive")}
+                </span>
               </span>
-              <span className="text-neutral-400 text-[10px] block">Secure Payment Reference ID</span>
+              <span className="text-neutral-400 text-[10px] block">
+                {subData?.razorpaySubscriptionId ? `Ref: ${subData.razorpaySubscriptionId}` : "Secure Payment Reference ID"}
+              </span>
             </div>
           </div>
 

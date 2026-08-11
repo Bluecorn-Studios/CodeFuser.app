@@ -26,8 +26,9 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({
   paymentLoading,
   paymentError,
 }) => {
-  const isPartiallyPaid = project.paymentStatus === "partially_paid" || unpaidFunds > 0;
   const isFullyPaid = project.paymentStatus === "paid" || unpaidFunds === 0;
+  const isPartiallyPaid = !isFullyPaid && (project.paymentStatus === "partially_paid" || paidFunds > 0);
+  const isUnpaid = !isFullyPaid && !isPartiallyPaid;
 
   const [downloadingReceipt, setDownloadingReceipt] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -98,10 +99,12 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({
               className={`text-[10px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
                 isFullyPaid
                   ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                  : "text-white bg-neutral-900 border-neutral-700"
+                  : isPartiallyPaid
+                  ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                  : "text-amber-400 bg-amber-500/10 border-amber-500/20"
               }`}
             >
-              {isFullyPaid ? "Fully Paid" : "Deposit Received"}
+              {isFullyPaid ? "Fully Paid" : isPartiallyPaid ? "Deposit Received" : "Payment Pending"}
             </span>
           </div>
 
@@ -185,12 +188,16 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({
             <div className="p-4 bg-black/60 border border-neutral-800 rounded-2xl flex items-center justify-between">
               <div className="space-y-0.5">
                 <span className="text-xs font-bold text-white block">1. Initial Deposit (50%)</span>
-                <span className="text-xs text-emerald-400 block">
-                  ₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")} • Received
+                <span className={`text-xs block ${isPartiallyPaid || isFullyPaid ? "text-emerald-400" : "text-neutral-400"}`}>
+                  ₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")} • {isPartiallyPaid || isFullyPaid ? "Received" : "Due"}
                 </span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                ✓ Paid
+              <span className={`text-[10px] font-mono font-bold px-3 py-1 rounded-full border ${
+                isPartiallyPaid || isFullyPaid
+                  ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                  : "text-amber-400 bg-amber-500/10 border-amber-500/20"
+              }`}>
+                {isPartiallyPaid || isFullyPaid ? "✓ Paid" : "Pending"}
               </span>
             </div>
 
@@ -198,11 +205,11 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({
             <div className="p-4 bg-black/60 border border-neutral-800 rounded-2xl flex items-center justify-between">
               <div className="space-y-0.5">
                 <span className="text-xs font-bold text-white block">2. Final Payment (50%)</span>
-                <span className="text-xs text-neutral-400 block">
-                  ₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")} • Due Before Launch
+                <span className={`text-xs block ${isFullyPaid ? "text-emerald-400" : "text-neutral-400"}`}>
+                  ₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")} • {isFullyPaid ? "Paid" : "Due Before Launch"}
                 </span>
               </div>
-              {unpaidFunds === 0 ? (
+              {isFullyPaid ? (
                 <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
                   ✓ Paid
                 </span>

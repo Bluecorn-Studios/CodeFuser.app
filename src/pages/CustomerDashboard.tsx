@@ -1014,9 +1014,10 @@ export default function CustomerDashboard() {
   const rawPackageName = quoteData ? quoteData.packageName : planInfo.name;
   const selectedPackageName = getCleanPackageName(rawPackageName);
   const finalPrice = (quoteData?.finalPrice ?? quoteData?.price ?? planInfo?.price) || 0;
-  const isFullySettled = project.paymentStatus === "paid" || project.ownershipChoice === "full";
+  const isFullySettled = project.paymentStatus === "paid";
+  const isPartiallyPaid = project.paymentStatus === "partially_paid";
   
-  const paidFunds = isFullySettled ? (project.ownershipChoice === "full" ? finalPrice * 0.9 : finalPrice) : (project.paymentStatus === "partially_paid" ? finalPrice / 2 : 0);
+  const paidFunds = isFullySettled ? finalPrice : (isPartiallyPaid ? Math.round(finalPrice * 0.5) : 0);
   const unpaidFunds = isFullySettled ? 0 : Math.max(0, finalPrice - paidFunds);
 
   const isDomainComplete = getAssetCategory(project.hasDomain) !== "pending";
@@ -1497,26 +1498,35 @@ export default function CustomerDashboard() {
                     {/* Milestone 1 */}
                     <div className="p-3 bg-neutral-950 border border-neutral-900 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-white block">Milestone 1: Project Initiation</span>
-                        <span className="text-[10px] font-mono text-emerald-400 mt-0.5 block">₹{Math.round(project?.paymentStatus === "partially_paid" ? finalPrice * 0.5 : (project?.ownershipChoice === "full" ? finalPrice : finalPrice * 0.5)).toLocaleString("en-IN")} • Confirmed</span>
+                        <span className="text-xs font-bold text-white block">Milestone 1: Project Initiation (50%)</span>
+                        <span className={`text-[10px] font-mono mt-0.5 block ${isFullySettled || isPartiallyPaid ? "text-emerald-400" : "text-neutral-400"}`}>
+                          ₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")} • {isFullySettled || isPartiallyPaid ? "Confirmed" : "Pending"}
+                        </span>
                       </div>
-                      <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 uppercase">PAID</span>
+                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${
+                        isFullySettled || isPartiallyPaid
+                          ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                          : "text-amber-500 bg-amber-500/10 border-amber-500/20"
+                      }`}>
+                        {isFullySettled || isPartiallyPaid ? "PAID" : "DUE"}
+                      </span>
                     </div>
 
                     {/* Milestone 2 */}
                     <div className="p-3 bg-neutral-950 border border-neutral-900 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-white block">Milestone 2: Final Handover</span>
-                        <span className="text-[10px] font-mono mt-0.5 block text-neutral-400">
-                          ₹{Math.round(project?.paymentStatus === "partially_paid" ? finalPrice * 0.5 : (project?.ownershipChoice === "full" ? 0 : finalPrice * 0.5)).toLocaleString("en-IN")} 
-                          {project?.paymentStatus === "partially_paid" ? " • Outstanding" : " • Settled"}
+                        <span className="text-xs font-bold text-white block">Milestone 2: Final Handover (50%)</span>
+                        <span className={`text-[10px] font-mono mt-0.5 block ${isFullySettled ? "text-emerald-400" : "text-neutral-400"}`}>
+                          ₹{Math.round(finalPrice * 0.5).toLocaleString("en-IN")} • {isFullySettled ? "Settled" : "Outstanding"}
                         </span>
                       </div>
-                      {project?.paymentStatus === "partially_paid" ? (
-                        <span className="text-[9px] font-mono font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 uppercase">DUE</span>
-                      ) : (
-                        <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 uppercase">PAID</span>
-                      )}
+                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${
+                        isFullySettled
+                          ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                          : "text-amber-500 bg-amber-500/10 border-amber-500/20"
+                      }`}>
+                        {isFullySettled ? "PAID" : "DUE"}
+                      </span>
                     </div>
                   </div>
                 </div>
