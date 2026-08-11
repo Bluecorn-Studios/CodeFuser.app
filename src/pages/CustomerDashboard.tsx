@@ -930,16 +930,14 @@ export default function CustomerDashboard() {
         const body = await res.json();
         if (body.success) {
           setExtraStore(body.data);
-          alert("Quotation has been reset successfully.");
         } else {
-          alert(body.error || "Failed to reset quote.");
+          console.warn("Quote reset error:", body.error);
         }
       } else {
-        alert("Failed to reset standard quotation.");
+        console.warn("Failed to reset standard quotation.");
       }
     } catch(err) {
       console.error("Failed to reset standard quotation:", err);
-      alert("Error resetting standard quotation.");
     }
   };
 

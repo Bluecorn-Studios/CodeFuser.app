@@ -83,6 +83,13 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
   const [cancellingLoading, setCancellingLoading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
+  const [modalNotification, setModalNotification] = useState<{
+    type: "success" | "info" | "error" | "confirm";
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+  } | null>(null);
+
   const fetchHostingData = async () => {
     setLoading(true);
     setError(null);
@@ -116,6 +123,20 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
     fetchHostingData();
   }, [project.id]);
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window !== "undefined" && (window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleInitiateAutoPay = async () => {
     setSetupLoading(true);
     try {
@@ -133,7 +154,12 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
       const json = await res.json();
       if (!json.success) throw new Error(json.error || "Failed to initiate AutoPay setup.");
 
-      if (json.isRealRazorpay && (window as any).Razorpay) {
+      if (json.isRealRazorpay) {
+        const isLoaded = await loadRazorpayScript();
+        if (!isLoaded || !(window as any).Razorpay) {
+          throw new Error("Unable to load Razorpay Checkout SDK. Please check your internet connection and try again.");
+        }
+
         const options = {
           key: json.keyId,
           subscription_id: json.subscriptionId,
@@ -141,6 +167,15 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
           description: "Monthly Website Hosting & Cloud Maintenance",
           handler: async (response: any) => {
             await verifyAutoPay(response);
+          },
+          modal: {
+            ondismiss: () => {
+              setModalNotification({
+                type: "info",
+                title: "AutoPay Authorization Incomplete",
+                message: "You closed the Razorpay authorization window before completing setup. Your mandate is currently pending authorization."
+              });
+            }
           },
           prefill: {
             name: project.clientName,
@@ -159,7 +194,11 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
         });
       }
     } catch (err: any) {
-      alert(err.message || "AutoPay setup failed.");
+      setModalNotification({
+        type: "error",
+        title: "AutoPay Setup Error",
+        message: err.message || "AutoPay setup failed. Please try again or contact support."
+      });
     } finally {
       setSetupLoading(false);
     }
@@ -181,27 +220,50 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
 
       const json = await res.json();
       if (json.success) {
-        if (json.subscription?.autopayStatus === "active" || json.subscription?.status === "AUTOPAY_ACTIVE") {
-          alert("✓ Hosting AutoPay Mandate successfully activated!");
-        } else if (json.subscription?.mandateStatus === "authenticated") {
-          alert("✓ AutoPay Mandate authorization recorded (Status: Authenticated / Pending First Charge). Activation will complete upon Razorpay charge confirmation.");
+        await fetchHostingData();
+        const mStatus = json.subscription?.mandateStatus || "created";
+        const isAct = json.subscription?.autopayStatus === "active" || json.subscription?.status === "AUTOPAY_ACTIVE";
+
+        if (isAct) {
+          setModalNotification({
+            type: "success",
+            title: "✓ Hosting AutoPay Mandate Activated",
+            message: "Your automatic payment mandate is active. Your website hosting will renew seamlessly without any manual intervention required."
+          });
+        } else if (mStatus === "authenticated") {
+          setModalNotification({
+            type: "info",
+            title: "✓ Mandate Authorized (Pending First Charge)",
+            message: "Your AutoPay authorization has been successfully recorded on Razorpay. Official activation will finalize upon your first cycle charge. Your hosting remains 100% active."
+          });
+        } else if (mStatus === "created") {
+          setModalNotification({
+            type: "info",
+            title: "Mandate Created (Authorization Pending)",
+            message: "Your AutoPay mandate has been created, but payment authorization is required before it becomes active. Please authorize through the Razorpay checkout window."
+          });
         } else {
-          alert(`AutoPay setup recorded (Mandate Status: ${json.subscription?.mandateStatus || "Created"}).`);
+          setModalNotification({
+            type: "info",
+            title: "AutoPay Mandate Update",
+            message: `Mandate recorded with status: ${mStatus.toUpperCase()}.`
+          });
         }
-        fetchHostingData();
       } else {
         throw new Error(json.error || "AutoPay verification failed.");
       }
     } catch (err: any) {
-      alert(err.message || "Failed to verify AutoPay.");
+      setModalNotification({
+        type: "error",
+        title: "AutoPay Verification Failed",
+        message: err.message || "Failed to verify AutoPay mandate status."
+      });
     }
   };
 
-  const handleCancelAutoPay = async () => {
-    if (!confirm("Are you sure you want to cancel your hosting AutoPay mandate? Your website will remain live until the end of your current cycle.")) {
-      return;
-    }
+  const executeCancelAutoPay = async () => {
     setCancellingLoading(true);
+    setModalNotification(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || localStorage.getItem("fuser_token") || "";
@@ -213,16 +275,33 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
 
       const json = await res.json();
       if (json.success) {
-        alert("AutoPay mandate cancelled.");
+        setModalNotification({
+          type: "info",
+          title: "AutoPay Cancelled",
+          message: "Your AutoPay mandate has been cancelled. Your website will remain live until the end of your active billing cycle."
+        });
         fetchHostingData();
       } else {
         throw new Error(json.error || "Failed to cancel AutoPay.");
       }
     } catch (err: any) {
-      alert(err.message || "Could not cancel AutoPay.");
+      setModalNotification({
+        type: "error",
+        title: "Cancellation Error",
+        message: err.message || "Could not cancel AutoPay mandate."
+      });
     } finally {
       setCancellingLoading(false);
     }
+  };
+
+  const handleCancelAutoPay = () => {
+    setModalNotification({
+      type: "confirm",
+      title: "Cancel AutoPay Mandate?",
+      message: "Are you sure you want to cancel your hosting AutoPay mandate? Your website will remain online until the end of your current cycle.",
+      onConfirm: executeCancelAutoPay
+    });
   };
 
   const handleDownloadInvoice = async (invoiceId: string, receiptNumber: string) => {
@@ -247,7 +326,11 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert(err.message || "Failed to download hosting invoice.");
+      setModalNotification({
+        type: "error",
+        title: "Download Error",
+        message: err.message || "Failed to download hosting invoice PDF."
+      });
     } finally {
       setDownloadingId(null);
     }
@@ -607,6 +690,76 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
           </div>
         )}
       </div>
+
+      {/* CUSTOM MODAL NOTIFICATION / CONFIRM DIALOG */}
+      {modalNotification && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-neutral-950 border border-neutral-800 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <div className={`p-3 rounded-2xl border ${
+                modalNotification.type === "success" 
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                  : modalNotification.type === "error"
+                  ? "bg-red-500/10 border-red-500/20 text-red-400"
+                  : modalNotification.type === "confirm"
+                  ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                  : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+              }`}>
+                {modalNotification.type === "success" ? (
+                  <CheckCircle2 size={24} />
+                ) : modalNotification.type === "error" ? (
+                  <AlertTriangle size={24} />
+                ) : modalNotification.type === "confirm" ? (
+                  <AlertTriangle size={24} />
+                ) : (
+                  <ShieldCheck size={24} />
+                )}
+              </div>
+              <button
+                onClick={() => setModalNotification(null)}
+                className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-lg font-extrabold text-white tracking-tight">
+                {modalNotification.title}
+              </h3>
+              <p className="text-xs text-neutral-300 leading-relaxed">
+                {modalNotification.message}
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center gap-3">
+              {modalNotification.type === "confirm" ? (
+                <>
+                  <button
+                    onClick={() => setModalNotification(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-neutral-300 transition-all cursor-pointer"
+                  >
+                    Keep AutoPay
+                  </button>
+                  <button
+                    onClick={modalNotification.onConfirm}
+                    className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-black font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    Yes, Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setModalNotification(null)}
+                  className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  Got It
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
