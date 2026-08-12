@@ -2566,8 +2566,9 @@ app.get("/api/projects/:id/hosting", requireAuth, validateProjectIdParam, async 
             newAutopayStatus = "active";
             newMandateStatus = "activated";
           } else if (rzpStatus === "authenticated") {
-            newStatus = "MANDATE_PENDING";
-            newAutopayStatus = "pending";
+            const isTrialActive = sub.status === "FREE_TRIAL_ACTIVE" || (sub.nextBillingDate && new Date(sub.nextBillingDate) > new Date());
+            newStatus = isTrialActive ? "FREE_TRIAL_ACTIVE" : "AUTOPAY_ACTIVE";
+            newAutopayStatus = "active";
             newMandateStatus = "authenticated";
           } else if (rzpStatus === "created") {
             newStatus = "MANDATE_PENDING";
@@ -2736,10 +2737,12 @@ app.post("/api/projects/:id/hosting/verify-autopay", requireAuth, validateProjec
     const nextBill = new Date(now);
     nextBill.setMonth(nextBill.getMonth() + 1);
 
+    const isTrialActive = sub.status === "FREE_TRIAL_ACTIVE" || (sub.nextBillingDate && new Date(sub.nextBillingDate) > new Date());
+
     // Fetch authoritative status from Razorpay API when available
-    let realStatus = "AUTOPAY_ACTIVE";
+    let realStatus = isTrialActive ? "FREE_TRIAL_ACTIVE" : "AUTOPAY_ACTIVE";
     let realAutopayStatus: "inactive" | "pending" | "active" | "cancelled" | "revoked" = "active";
-    let realMandateStatus: "none" | "created" | "authenticated" | "activated" | "revoked" | "expired" | "paused" = "activated";
+    let realMandateStatus: "none" | "created" | "authenticated" | "activated" | "revoked" | "expired" | "paused" = "authenticated";
 
     if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET && targetSubId && !targetSubId.startsWith("sub_sim_")) {
       try {
@@ -2752,8 +2755,8 @@ app.post("/api/projects/:id/hosting/verify-autopay", requireAuth, validateProjec
             realAutopayStatus = "active";
             realMandateStatus = "activated";
           } else if (rzpStatus === "authenticated") {
-            realStatus = "MANDATE_PENDING";
-            realAutopayStatus = "pending";
+            realStatus = isTrialActive ? "FREE_TRIAL_ACTIVE" : "AUTOPAY_ACTIVE";
+            realAutopayStatus = "active";
             realMandateStatus = "authenticated";
           } else if (rzpStatus === "created") {
             realStatus = "MANDATE_PENDING";
@@ -2774,21 +2777,26 @@ app.post("/api/projects/:id/hosting/verify-autopay", requireAuth, validateProjec
       }
     }
 
-    const updatedSub = await updateHostingSubscription(id, {
+    const updates: Partial<HostingSubscriptionRecord> = {
       status: realStatus as any,
       autopayStatus: realAutopayStatus,
       mandateStatus: realMandateStatus,
       razorpaySubscriptionId: targetSubId,
-      lastPaymentId: razorpay_payment_id || sub.lastPaymentId || `pay_host_${Date.now()}`,
-      lastPaymentDate: now.toISOString(),
-      lastPaymentAmount: sub.monthlyAmount,
-      nextBillingDate: nextBill.toISOString(),
       failedPaymentCount: 0,
       gracePeriodEndsAt: null
-    });
+    };
+
+    if (realMandateStatus === "activated" && razorpay_payment_id) {
+      updates.lastPaymentId = razorpay_payment_id;
+      updates.lastPaymentDate = now.toISOString();
+      updates.lastPaymentAmount = sub.monthlyAmount;
+      updates.nextBillingDate = nextBill.toISOString();
+    }
+
+    const updatedSub = await updateHostingSubscription(id, updates);
 
     let invoice: HostingInvoiceRecord | null = null;
-    if (realAutopayStatus === "active") {
+    if (realMandateStatus === "activated" && razorpay_payment_id) {
       // Generate paid invoice record only if actually active / charged
       invoice = {
         id: `INV-HOST-${Date.now().toString().slice(-6)}`,

@@ -180,6 +180,7 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
           prefill: {
             name: project.clientName,
             email: project.email,
+            contact: project.whatsapp || "",
           },
           theme: { color: "#F59E0B" },
         };
@@ -348,7 +349,7 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
   const isFreeTrial = subData?.status === "FREE_TRIAL_ACTIVE";
   const isAutoPayActive = subData?.status === "AUTOPAY_ACTIVE" || subData?.autopayStatus === "active";
   const isMandateAuthenticated = subData?.mandateStatus === "authenticated";
-  const isMandatePending = subData?.status === "MANDATE_PENDING" || subData?.mandateStatus === "created";
+  const isMandatePending = (subData?.status === "MANDATE_PENDING" || subData?.mandateStatus === "created") && !isMandateAuthenticated && !isAutoPayActive;
   const isSuspended = subData?.status === "HOSTING_SUSPENDED";
   const isGracePeriod = subData?.status === "GRACE_PERIOD";
 
@@ -525,7 +526,7 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
                   {isAutoPayActive
                     ? "Active"
                     : isMandateAuthenticated
-                    ? "Authenticated (Pending Charge)"
+                    ? "Mandate Authorized — Pending First Charge"
                     : isMandatePending
                     ? "Pending Authorization"
                     : (subData?.autopayStatus || "Inactive")}
@@ -544,7 +545,7 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
               <span>100% Safe & Encrypted Payment Setup</span>
             </div>
 
-            {subData?.autopayStatus !== "active" ? (
+            {!isAutoPayActive && !isMandateAuthenticated ? (
               <button
                 onClick={handleInitiateAutoPay}
                 disabled={setupLoading}

@@ -297,6 +297,16 @@ export async function getHostingSubscription(projectId: string): Promise<Hosting
     throw new Error(`[Hosting Error] Cannot create subscription. Project with ID "${projectId}" not found.`);
   }
 
+  // Restore existing persisted hosting subscription from project/Supabase if available
+  const persistedSub: HostingSubscriptionRecord | undefined =
+    project.payment?.hostingSubscription || (project as any).hostingSubscription;
+
+  if (persistedSub && persistedSub.id) {
+    localStore.subscriptions[projectId] = persistedSub;
+    saveLocalHostingStore(localStore);
+    return persistedSub;
+  }
+
   // Resolve authoritative plan config from project.selectedPackage
   const planConfig = getHostingPlanConfig(project.selectedPackage);
 
@@ -379,8 +389,11 @@ export async function updateHostingSubscription(
   // Sync to Supabase projects json if available
   try {
     const supabase = getSupabase();
+    const project = await getProjectById(projectId);
+    const existingPayment = project?.payment || {};
     await supabase.from("projects").update({
       payment: {
+        ...existingPayment,
         hostingSubscription: updated
       }
     }).eq("id", projectId);

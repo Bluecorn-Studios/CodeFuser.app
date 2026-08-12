@@ -140,10 +140,13 @@ export async function processRazorpayWebhookEvent(
 
       // Event Handler Branching
       if (eventName === "subscription.authenticated" || eventName === "subscription.activated") {
+        const isAuthOnly = eventName === "subscription.authenticated";
+        const isTrialActive = sub.status === "FREE_TRIAL_ACTIVE" || (sub.nextBillingDate && new Date(sub.nextBillingDate) > new Date());
+
         const updatedSub = await updateHostingSubscription(projectId, {
-          status: "AUTOPAY_ACTIVE",
+          status: (isAuthOnly && isTrialActive) ? "FREE_TRIAL_ACTIVE" : "AUTOPAY_ACTIVE",
           autopayStatus: "active",
-          mandateStatus: "activated",
+          mandateStatus: isAuthOnly ? "authenticated" : "activated",
           razorpaySubscriptionId: subEntity?.id || sub.razorpaySubscriptionId,
           razorpayPlanId: subEntity?.plan_id || sub.razorpayPlanId
         });
