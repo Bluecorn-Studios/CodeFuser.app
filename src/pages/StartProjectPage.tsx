@@ -1158,8 +1158,6 @@ export const StartProjectPage: React.FC = () => {
               const raw = parsed.formData || {};
               const normalized = normalizeProjectFormData({ ...prev, ...raw });
               return {
-                ...prev,
-                ...raw,
                 businessName: prev.businessName || raw.businessName || normalized.businessName || prev.businessName,
                 ownerName: prev.ownerName || raw.ownerName || normalized.ownerName || prev.ownerName,
                 email: prev.email || raw.email || normalized.email || prev.email,
@@ -1168,12 +1166,12 @@ export const StartProjectPage: React.FC = () => {
                 customIndustry: prev.customIndustry || raw.customIndustry || normalized.customIndustry || prev.customIndustry,
                 goal: prev.goal || raw.goal || prev.goal,
                 customGoal: prev.customGoal || raw.customGoal || prev.customGoal,
-                packageId: prev.packageId || raw.packageId || normalized.selectedPlanId || prev.packageId,
-                ownership: prev.ownership || raw.ownership || prev.ownership,
-                hasDomain: prev.hasDomain || raw.hasDomain || (normalized.hasDomain as any) || prev.hasDomain,
-                hasLogo: prev.hasLogo || raw.hasLogo || (normalized.hasLogo as any) || prev.hasLogo,
-                contentReady: prev.contentReady || raw.contentReady || prev.contentReady,
-                aiPrompt: prev.aiPrompt || raw.aiPrompt || normalized.aiPrompt || prev.aiPrompt
+                packageId: prev.packageId || raw.packageId || normalized.selectedPlanId || prev.packageId || "growth",
+                ownership: (raw.ownership === 'full' || raw.ownership === 'managed') ? raw.ownership : (prev.ownership || "managed"),
+                hasDomain: raw.hasDomain || (normalized.hasDomain as any) || prev.hasDomain || "help",
+                hasLogo: raw.hasLogo || (normalized.hasLogo as any) || prev.hasLogo || "help",
+                contentReady: raw.contentReady || prev.contentReady || "no_help",
+                aiPrompt: prev.aiPrompt || raw.aiPrompt || normalized.aiPrompt || prev.aiPrompt || ""
               };
             });
           }
@@ -1440,7 +1438,20 @@ export const StartProjectPage: React.FC = () => {
       const authUser = getAuthUser();
       const existingProjId = createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || undefined;
       const payload = {
-        ...formData,
+        ownerName: formData.ownerName?.trim() || "",
+        businessName: formData.businessName?.trim() || "",
+        email: formData.email?.trim().toLowerCase() || "",
+        whatsapp: formData.whatsapp?.trim() || "",
+        packageId: formData.packageId || "growth",
+        ownership: formData.ownership || "managed",
+        industry: formData.industry || "",
+        customIndustry: formData.customIndustry || "",
+        goal: formData.goal || "",
+        customGoal: formData.customGoal || "",
+        hasDomain: formData.hasDomain || "help",
+        hasLogo: formData.hasLogo || "help",
+        contentReady: formData.contentReady || "no_help",
+        aiPrompt: formData.aiPrompt || "",
         userId: authUser?.id || "",
         projectId: existingProjId,
         isNewProject: isNewProjectMode
@@ -1457,7 +1468,11 @@ export const StartProjectPage: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Server responded with status ${response.status}`);
+        const detailMsg = errData.details && Array.isArray(errData.details)
+          ? errData.details.map((d: any) => `${d.field}: ${d.message}`).join(', ')
+          : (errData.error || `Server responded with status ${response.status}`);
+        console.error("Submission failed:", detailMsg, errData);
+        throw new Error(detailMsg);
       }
 
       const resJson = await response.json();
