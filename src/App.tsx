@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PagePath } from './types';
 import { RouterContext, P as PageContainer } from './components/Reveal';
@@ -8,19 +8,20 @@ import { AuthProvider } from './context/AuthContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { RequireAuth } from './components/auth/RequireAuth';
 import { RequirePortalAccess } from './components/auth/RequirePortalAccess';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
-// Lazy load secondary pages to optimize initial bundle size and speed up first paint
-const Story = lazy(() => import('./pages/Story'));
-const Process = lazy(() => import('./pages/Process'));
-const PricingPage = lazy(() => import('./pages/PricingPage'));
-const FAQPage = lazy(() => import('./pages/FAQPage'));
-const ContactPage = lazy(() => import('./pages/ContactPage'));
-const Portfolio = lazy(() => import('./pages/Portfolio'));
-const StartProjectPage = lazy(() => import('./pages/StartProjectPage'));
-const MissionControl = lazy(() => import('./pages/MissionControl'));
-const CustomerDashboard = lazy(() => import('./pages/CustomerDashboard'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const LogoPage = lazy(() => import('./pages/LogoPage'));
+// Lazy load secondary pages with automatic chunk retry & auto-refresh on new deployments
+const Story = lazyWithRetry(() => import('./pages/Story'), 'Story');
+const Process = lazyWithRetry(() => import('./pages/Process'), 'Process');
+const PricingPage = lazyWithRetry(() => import('./pages/PricingPage'), 'PricingPage');
+const FAQPage = lazyWithRetry(() => import('./pages/FAQPage'), 'FAQPage');
+const ContactPage = lazyWithRetry(() => import('./pages/ContactPage'), 'ContactPage');
+const Portfolio = lazyWithRetry(() => import('./pages/Portfolio'), 'Portfolio');
+const StartProjectPage = lazyWithRetry(() => import('./pages/StartProjectPage'), 'StartProjectPage');
+const MissionControl = lazyWithRetry(() => import('./pages/MissionControl'), 'MissionControl');
+const CustomerDashboard = lazyWithRetry(() => import('./pages/CustomerDashboard'), 'CustomerDashboard');
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'), 'LoginPage');
+const LogoPage = lazyWithRetry(() => import('./pages/LogoPage'), 'LogoPage');
 
 function PageLoader() {
   console.log(`[TIMING] ${performance.now().toFixed(2)}ms - PageLoader rendered`);
