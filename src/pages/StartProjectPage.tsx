@@ -444,6 +444,37 @@ function getDraftAgeDays(dateStr?: string): number {
   }
 }
 
+// Synchronous draft loader to ensure zero step reset/flash upon browser refresh
+const getInitialDraft = () => {
+  try {
+    const raw = safeLocalStorage.getItem("codefuser_start_project_draft");
+    const parsed = raw ? JSON.parse(raw) : null;
+    
+    // Check URL parameters for step/stage overrides
+    let urlStep: number | null = null;
+    let urlStage: string | null = null;
+    if (typeof window !== 'undefined' && window.location) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sParam = urlParams.get('step');
+      if (sParam && !isNaN(Number(sParam))) {
+        urlStep = Math.min(4, Math.max(1, Number(sParam)));
+      }
+      const stgParam = urlParams.get('stage');
+      if (stgParam && ['form', 'ai_loading', 'recommendations', 'workspace_signup', 'payment', 'schedule', 'asset_center', 'success'].includes(stgParam)) {
+        urlStage = stgParam;
+      }
+    }
+
+    const draft = parsed || {};
+    if (urlStep) draft.step = urlStep;
+    if (urlStage) draft.onboardingStage = urlStage;
+
+    return Object.keys(draft).length > 0 ? draft : null;
+  } catch (e) {
+    return null;
+  }
+};
+
 export const StartProjectPage: React.FC = () => {
   const { navigate, currentPath } = useAppRouter();
   const { refreshProject } = useProject();
@@ -458,12 +489,42 @@ export const StartProjectPage: React.FC = () => {
       delay: Math.random() * 5,
     }));
   }, []);
-  const [step, setStep] = useState(1);
-  const [maxStep, setMaxStep] = useState(1);
+
+  // Synchronously initialize all navigation & form states from preserved local storage & URL
+  const initialDraft = React.useMemo(() => getInitialDraft(), []);
+
+  const [step, setStep] = useState<number>(() => {
+    if (initialDraft && typeof initialDraft.step === 'number' && initialDraft.step >= 1 && initialDraft.step <= 4) {
+      return initialDraft.step;
+    }
+    return 1;
+  });
+
+  const [maxStep, setMaxStep] = useState<number>(() => {
+    if (initialDraft && typeof initialDraft.maxStep === 'number') {
+      return Math.max(initialDraft.maxStep, initialDraft.step || 1);
+    }
+    return initialDraft?.step || 1;
+  });
+
+  const [onboardingStage, setOnboardingStage] = useState<'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'>(() => {
+    if (initialDraft && initialDraft.onboardingStage) {
+      if (initialDraft.onboardingStage === 'ai_loading') {
+        return initialDraft.recommendationCards ? 'recommendations' : 'form';
+      }
+      return initialDraft.onboardingStage;
+    }
+    return 'form';
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(() => {
+    return Boolean(initialDraft?.isSubmitted || (initialDraft?.onboardingStage && initialDraft.onboardingStage !== 'form'));
+  });
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(() => {
+    return initialDraft?.projectId || safeLocalStorage.getItem('fuser_client_project_id') || null;
+  });
 
   // Production Validation & Smart Match Notice States
   const [isValidatingStep1, setIsValidatingStep1] = useState(false);
@@ -523,8 +584,16 @@ export const StartProjectPage: React.FC = () => {
       aiPrompt: ''
     });
 
+    setRecommendationCards(null);
+    setTempFetchedCards(null);
+    setAiSummary(null);
+    setSelectedCardId('current');
+    setSelectedPaymentTerm('milestone');
+    setIsSubmitted(false);
+    setOnboardingStage('form');
     setStep1Notice(null);
     setStep(2);
+    setMaxStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -540,23 +609,124 @@ export const StartProjectPage: React.FC = () => {
   };
 
   // Intelligent Package Recommendation states
-  const [recommendationCards, setRecommendationCards] = useState<any[] | null>(null);
-  const [tempFetchedCards, setTempFetchedCards] = useState<any[] | null>(null);
-  const [aiSummary, setAiSummary] = useState<any | null>(null);
+  const [recommendationCards, setRecommendationCards] = useState<any[] | null>(() => {
+    return initialDraft?.recommendationCards || null;
+  });
+  const [tempFetchedCards, setTempFetchedCards] = useState<any[] | null>(() => {
+    return initialDraft?.recommendationCards || null;
+  });
+  const [aiSummary, setAiSummary] = useState<any | null>(() => {
+    return initialDraft?.aiSummary || null;
+  });
   const [preferredContactTime, setPreferredContactTime] = useState<'morning' | 'afternoon' | 'evening' | 'anytime'>('anytime');
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [loadingFinished, setLoadingFinished] = useState(false);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
-  const [selectedCardId, setSelectedCardId] = useState<string>('current');
+  const [selectedCardId, setSelectedCardId] = useState<string>(() => {
+    return initialDraft?.selectedCardId || 'current';
+  });
 
   const [uploadedAssets, setUploadedAssets] = useState<Record<string, string>>({});
   const [skippedAssets, setSkippedAssets] = useState<Record<string, boolean>>({});
-
-  // Stages: 'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'
-  const [onboardingStage, setOnboardingStage] = useState<'form' | 'ai_loading' | 'recommendations' | 'workspace_signup' | 'payment' | 'schedule' | 'asset_center' | 'success'>('form');
-  const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<'milestone' | 'upfront'>('milestone');
+  const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<'milestone' | 'upfront'>(() => {
+    return initialDraft?.selectedPaymentTerm || 'milestone';
+  });
   const [verificationEnabled, setVerificationEnabled] = useState<boolean>(false);
+
+  // Form State
+  const [formData, setFormData] = useState<StartProjectData>(() => {
+    const authUser = getAuthUser();
+    const defaults: StartProjectData = {
+      businessName: authUser?.user_metadata?.business_name || authUser?.businessName || '',
+      ownerName: authUser?.user_metadata?.full_name || authUser?.fullName || '',
+      whatsapp: '',
+      email: authUser?.email || '',
+      industry: '',
+      customIndustry: '',
+      goal: '',
+      customGoal: '',
+      packageId: 'growth', // default package: Fusion
+      ownership: 'managed',
+      hasDomain: 'help',
+      hasLogo: 'help',
+      contentReady: 'no_help',
+      aiPrompt: ''
+    };
+    if (initialDraft && initialDraft.formData) {
+      return { ...defaults, ...initialDraft.formData };
+    }
+    return defaults;
+  });
+
+  const [isPlanLocked, setIsPlanLocked] = useState(false);
+  const [triggerValidation, setTriggerValidation] = useState(false);
+
+  // International Country phone selection states
+  const [selectedCountry, setSelectedCountry] = useState<Country>(() => {
+    if (initialDraft?.selectedCountryCode) {
+      const match = COUNTRIES.find(c => c.code === initialDraft.selectedCountryCode);
+      if (match) return match;
+    }
+    return COUNTRIES[0];
+  });
+  const [localPhone, setLocalPhone] = useState<string>(() => {
+    return initialDraft?.localPhone || '';
+  });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+
+  // Continuous Synchronous Local Persistence & URL state mirroring across all steps/pages
+  useEffect(() => {
+    if (step1Notice) return;
+    try {
+      const draftPayload = {
+        step,
+        maxStep,
+        onboardingStage,
+        formData,
+        localPhone,
+        selectedCountryCode: selectedCountry.code,
+        recommendationCards,
+        aiSummary,
+        selectedCardId,
+        selectedPaymentTerm,
+        projectId: createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || undefined,
+        isSubmitted,
+        timestamp: Date.now()
+      };
+      safeLocalStorage.setItem('codefuser_start_project_draft', JSON.stringify(draftPayload));
+
+      // Synchronize URL query params seamlessly
+      if (typeof window !== 'undefined' && window.location) {
+        const url = new URL(window.location.href);
+        if (onboardingStage === 'form') {
+          url.searchParams.set('step', String(step));
+          url.searchParams.delete('stage');
+        } else {
+          url.searchParams.set('stage', onboardingStage);
+          url.searchParams.delete('step');
+        }
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+    } catch (err) {
+      console.warn("Local persistence error:", err);
+    }
+  }, [
+    step,
+    maxStep,
+    onboardingStage,
+    formData,
+    localPhone,
+    selectedCountry,
+    recommendationCards,
+    aiSummary,
+    selectedCardId,
+    selectedPaymentTerm,
+    createdProjectId,
+    isSubmitted,
+    step1Notice
+  ]);
 
   useEffect(() => {
     fetch('/api/config/razorpay')
@@ -781,33 +951,6 @@ export const StartProjectPage: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [onboardingStage, loadingFinished, tempFetchedCards]);
-
-  // Form State
-  const [formData, setFormData] = useState<StartProjectData>({
-    businessName: '',
-    ownerName: '',
-    whatsapp: '',
-    email: '',
-    industry: '',
-    customIndustry: '',
-    goal: '',
-    customGoal: '',
-    packageId: 'growth', // default package: Fusion
-    ownership: 'managed',
-    hasDomain: 'help',
-    hasLogo: 'help',
-    contentReady: 'no_help',
-    aiPrompt: ''
-  });
-
-  const [isPlanLocked, setIsPlanLocked] = useState(false);
-  const [triggerValidation, setTriggerValidation] = useState(false);
-
-  // International Country phone selection states
-  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
-  const [localPhone, setLocalPhone] = useState<string>('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [countrySearch, setCountrySearch] = useState('');
 
   // Sync state cleanly into the overarching formData.whatsapp field (which preserving API boundary)
   useEffect(() => {
@@ -1314,9 +1457,6 @@ export const StartProjectPage: React.FC = () => {
       if (savedProject && savedProject.id) {
         setCreatedProjectId(savedProject.id);
       }
-
-      // Clear automatic draft persistence (Part 1 requirement)
-      safeLocalStorage.removeItem("codefuser_start_project_draft");
 
       // Save submission locally for future dashboard lookup & offline redundancy
       const savedRequests = JSON.parse(safeLocalStorage.getItem('codefuser_requests') || '[]');

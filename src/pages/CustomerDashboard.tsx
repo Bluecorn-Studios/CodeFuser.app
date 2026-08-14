@@ -211,8 +211,29 @@ export default function CustomerDashboard() {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   
-  // Interactive Modal/Sections State
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  // Interactive Modal/Sections State with reload persistence
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    try {
+      const urlTab = new URLSearchParams(window.location.search).get("tab");
+      if (urlTab && ["overview", "project", "files", "payments", "hosting", "help"].includes(urlTab)) {
+        return urlTab as TabType;
+      }
+      const savedTab = safeLocalStorage.getItem("fuser_dashboard_active_tab");
+      if (savedTab && ["overview", "project", "files", "payments", "hosting", "help"].includes(savedTab)) {
+        return savedTab as TabType;
+      }
+    } catch {}
+    return "overview";
+  });
+
+  useEffect(() => {
+    try {
+      safeLocalStorage.setItem("fuser_dashboard_active_tab", activeTab);
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", activeTab);
+      window.history.replaceState({}, "", url.pathname + url.search);
+    } catch {}
+  }, [activeTab]);
   const [activeQuickAction, setActiveQuickAction] = useState<string | null>(null);
   const [domainInput, setDomainInput] = useState<string>("");
   const [logoInput, setLogoInput] = useState<string>("");
