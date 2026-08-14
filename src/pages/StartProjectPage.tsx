@@ -2818,11 +2818,11 @@ That's enough. We'll help with the rest.`}
                         </div>
 
                         <div className="md:col-span-6 flex flex-col justify-end text-left md:text-right">
-                          <span className="text-zinc-400 text-sm sm:text-[15px] font-semibold tracking-wide">Website Setup Investment</span>
-                          <span className="text-amber-500 text-5xl sm:text-[64px] font-black font-display tracking-tight mt-1 block [text-shadow:0_0_25px_rgba(245,158,11,0.3)]">
+                          <span className="text-zinc-400 text-xs sm:text-sm font-semibold tracking-wide">Website Setup Investment</span>
+                          <span className="text-amber-500 text-3xl sm:text-4xl font-extrabold font-display tracking-tight mt-1 block [text-shadow:0_0_20px_rgba(245,158,11,0.25)]">
                             {selectedPlan.price}
                           </span>
-                          <span className="text-xs sm:text-[12px] text-zinc-500 font-medium">One-Time Investment</span>
+                          <span className="text-[11px] sm:text-xs text-zinc-500 font-medium">One-Time Investment</span>
                         </div>
                       </div>
 
