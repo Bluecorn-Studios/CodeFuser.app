@@ -2153,17 +2153,17 @@ ${formData.ownerName}
                   >
                     <h3 className="font-display text-lg sm:text-[22px] font-bold tracking-tight text-[#f5f5f0] mb-4 pb-3 border-b border-zinc-800 flex items-center justify-between gap-4">
                       <span className="tracking-wide">Your Website Package</span>
-                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/80 font-bold uppercase shrink-0">01 / Selected Plan</span>
+                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/70 font-semibold uppercase shrink-0">01 / Selected Plan</span>
                     </h3>
                     
                     {isPlanLocked ? (
-                      <div className="relative overflow-hidden p-6 sm:p-8 rounded-2xl border border-purple-300/25 bg-gradient-to-r from-[#110f1c] via-[#161324] to-[#0f0e1a] shadow-[0_0_20px_rgba(192,132,252,0.10)] hover:border-purple-300/40 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-6 font-sans">
+                      <div className="relative overflow-hidden p-6 sm:p-8 rounded-2xl border border-purple-200/20 bg-gradient-to-r from-[#12111a] via-[#14121e] to-[#100f18] shadow-[0_0_20px_rgba(216,180,254,0.06)] hover:border-purple-200/30 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-6 font-sans">
                         <div className="flex items-center gap-4">
-                          <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-300/30 text-purple-200 shadow-[0_0_12px_rgba(192,132,252,0.12)] shrink-0">
-                            <Lock size={22} className="text-purple-200" />
+                          <div className="p-3.5 rounded-2xl bg-purple-200/[0.08] border border-purple-200/20 text-purple-200/90 shadow-[0_0_10px_rgba(216,180,254,0.08)] shrink-0">
+                            <Lock size={22} className="text-purple-200/90" />
                           </div>
                           <div className="space-y-1">
-                            <span className="text-[11px] font-mono text-purple-200/90 font-bold uppercase tracking-wider block">
+                            <span className="text-[11px] font-mono text-purple-200/75 font-semibold uppercase tracking-wider block">
                               SELECTED WEBSITE PLAN
                             </span>
                             <h4 className="font-display text-xl sm:text-2xl font-bold text-white">
@@ -2193,8 +2193,8 @@ ${formData.ownerName}
                               onClick={() => updateField('packageId', plan.id)}
                               className={`relative flex flex-col justify-between p-5 rounded-2xl border text-left transition-all duration-300 select-none active:scale-95 cursor-pointer ${
                                 isSelected 
-                                  ? 'bg-gradient-to-b from-purple-950/30 via-[#110f1d] to-[#080710] border-purple-300/40 text-white shadow-[0_0_20px_rgba(192,132,252,0.12)] ring-1 ring-purple-300/25' 
-                                  : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-purple-300/30 hover:text-white'
+                                  ? 'bg-gradient-to-b from-[#161422] via-[#111019] to-[#0a0a10] border-purple-200/30 text-white shadow-[0_0_16px_rgba(216,180,254,0.06)] ring-1 ring-purple-200/20' 
+                                  : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-purple-200/20 hover:text-white'
                               }`}
                             >
                               {plan.highlight && (
@@ -2203,7 +2203,7 @@ ${formData.ownerName}
                                 </span>
                               )}
                               <div className="space-y-1">
-                                <span className="text-[11px] text-purple-200/80 font-mono font-semibold block">{plan.tagline}</span>
+                                <span className="text-[11px] text-purple-200/70 font-mono font-semibold block">{plan.tagline}</span>
                                 <span className="text-base font-bold text-white block">
                                   {plan.name.replace(/[⚡✦⬢]/g, '').trim()}
                                 </span>
@@ -2232,10 +2232,10 @@ ${formData.ownerName}
                   >
                     <h3 className="font-display text-lg sm:text-[22px] font-bold tracking-tight text-[#f5f5f0] mt-10 mb-4 pb-3 border-b border-zinc-800 flex items-center justify-between gap-4">
                       <span className="tracking-wide">Continuous Care & Cloud Management</span>
-                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/80 font-bold uppercase shrink-0">02 / Monthly Maintenance</span>
+                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/70 font-semibold uppercase shrink-0">02 / Monthly Maintenance</span>
                     </h3>
                     
-                    <div className="p-6 sm:p-7 rounded-2xl border border-purple-300/25 bg-gradient-to-r from-[#110f1c] via-[#161324] to-[#0f0e1a] shadow-[0_0_20px_rgba(192,132,252,0.10)] font-sans space-y-5">
+                    <div className="p-6 sm:p-7 rounded-2xl border border-purple-200/20 bg-gradient-to-r from-[#12111a] via-[#14121e] to-[#100f18] shadow-[0_0_20px_rgba(216,180,254,0.06)] font-sans space-y-5">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
                         <div>
                           <div className="flex items-center gap-2">
@@ -2251,22 +2251,22 @@ ${formData.ownerName}
                       </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/25 border border-purple-300/20 text-xs text-purple-100 font-medium">
-                          <div className="p-2 rounded-lg bg-purple-900/30 text-purple-200 shrink-0">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-200/[0.04] border border-purple-200/15 text-xs text-zinc-200 font-medium">
+                          <div className="p-2 rounded-lg bg-purple-200/[0.08] text-purple-200/90 shrink-0">
                             <ShieldCheck size={18} />
                           </div>
                           <span className="font-semibold text-zinc-200">Secure Cloud Hosting</span>
                         </div>
                         
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/25 border border-purple-300/20 text-xs text-purple-100 font-medium">
-                          <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-200/[0.04] border border-purple-200/15 text-xs text-zinc-200 font-medium">
+                          <div className="p-2 rounded-lg bg-amber-500/15 text-amber-300 shrink-0">
                             <Zap size={18} />
                           </div>
                           <span className="font-semibold text-zinc-200">Speed & Security Updates</span>
                         </div>
                         
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/25 border border-purple-300/20 text-xs text-purple-100 font-medium">
-                          <div className="p-2 rounded-lg bg-purple-900/30 text-purple-200 shrink-0">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-200/[0.04] border border-purple-200/15 text-xs text-zinc-200 font-medium">
+                          <div className="p-2 rounded-lg bg-purple-200/[0.08] text-purple-200/90 shrink-0">
                             <Wrench size={18} />
                           </div>
                           <span className="font-semibold text-zinc-200">Technical Maintenance</span>
@@ -2285,12 +2285,12 @@ ${formData.ownerName}
                   >
                     <h3 className="font-display text-lg sm:text-[22px] font-bold tracking-tight text-[#f5f5f0] mt-10 mb-4 pb-3 border-b border-zinc-800 flex items-center justify-between gap-4">
                       <span className="tracking-wide">Premium Client Workspace</span>
-                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/80 font-bold uppercase shrink-0">03 / Exclusive Client Gift</span>
+                      <span className="text-xs sm:text-sm font-mono tracking-wider text-purple-200/70 font-semibold uppercase shrink-0">03 / Exclusive Client Gift</span>
                     </h3>
 
-                    <div className="relative p-8 sm:p-10 rounded-3xl border border-purple-300/25 bg-gradient-to-b from-[#151322]/95 to-[#0e0d19]/98 backdrop-blur-3xl overflow-hidden group hover:border-purple-300/35 transition-all duration-500 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_25px_rgba(192,132,252,0.10)]">
+                    <div className="relative p-8 sm:p-10 rounded-3xl border border-purple-200/20 bg-gradient-to-b from-[#14131f]/95 to-[#0e0d16]/98 backdrop-blur-3xl overflow-hidden group hover:border-purple-200/30 transition-all duration-500 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_20px_rgba(216,180,254,0.06)]">
                       <div className="mb-8 text-left">
-                        <span className="inline-block text-xs font-mono tracking-wider font-bold text-purple-200 uppercase bg-purple-300/10 border border-purple-300/20 px-4 py-1.5 rounded-full mb-3 shadow-[0_0_12px_rgba(192,132,252,0.08)]">
+                        <span className="inline-block text-xs font-mono tracking-wider font-bold text-purple-200/90 uppercase bg-purple-200/[0.08] border border-purple-200/20 px-4 py-1.5 rounded-full mb-3 shadow-[0_0_10px_rgba(216,180,254,0.06)]">
                           Exclusive Client Gift
                         </span>
                         <h4 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight mb-2">
@@ -2311,8 +2311,8 @@ ${formData.ownerName}
                           "Priority Project Updates"
                         ].map((item, idx) => (
                           <div key={idx} className="flex items-center gap-3.5 group/item">
-                            <div className="h-6 w-6 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
-                              <Check size={12} className="text-purple-300" strokeWidth={3} />
+                            <div className="h-6 w-6 rounded-full bg-purple-200/[0.08] border border-purple-200/20 flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(216,180,254,0.1)]">
+                              <Check size={12} className="text-purple-200" strokeWidth={3} />
                             </div>
                             <span className="text-xs sm:text-sm text-zinc-200 font-sans tracking-wide font-medium group-hover/item:text-white transition-colors">
                               {item}
@@ -2326,11 +2326,11 @@ ${formData.ownerName}
                           "Because every great business deserves a premium digital experience."
                         </p>
                         <div className="flex items-center gap-2">
-                          <div className="h-px w-8 bg-gradient-to-r from-transparent to-purple-500/40" />
+                          <div className="h-px w-8 bg-gradient-to-r from-transparent to-purple-200/30" />
                           <span className="text-[9px] font-mono tracking-[0.2em] text-zinc-400 uppercase font-semibold">
                             Welcome to the CodeFuser Client Circle
                           </span>
-                          <div className="h-px w-8 bg-gradient-to-l from-transparent to-purple-500/40" />
+                          <div className="h-px w-8 bg-gradient-to-l from-transparent to-purple-200/30" />
                         </div>
                       </div>
                     </div>
@@ -3488,7 +3488,7 @@ That's enough. We'll help with the rest.`}
                       
                       if (card.id === 'upgrade_1' || card.id === 'upgrade_2') {
                         badge = "Recommended AI Upgrade";
-                        badgeStyle = "bg-purple-300/10 text-purple-200 border-purple-300/20 shadow-[0_0_12px_rgba(192,132,252,0.08)]";
+                        badgeStyle = "bg-purple-200/[0.08] text-purple-200/90 border-purple-200/20 shadow-[0_0_10px_rgba(216,180,254,0.06)]";
                       }
 
                       return (
@@ -3498,12 +3498,12 @@ That's enough. We'll help with the rest.`}
                           whileHover={{ y: -4 }}
                           className={`relative select-none cursor-pointer p-6 sm:p-7 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${
                             isSelected 
-                              ? 'border-purple-300/50 bg-[#0a0a0a] shadow-[0_0_25px_rgba(192,132,252,0.12)]' 
+                              ? 'border-purple-200/35 bg-[#0a0a0d] shadow-[0_0_20px_rgba(216,180,254,0.08)]' 
                               : 'border-white/[0.08] bg-[#060606] hover:border-white/[0.18] hover:bg-[#080808]'
                           }`}
                         >
                           {isSelected && (
-                            <div className="absolute -inset-px rounded-2xl border-2 border-purple-300/60 pointer-events-none" />
+                            <div className="absolute -inset-px rounded-2xl border-2 border-purple-200/40 pointer-events-none" />
                           )}
 
                           <div>
@@ -3514,7 +3514,7 @@ That's enough. We'll help with the rest.`}
                               </span>
                               <div className={`h-6 w-6 rounded-full border flex items-center justify-center transition-all ${
                                 isSelected 
-                                  ? 'border-purple-300 bg-purple-300/90 text-black shadow-[0_0_10px_rgba(192,132,252,0.3)]' 
+                                  ? 'border-purple-200 bg-purple-200/90 text-black shadow-[0_0_10px_rgba(216,180,254,0.2)]' 
                                   : 'border-white/20 bg-transparent'
                               }`}>
                                 {isSelected && <Check className="h-4 w-4 stroke-[3]" />}
@@ -3528,7 +3528,7 @@ That's enough. We'll help with the rest.`}
                                   Base Configuration
                                 </p>
                               ) : (
-                                <p className="text-[10px] font-mono font-bold tracking-[0.12em] text-purple-300 mb-0.5 uppercase flex items-center gap-1">
+                                <p className="text-[10px] font-mono font-bold tracking-[0.12em] text-purple-200/80 mb-0.5 uppercase flex items-center gap-1">
                                   <Sparkles className="h-3 w-3" /> Recommended AI Upgrade
                                 </p>
                               )}
@@ -3541,7 +3541,7 @@ That's enough. We'll help with the rest.`}
                                   {card.price}
                                 </span>
                                 {card.id !== 'current' && (
-                                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-300/10 text-purple-200 border border-purple-300/20 animate-pulse">
+                                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-200/[0.08] text-purple-200 border border-purple-200/20">
                                     {getDiffText(card) || "+₹5,000 Complete Pack Upgrade"}
                                   </span>
                                 )}
@@ -3555,7 +3555,7 @@ That's enough. We'll help with the rest.`}
                              <div className="border-t border-white/[0.08] my-4" />
 
                             {/* Section Checklist */}
-                            <p className="text-[9px] font-mono text-purple-200/80 uppercase tracking-widest block mb-3 font-bold">
+                            <p className="text-[9px] font-mono text-purple-200/70 uppercase tracking-widest block mb-3 font-bold">
                               {card.id === 'current' ? 'Included In Base Package' : 'Included In This Upgrade'}
                             </p>
                             
@@ -3567,7 +3567,7 @@ That's enough. We'll help with the rest.`}
 
                                 if (isHero) {
                                   return (
-                                    <li key={bIdx} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-purple-300/10 border border-purple-300/20 text-purple-100 font-semibold shadow-sm">
+                                    <li key={bIdx} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-purple-200/[0.06] border border-purple-200/20 text-purple-100 font-semibold shadow-sm">
                                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-300">
                                         <Star className="h-3.5 w-3.5 fill-amber-300" />
                                       </span>
@@ -3578,7 +3578,7 @@ That's enough. We'll help with the rest.`}
 
                                 return (
                                   <li key={bIdx} className="flex items-center gap-2.5 px-1.5 py-1 text-zinc-300">
-                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-300/10 border border-purple-300/20 text-purple-200">
+                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-200/[0.08] border border-purple-200/20 text-purple-200">
                                       <Check className="h-3.5 w-3.5 stroke-[2.5]" />
                                     </span>
                                     <span className="font-medium text-xs text-zinc-200">{text}</span>
@@ -3590,7 +3590,7 @@ That's enough. We'll help with the rest.`}
 
                           {/* Why We Recommend This */}
                           <div className="mt-auto border-t border-white/[0.08] pt-4">
-                            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-purple-200/90 mb-1.5">
+                            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-purple-200/80 mb-1.5">
                               {card.id === 'current' ? 'Package Focus' : 'Why We Recommend This'}
                             </p>
                             <p className="text-xs leading-relaxed text-zinc-300 font-sans">
@@ -3899,7 +3899,7 @@ That's enough. We'll help with the rest.`}
                     onClick={() => setSelectedPaymentTerm('milestone')}
                     className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
                       selectedPaymentTerm === 'milestone' 
-                        ? 'border-purple-300/35 bg-[#12101d] shadow-lg ring-1 ring-purple-300/20' 
+                        ? 'border-purple-200/30 bg-[#111018] shadow-lg ring-1 ring-purple-200/20' 
                         : 'border-zinc-800/80 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/40'
                     }`}
                   >
@@ -3913,7 +3913,7 @@ That's enough. We'll help with the rest.`}
                         </div>
                         <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
                           selectedPaymentTerm === 'milestone' 
-                            ? 'border-purple-300 bg-purple-300/90 text-black' 
+                            ? 'border-purple-200 bg-purple-200/90 text-black' 
                             : 'border-zinc-700 bg-transparent'
                         }`}>
                           {selectedPaymentTerm === 'milestone' && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -3922,11 +3922,11 @@ That's enough. We'll help with the rest.`}
 
                       <div className="mt-4 space-y-2 text-xs text-zinc-200">
                         <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'milestone' ? "text-purple-300" : "text-emerald-400"} />
+                          <Check size={14} className={selectedPaymentTerm === 'milestone' ? "text-purple-200" : "text-emerald-400"} />
                           <span className="font-medium">Work starts today</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <Check size={14} className={`${selectedPaymentTerm === 'milestone' ? "text-purple-300" : "text-emerald-400"} shrink-0 mt-0.5`} />
+                          <Check size={14} className={`${selectedPaymentTerm === 'milestone' ? "text-purple-200" : "text-emerald-400"} shrink-0 mt-0.5`} />
                           <span className="font-medium">Pay the balance after you approve your website</span>
                         </div>
                       </div>
@@ -3938,7 +3938,7 @@ That's enough. We'll help with the rest.`}
                     onClick={() => setSelectedPaymentTerm('upfront')}
                     className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
                       selectedPaymentTerm === 'upfront' 
-                        ? 'border-purple-300/35 bg-[#12101d] shadow-lg ring-1 ring-purple-300/20' 
+                        ? 'border-purple-200/30 bg-[#111018] shadow-lg ring-1 ring-purple-200/20' 
                         : 'border-zinc-800/80 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/40'
                     }`}
                   >
@@ -3957,7 +3957,7 @@ That's enough. We'll help with the rest.`}
                         </div>
                         <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
                           selectedPaymentTerm === 'upfront' 
-                            ? 'border-purple-300 bg-purple-300/90 text-black' 
+                            ? 'border-purple-200 bg-purple-200/90 text-black' 
                             : 'border-zinc-700 bg-transparent'
                         }`}>
                           {selectedPaymentTerm === 'upfront' && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -3966,11 +3966,11 @@ That's enough. We'll help with the rest.`}
 
                       <div className="mt-4 space-y-2 text-xs text-zinc-200">
                         <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-300" : "text-emerald-400"} />
+                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-200" : "text-emerald-400"} />
                           <span className="font-medium">One-time payment</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-300" : "text-emerald-400"} />
+                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-200" : "text-emerald-400"} />
                           <span className="font-medium">Extra savings (Save ₹{discountVal.toLocaleString('en-IN')})</span>
                         </div>
                       </div>
