@@ -550,6 +550,126 @@ export interface LifecycleEvaluationResult {
 }
 
 /**
+ * Get or Create Pending Hosting Renewal Invoice for a Project
+ */
+export async function getOrCreatePendingHostingInvoice(projectId: string): Promise<HostingInvoiceRecord> {
+  const invoices = getHostingInvoices(projectId);
+  const pending = invoices.find((i) => i.status === "PENDING");
+  if (pending) return pending;
+
+  const sub = await getHostingSubscription(projectId);
+  const now = new Date();
+  const periodStart = sub.nextBillingDate || now.toISOString();
+  const periodEnd = new Date(new Date(periodStart).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const newInvoice: HostingInvoiceRecord = {
+    id: `INV-HOST-${Date.now().toString().slice(-6)}`,
+    subscriptionId: sub.id,
+    projectId,
+    receiptNumber: `HST-${Date.now().toString().slice(-6)}`,
+    billingPeriodStart: periodStart,
+    billingPeriodEnd: periodEnd,
+    amount: sub.monthlyAmount,
+    discount: 0,
+    finalAmount: sub.monthlyAmount,
+    status: "PENDING",
+    paymentDate: now.toISOString(),
+    nextBillingDate: periodEnd,
+    createdAt: now.toISOString(),
+  };
+
+  addHostingInvoice(newInvoice);
+  return newInvoice;
+}
+
+/**
+ * Record Successful Manual Hosting Payment
+ */
+export async function recordManualHostingPayment(
+  projectId: string,
+  invoiceId: string,
+  razorpayPaymentId: string,
+  razorpayOrderId?: string
+): Promise<{ subscription: HostingSubscriptionRecord; invoice: HostingInvoiceRecord }> {
+  const localStore = getLocalHostingStore();
+  const projectInvoices = localStore.invoices[projectId] || [];
+  let invoiceIndex = projectInvoices.findIndex((i) => i.id === invoiceId || i.receiptNumber === invoiceId);
+
+  const now = new Date();
+  const sub = await getHostingSubscription(projectId);
+
+  let invoice: HostingInvoiceRecord;
+  if (invoiceIndex >= 0) {
+    invoice = {
+      ...projectInvoices[invoiceIndex],
+      status: "PAID",
+      razorpayPaymentId,
+      transactionId: razorpayPaymentId || razorpayOrderId || `PAY_HOST_${Date.now()}`,
+      paymentDate: now.toISOString(),
+    };
+    projectInvoices[invoiceIndex] = invoice;
+  } else {
+    const periodStart = sub.nextBillingDate || now.toISOString();
+    const periodEnd = new Date(new Date(periodStart).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    invoice = {
+      id: invoiceId || `INV-HOST-${Date.now().toString().slice(-6)}`,
+      subscriptionId: sub.id,
+      projectId,
+      receiptNumber: `HST-${Date.now().toString().slice(-6)}`,
+      billingPeriodStart: periodStart,
+      billingPeriodEnd: periodEnd,
+      amount: sub.monthlyAmount,
+      discount: 0,
+      finalAmount: sub.monthlyAmount,
+      status: "PAID",
+      transactionId: razorpayPaymentId || razorpayOrderId || `PAY_HOST_${Date.now()}`,
+      razorpayPaymentId,
+      paymentDate: now.toISOString(),
+      nextBillingDate: periodEnd,
+      createdAt: now.toISOString(),
+    };
+    projectInvoices.unshift(invoice);
+  }
+  localStore.invoices[projectId] = projectInvoices;
+  saveLocalHostingStore(localStore);
+
+  // Advance next billing date by 1 month from current billing date or now
+  const currentNextBill = new Date(sub.nextBillingDate && !isNaN(new Date(sub.nextBillingDate).getTime()) ? sub.nextBillingDate : now);
+  const nextBillDate = new Date(currentNextBill > now ? currentNextBill : now);
+  nextBillDate.setMonth(nextBillDate.getMonth() + 1);
+
+  const isSuspendedBefore = sub.status === "HOSTING_SUSPENDED";
+
+  const updatedSub = await updateHostingSubscription(projectId, {
+    status: "PAID",
+    lastPaymentId: razorpayPaymentId,
+    lastPaymentDate: now.toISOString(),
+    lastPaymentAmount: invoice.finalAmount,
+    nextBillingDate: nextBillDate.toISOString(),
+    failedPaymentCount: 0,
+    gracePeriodEndsAt: null,
+    suspendedAt: null,
+  });
+
+  // Dispatch payment success and reactivation notifications
+  await sendHostingLifecycleNotification("PAYMENT_SUCCESS", projectId, { invoice });
+  if (isSuspendedBefore) {
+    await sendHostingLifecycleNotification("HOSTING_REACTIVATED", projectId);
+  }
+
+  await logAuditEvent({
+    projectId,
+    eventType: "Manual Hosting Payment Verified",
+    requestId: `manual_pay_${Date.now()}`,
+    actor: "Client",
+    status: "Success",
+    notes: `Manual hosting payment of ₹${invoice.finalAmount} received via Razorpay (${razorpayPaymentId}). Invoice ${invoice.receiptNumber} marked PAID. Next billing: ${nextBillDate.toISOString().slice(0, 10)}.`,
+  });
+
+  return { subscription: updatedSub, invoice };
+}
+
+/**
  * Pure, Idempotent Lifecycle Evaluator for a Single Subscription
  */
 export async function evaluateHostingSubscriptionLifecycle(
@@ -579,7 +699,7 @@ export async function evaluateHostingSubscriptionLifecycle(
         updates.status = "AUTOPAY_ACTIVE";
         statusChanged = true;
         actionTaken = "TRANSITION_TO_AUTOPAY_ACTIVE";
-        notes = `Free trial period expired (${sub.freeTrialEnd}). AutoPay mandate active. Status set to AUTOPAY_ACTIVE. Plan: ${sub.planName} (${sub.monthlyAmount}/mo).`;
+        notes = `Free trial period expired (${sub.freeTrialEnd}). Legacy AutoPay active. Status set to AUTOPAY_ACTIVE.`;
       } else {
         updates.status = "GRACE_PERIOD";
         const graceDays = config.gracePeriodDays || 7;
@@ -587,7 +707,10 @@ export async function evaluateHostingSubscriptionLifecycle(
         updates.gracePeriodEndsAt = graceEnd.toISOString();
         statusChanged = true;
         actionTaken = "TRANSITION_TO_GRACE_PERIOD";
-        notes = `Free trial period expired without active AutoPay mandate. ${graceDays}-day grace period initiated ending on ${graceEnd.toISOString()}.`;
+        notes = `Free trial period expired. ${graceDays}-day grace period initiated ending on ${graceEnd.toISOString()}. Pending hosting invoice created for manual payment.`;
+
+        // Ensure pending invoice exists
+        await getOrCreatePendingHostingInvoice(projectId);
       }
     }
   }
@@ -604,7 +727,7 @@ export async function evaluateHostingSubscriptionLifecycle(
       updates.status = "AUTOPAY_ACTIVE";
       statusChanged = true;
       actionTaken = "TRANSITION_TO_AUTOPAY_ACTIVE";
-      notes = `AutoPay mandate approved during grace period. Hosting status restored to AUTOPAY_ACTIVE.`;
+      notes = `Hosting status restored to AUTOPAY_ACTIVE.`;
     } else {
       let effectiveGraceEndMs = graceEndsMs;
       if (!effectiveGraceEndMs) {
@@ -619,7 +742,7 @@ export async function evaluateHostingSubscriptionLifecycle(
         updates.suspendedAt = now.toISOString();
         statusChanged = true;
         actionTaken = "TRANSITION_TO_HOSTING_SUSPENDED";
-        notes = `Grace period expired without active payment mandate. Hosting service suspended.`;
+        notes = `Grace period expired without manual payment. Hosting service suspended.`;
       }
     }
   }
@@ -630,7 +753,7 @@ export async function evaluateHostingSubscriptionLifecycle(
       updates.status = "AUTOPAY_ACTIVE";
       statusChanged = true;
       actionTaken = "RESTORE_FROM_SUSPENSION";
-      notes = `AutoPay mandate activated. Hosting reactivated from HOSTING_SUSPENDED to AUTOPAY_ACTIVE.`;
+      notes = `Hosting reactivated from HOSTING_SUSPENDED to AUTOPAY_ACTIVE.`;
     }
   }
 

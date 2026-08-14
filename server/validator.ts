@@ -319,7 +319,9 @@ export const createProjectSchema: Schema = {
   hasLogo: { type: "string", required: false, max: 100, allowEmpty: true },
   contentReady: { type: "string", required: false, max: 100, allowEmpty: true },
   userId: { type: "string", required: false, max: 100, allowEmpty: true },
-  aiPrompt: { type: "string", required: false, max: 1000, allowEmpty: true }
+  aiPrompt: { type: "string", required: false, max: 1000, allowEmpty: true },
+  projectId: { type: "string", required: false, max: 100, allowEmpty: true },
+  isNewProject: { type: "boolean", required: false }
 };
 
 // 2. GET /api/projects (Query params)

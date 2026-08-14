@@ -96,7 +96,7 @@ export const HostingSetupModal: React.FC<HostingSetupModalProps> = ({
 
           {/* Explanation Text */}
           <p className="text-xs text-neutral-400 leading-relaxed">
-            After your free hosting period ends on <span className="text-neutral-200 font-semibold">{formattedBillingDate}</span>, your monthly hosting fee will be charged automatically using your approved payment method so your website never goes offline.
+            After your free hosting period ends on <span className="text-neutral-200 font-semibold">{formattedBillingDate}</span>, hosting renewal invoices will be generated for manual payment so your website remains active and offline-free.
           </p>
 
           {/* Actions */}
@@ -108,7 +108,7 @@ export const HostingSetupModal: React.FC<HostingSetupModalProps> = ({
               }}
               className="w-full flex items-center justify-center gap-2 py-3.5 px-6 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-500/15 cursor-pointer"
             >
-              <span>SET UP AUTOMATIC PAYMENTS</span>
+              <span>VIEW HOSTING DETAILS</span>
               <ArrowRight size={16} />
             </button>
 

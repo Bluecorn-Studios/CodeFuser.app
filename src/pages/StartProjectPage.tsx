@@ -1287,9 +1287,12 @@ export const StartProjectPage: React.FC = () => {
     try {
       console.log("Transmitting proposal packet to database system...");
       const authUser = getAuthUser();
+      const existingProjId = createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || undefined;
       const payload = {
         ...formData,
-        userId: authUser?.id || ""
+        userId: authUser?.id || "",
+        projectId: existingProjId,
+        isNewProject: isNewProjectMode
       };
 
       const response = await fetch("/api/projects", {

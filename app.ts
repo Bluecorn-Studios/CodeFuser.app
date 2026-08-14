@@ -24,7 +24,9 @@ import {
   HostingSubscriptionRecord,
   HostingInvoiceRecord,
   runHostingLifecycleScan,
-  runHostingLifecycleTestMatrix
+  runHostingLifecycleTestMatrix,
+  getOrCreatePendingHostingInvoice,
+  recordManualHostingPayment
 } from "./server/hosting_model.js";
 import { generateHostingReceiptPDF } from "./server/hosting_pdf.js";
 import { sendHostingLifecycleNotification, runNotificationHardeningTestMatrix } from "./server/hosting_notifications.js";
@@ -980,6 +982,92 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
       }
     }
 
+    const { projectId, isNewProject } = req.body;
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    const supabase = getSupabase();
+
+    let existingProject: any = null;
+
+    // 1. Check by explicit projectId
+    if (projectId) {
+      existingProject = await getProjectById(projectId);
+    }
+
+    // 2. If no project found by id and NOT explicitly starting a new project, search by resolvedUserId or email
+    if (!existingProject && !isNewProject && resolvedUserId) {
+      const { data: userProjects } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", resolvedUserId)
+        .order("created_at", { ascending: false });
+      if (userProjects && userProjects.length > 0) {
+        existingProject = userProjects[0];
+      }
+    }
+
+    if (!existingProject && !isNewProject && cleanEmail) {
+      const { data: emailProjects } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("email", cleanEmail)
+        .order("created_at", { ascending: false });
+      if (emailProjects && emailProjects.length > 0) {
+        existingProject = emailProjects[0];
+      }
+    }
+
+    checkAbort(req);
+
+    if (existingProject) {
+      console.log(`Updating existing project draft (${existingProject.id}) on submit...`);
+      const existingOnboarding = existingProject.onboarding || {};
+      const updates: any = {
+        clientName: ownerName || existingProject.clientName,
+        businessName: businessName || existingProject.businessName,
+        email: cleanEmail || existingProject.email,
+        whatsapp: whatsapp || existingProject.whatsapp,
+        selectedPackage: packageId || existingProject.selectedPackage,
+        ownershipChoice: normalizeOwnershipChoice(ownership || ownershipChoice || existingProject.ownershipChoice),
+        industry: industry ?? existingOnboarding.industry ?? existingProject.industry,
+        customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry,
+        goal: goal ?? existingOnboarding.goal ?? existingProject.goal,
+        customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal,
+        hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain,
+        hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo,
+        contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady,
+        onboarding: {
+          industry: industry ?? existingOnboarding.industry ?? existingProject.industry ?? "",
+          customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry ?? "",
+          goal: goal ?? existingOnboarding.goal ?? existingProject.goal ?? "",
+          customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal ?? "",
+          hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain ?? "",
+          hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo ?? "",
+          contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady ?? ""
+        },
+        status: existingProject.status === "draft" ? "Assets Pending" : existingProject.status
+      };
+
+      if (resolvedUserId && (!existingProject.userId || existingProject.userId !== resolvedUserId)) {
+        updates.userId = resolvedUserId;
+      }
+      if (aiPrompt) {
+        updates.aiPrompt = aiPrompt;
+      }
+
+      const savedProject = await updateProject(existingProject.id, updates, req.reqId);
+
+      await logAuditEvent({
+        projectId: savedProject.id,
+        eventType: "Project Submitted",
+        requestId: req.reqId,
+        actor: "Client",
+        status: "Success",
+        notes: `Project draft updated and submitted for ${savedProject.businessName} (package: ${savedProject.selectedPackage})`
+      });
+
+      return res.json({ success: true, message: "Project submitted successfully", data: savedProject });
+    }
+
     const payload = {
       clientName: ownerName,
       businessName,
@@ -998,9 +1086,7 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
       aiPrompt: aiPrompt || ""
     };
 
-    checkAbort(req);
-
-    console.log("Compiling and initializing project in CodeFuser Core architecture style...");
+    console.log("Compiling and initializing new project in CodeFuser Core architecture style...");
     const savedProject = await addProject(payload, req.reqId);
 
     // Track business event in Audit Trail
@@ -2548,55 +2634,7 @@ app.get("/api/projects/:id/hosting", requireAuth, validateProjectIdParam, async 
       return res.status(404).json({ success: false, error: "Project not found." });
     }
 
-    let sub = await getHostingSubscription(id);
-
-    // Synchronize subscription status directly from Razorpay API if subscription ID exists
-    if (sub.razorpaySubscriptionId && !sub.razorpaySubscriptionId.startsWith("sub_sim_") && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-      try {
-        const razorpay = getRazorpayInstance();
-        const rzpSub = await razorpay.subscriptions.fetch(sub.razorpaySubscriptionId);
-        if (rzpSub && rzpSub.status) {
-          const rzpStatus = String(rzpSub.status).toLowerCase();
-          let newStatus = sub.status;
-          let newAutopayStatus = sub.autopayStatus;
-          let newMandateStatus = sub.mandateStatus;
-
-          if (rzpStatus === "active") {
-            newStatus = "AUTOPAY_ACTIVE";
-            newAutopayStatus = "active";
-            newMandateStatus = "activated";
-          } else if (rzpStatus === "authenticated") {
-            const isTrialActive = sub.status === "FREE_TRIAL_ACTIVE" || (sub.nextBillingDate && new Date(sub.nextBillingDate) > new Date());
-            newStatus = isTrialActive ? "FREE_TRIAL_ACTIVE" : "AUTOPAY_ACTIVE";
-            newAutopayStatus = "active";
-            newMandateStatus = "authenticated";
-          } else if (rzpStatus === "created") {
-            newStatus = "MANDATE_PENDING";
-            newAutopayStatus = "pending";
-            newMandateStatus = "created";
-          } else if (rzpStatus === "halted") {
-            newStatus = "HOSTING_SUSPENDED";
-            newAutopayStatus = "pending";
-            newMandateStatus = "created";
-          } else if (rzpStatus === "cancelled") {
-            newStatus = "SUBSCRIPTION_CANCELLED";
-            newAutopayStatus = "cancelled";
-            newMandateStatus = "revoked";
-          }
-
-          if (newStatus !== sub.status || newAutopayStatus !== sub.autopayStatus || newMandateStatus !== sub.mandateStatus) {
-            sub = await updateHostingSubscription(id, {
-              status: newStatus as any,
-              autopayStatus: newAutopayStatus as any,
-              mandateStatus: newMandateStatus as any
-            });
-          }
-        }
-      } catch (syncErr: any) {
-        console.warn("[Hosting Sync] Could not fetch subscription status from Razorpay API:", syncErr?.message || syncErr);
-      }
-    }
-
+    const sub = await getHostingSubscription(id);
     const domain = await getDomainRecord(id);
     const invoices = getHostingInvoices(id);
 
@@ -2613,8 +2651,8 @@ app.get("/api/projects/:id/hosting", requireAuth, validateProjectIdParam, async 
   }
 });
 
-// POST /api/projects/:id/hosting/setup-autopay - Create Razorpay subscription or mandate order
-app.post("/api/projects/:id/hosting/setup-autopay", requireAuth, validateProjectIdParam, async (req: any, res) => {
+// POST /api/projects/:id/hosting/create-invoice-order - Create Razorpay order for manual hosting renewal payment
+app.post("/api/projects/:id/hosting/create-invoice-order", requireAuth, validateProjectIdParam, async (req: any, res) => {
   try {
     const { id } = req.params;
     const project = await getProjectById(id);
@@ -2622,232 +2660,132 @@ app.post("/api/projects/:id/hosting/setup-autopay", requireAuth, validateProject
       return res.status(404).json({ success: false, error: "Project not found." });
     }
 
-    const sub = await getHostingSubscription(id);
-    const amountInPaisa = sub.monthlyAmount * 100;
+    const invoice = await getOrCreatePendingHostingInvoice(id);
+    const amountInPaisa = Math.round(invoice.finalAmount * 100);
 
-    let razorpaySubscription: any = null;
+    let razorpayOrder: any = null;
     let isRealRazorpay = false;
-
-    // Resolve plan ID from subscription snapshot / server configuration
-    const planId = sub.razorpayPlanId || getHostingPlanConfig(project.selectedPackage).razorpayPlanId;
 
     if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
       try {
         const razorpay = getRazorpayInstance();
-        const startAtSeconds = Math.floor(new Date(sub.nextBillingDate).getTime() / 1000);
-        
-        const createPayload: any = {
-          plan_id: planId,
-          customer_notify: 1,
-          total_count: 12, // 1 Year auto-renewing
-          quantity: 1,
+        razorpayOrder = await razorpay.orders.create({
+          amount: amountInPaisa,
+          currency: "INR",
+          receipt: invoice.receiptNumber,
           notes: {
             projectId: id,
-            packageId: sub.packageId,
-            planName: sub.planName,
+            invoiceId: invoice.id,
+            receiptNumber: invoice.receiptNumber,
             clientName: project.clientName || "",
-            businessName: project.businessName || ""
+            businessName: project.businessName || "",
+            type: "hosting_renewal"
           }
-        };
-
-        if (startAtSeconds > Math.floor(Date.now() / 1000)) {
-          createPayload.start_at = startAtSeconds;
-        }
-
-        razorpaySubscription = await razorpay.subscriptions.create(createPayload);
+        });
         isRealRazorpay = true;
       } catch (rzpErr: any) {
-        console.warn("Razorpay API call for subscription creation returned error, using verified test mandate mode:", rzpErr.message || rzpErr);
+        console.warn("[Hosting Payment Order] Razorpay order creation error, fallback to simulated order:", rzpErr?.message || rzpErr);
       }
     }
 
-    if (!razorpaySubscription) {
-      // Mock / Simulation Mandate Subscription ID
-      razorpaySubscription = {
-        id: `sub_sim_${id.slice(-6)}_${Date.now()}`,
-        plan_id: planId,
-        status: "created",
-        current_start: Math.floor(Date.now() / 1000),
-        current_end: Math.floor(new Date(sub.nextBillingDate).getTime() / 1000),
-        charge_at: Math.floor(new Date(sub.nextBillingDate).getTime() / 1000),
-        amount: amountInPaisa
+    if (!razorpayOrder) {
+      razorpayOrder = {
+        id: `order_host_sim_${id.slice(-6)}_${Date.now()}`,
+        entity: "order",
+        amount: amountInPaisa,
+        amount_paid: 0,
+        amount_due: amountInPaisa,
+        currency: "INR",
+        receipt: invoice.receiptNumber,
+        status: "created"
       };
     }
 
-    await updateHostingSubscription(id, {
-      autopayStatus: "pending",
-      mandateStatus: "created",
-      status: "MANDATE_PENDING",
-      razorpaySubscriptionId: razorpaySubscription.id,
-      razorpayPlanId: razorpaySubscription.plan_id
-    });
-
     await logAuditEvent({
       projectId: id,
-      eventType: "Hosting AutoPay Initiated",
+      eventType: "Manual Hosting Renewal Order Created",
       requestId: req.reqId,
       actor: req.user?.fullName || "Client",
       status: "Success",
-      notes: `Initiated AutoPay setup with subscription ID: ${razorpaySubscription.id}`
+      notes: `Created Razorpay hosting order (${razorpayOrder.id}) for invoice ${invoice.receiptNumber} (Amount: ₹${invoice.finalAmount}).`
     });
 
     return res.json({
       success: true,
-      subscriptionId: razorpaySubscription.id,
-      planId: razorpaySubscription.plan_id,
+      orderId: razorpayOrder.id,
+      invoiceId: invoice.id,
+      receiptNumber: invoice.receiptNumber,
+      amount: invoice.finalAmount,
+      amountInPaisa,
+      currency: "INR",
       keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_codefuser_key",
-      amount: sub.monthlyAmount,
-      currency: sub.currency,
-      isRealRazorpay,
-      nextBillingDate: sub.nextBillingDate
+      isRealRazorpay
     });
   } catch (err: any) {
-    logger.error("Failed to setup hosting AutoPay:", err);
-    return res.status(500).json({ success: false, error: err.message || "Failed to initiate hosting AutoPay setup." });
+    logger.error("Failed to create manual hosting payment order:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to create hosting renewal payment order." });
   }
 });
 
-// POST /api/projects/:id/hosting/verify-autopay - Verify AutoPay mandate & activate subscription
-app.post("/api/projects/:id/hosting/verify-autopay", requireAuth, validateProjectIdParam, async (req: any, res) => {
+// POST /api/projects/:id/hosting/verify-payment - Verify manual hosting renewal payment
+app.post("/api/projects/:id/hosting/verify-payment", requireAuth, validateProjectIdParam, async (req: any, res) => {
   try {
     const { id } = req.params;
-    const { razorpay_subscription_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { invoiceId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
     const project = await getProjectById(id);
     if (!project) {
       return res.status(404).json({ success: false, error: "Project not found." });
     }
 
-    const sub = await getHostingSubscription(id);
-    const targetSubId = razorpay_subscription_id || sub.razorpaySubscriptionId || `sub_ver_${Date.now()}`;
+    const payId = razorpay_payment_id || `pay_sim_${Date.now()}`;
+    const orderId = razorpay_order_id || `order_sim_${Date.now()}`;
 
-    // Signature verification if keys are present
-    if (process.env.RAZORPAY_KEY_SECRET && razorpay_signature && razorpay_payment_id && razorpay_subscription_id) {
-      const generatedSig = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-        .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
-        .digest("hex");
-
-      if (generatedSig !== razorpay_signature) {
-        console.warn("Hosting AutoPay signature verification failed.");
+    // Verify signature if credentials present
+    if (process.env.RAZORPAY_KEY_SECRET && razorpay_signature && razorpay_order_id && razorpay_payment_id) {
+      const isValid = verifyPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+      if (!isValid) {
+        return res.status(400).json({ success: false, error: "Invalid payment signature verification." });
       }
     }
 
-    const now = new Date();
-    const nextBill = new Date(now);
-    nextBill.setMonth(nextBill.getMonth() + 1);
-
-    const isTrialActive = sub.status === "FREE_TRIAL_ACTIVE" || (sub.nextBillingDate && new Date(sub.nextBillingDate) > new Date());
-
-    // Fetch authoritative status from Razorpay API when available
-    let realStatus = isTrialActive ? "FREE_TRIAL_ACTIVE" : "AUTOPAY_ACTIVE";
-    let realAutopayStatus: "inactive" | "pending" | "active" | "cancelled" | "revoked" = "active";
-    let realMandateStatus: "none" | "created" | "authenticated" | "activated" | "revoked" | "expired" | "paused" = "authenticated";
-
-    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET && targetSubId && !targetSubId.startsWith("sub_sim_")) {
-      try {
-        const razorpay = getRazorpayInstance();
-        const rzpSub = await razorpay.subscriptions.fetch(targetSubId);
-        if (rzpSub && rzpSub.status) {
-          const rzpStatus = String(rzpSub.status).toLowerCase();
-          if (rzpStatus === "active") {
-            realStatus = "AUTOPAY_ACTIVE";
-            realAutopayStatus = "active";
-            realMandateStatus = "activated";
-          } else if (rzpStatus === "authenticated") {
-            realStatus = isTrialActive ? "FREE_TRIAL_ACTIVE" : "AUTOPAY_ACTIVE";
-            realAutopayStatus = "active";
-            realMandateStatus = "authenticated";
-          } else if (rzpStatus === "created") {
-            realStatus = "MANDATE_PENDING";
-            realAutopayStatus = "pending";
-            realMandateStatus = "created";
-          } else if (rzpStatus === "halted") {
-            realStatus = "HOSTING_SUSPENDED";
-            realAutopayStatus = "pending";
-            realMandateStatus = "created";
-          } else if (rzpStatus === "cancelled") {
-            realStatus = "SUBSCRIPTION_CANCELLED";
-            realAutopayStatus = "cancelled";
-            realMandateStatus = "revoked";
-          }
-        }
-      } catch (rzpErr: any) {
-        console.warn("[Verify AutoPay] Could not fetch subscription from Razorpay API:", rzpErr?.message || rzpErr);
-      }
-    }
-
-    const updates: Partial<HostingSubscriptionRecord> = {
-      status: realStatus as any,
-      autopayStatus: realAutopayStatus,
-      mandateStatus: realMandateStatus,
-      razorpaySubscriptionId: targetSubId,
-      failedPaymentCount: 0,
-      gracePeriodEndsAt: null
-    };
-
-    if (realMandateStatus === "activated" && razorpay_payment_id) {
-      updates.lastPaymentId = razorpay_payment_id;
-      updates.lastPaymentDate = now.toISOString();
-      updates.lastPaymentAmount = sub.monthlyAmount;
-      updates.nextBillingDate = nextBill.toISOString();
-    }
-
-    const updatedSub = await updateHostingSubscription(id, updates);
-
-    let invoice: HostingInvoiceRecord | null = null;
-    if (realMandateStatus === "activated" && razorpay_payment_id) {
-      // Generate paid invoice record only if actually active / charged
-      invoice = {
-        id: `INV-HOST-${Date.now().toString().slice(-6)}`,
-        subscriptionId: updatedSub.id,
-        projectId: id,
-        receiptNumber: `HST-${Date.now().toString().slice(-6)}`,
-        billingPeriodStart: now.toISOString(),
-        billingPeriodEnd: nextBill.toISOString(),
-        amount: sub.monthlyAmount,
-        discount: 0,
-        finalAmount: sub.monthlyAmount,
-        status: "PAID",
-        transactionId: razorpay_payment_id || `PAY_HOST_${Date.now()}`,
-        razorpayPaymentId: razorpay_payment_id,
-        paymentDate: now.toISOString(),
-        nextBillingDate: nextBill.toISOString(),
-        createdAt: now.toISOString()
-      };
-
-      addHostingInvoice(invoice);
-
-      sendHostingLifecycleNotification("AUTOPAY_ACTIVATED", id, { invoice });
-      sendHostingLifecycleNotification("PAYMENT_SUCCESS", id, { invoice });
-    } else {
-      sendHostingLifecycleNotification("AUTOPAY_ACTIVATED", id);
-    }
-
-    await logAuditEvent({
-      projectId: id,
-      eventType: "Hosting AutoPay Verified",
-      requestId: req.reqId,
-      actor: req.user?.fullName || "Client",
-      status: "Success",
-      notes: `Recorded AutoPay mandate for subscription ${updatedSub.id} (Status: ${updatedSub.status}, Mandate: ${updatedSub.mandateStatus})`
-    });
+    const { subscription, invoice } = await recordManualHostingPayment(id, invoiceId, payId, orderId);
 
     return res.json({
       success: true,
-      message: realAutopayStatus === "active"
-        ? "Hosting AutoPay successfully setup and verified!"
-        : `AutoPay mandate setup recorded (Mandate Status: ${realMandateStatus}). Waiting for charge confirmation.`,
-      subscription: updatedSub,
+      message: "Hosting renewal payment verified successfully! Your hosting remains active.",
+      subscription,
       invoice
     });
   } catch (err: any) {
-    logger.error("Failed to verify hosting AutoPay:", err);
-    return res.status(500).json({ success: false, error: err.message || "Failed to verify AutoPay." });
+    logger.error("Failed to verify manual hosting payment:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to verify hosting payment." });
   }
 });
 
-// GET /api/hosting/test-matrix - Execute and return verification results for 9 mandatory test matrix cases
+// DISCONNECTED/DISABLED AUTOPAY ROUTES (Kept safely returning standard explanatory responses)
+app.post("/api/projects/:id/hosting/setup-autopay", requireAuth, validateProjectIdParam, async (_req: any, res) => {
+  return res.status(400).json({
+    success: false,
+    error: "Automatic hosting AutoPay is disabled on CodeFuser. Please use manual hosting invoice payments."
+  });
+});
+
+app.post("/api/projects/:id/hosting/verify-autopay", requireAuth, validateProjectIdParam, async (_req: any, res) => {
+  return res.status(400).json({
+    success: false,
+    error: "Automatic hosting AutoPay is disabled on CodeFuser. Please use manual hosting invoice payments."
+  });
+});
+
+app.post("/api/projects/:id/hosting/cancel-autopay", requireAuth, validateProjectIdParam, async (_req: any, res) => {
+  return res.status(400).json({
+    success: false,
+    error: "Automatic hosting AutoPay is disabled on CodeFuser. No active mandate to cancel."
+  });
+});
+
+// GET /api/hosting/test-matrix - Execute and return verification results for mandatory test matrix cases
 app.get("/api/hosting/test-matrix", async (_req, res) => {
   try {
     const report = await runHostingLifecycleTestMatrix();
@@ -2880,6 +2818,16 @@ app.get("/api/hosting/whatsapp-status", (_req, res) => {
   }
 });
 
+// GET /api/hosting/sms-status - Returns status of SMS provider architecture
+app.get("/api/hosting/sms-status", (_req, res) => {
+  return res.json({
+    providerDetected: "None",
+    providerConfigured: false,
+    status: "READY_FOR_PROVIDER_CONFIGURATION",
+    message: "SMS notification provider architecture ready. Configure SMS API credentials (e.g. Twilio / Fast2SMS) when needed."
+  });
+});
+
 // GET /api/hosting/test-whatsapp - Executes a dry-run test of WhatsApp dispatch logic for validation
 app.get("/api/hosting/test-whatsapp", async (_req, res) => {
   try {
@@ -2904,45 +2852,6 @@ app.post("/api/hosting/admin-scan", async (req: any, res) => {
   } catch (err: any) {
     logger.error("Failed to run manual hosting scan:", err);
     return res.status(500).json({ success: false, error: err.message || "Hosting scan failed." });
-  }
-});
-
-// POST /api/projects/:id/hosting/cancel-autopay - Cancel AutoPay subscription
-app.post("/api/projects/:id/hosting/cancel-autopay", requireAuth, validateProjectIdParam, async (req: any, res) => {
-  try {
-    const { id } = req.params;
-    const project = await getProjectById(id);
-    if (!project) {
-      return res.status(404).json({ success: false, error: "Project not found." });
-    }
-
-    const updatedSub = await updateHostingSubscription(id, {
-      autopayStatus: "cancelled",
-      mandateStatus: "revoked",
-      status: "SUBSCRIPTION_CANCELLED",
-      cancelledAt: new Date().toISOString()
-    });
-
-    // Dispatch AutoPay cancelled notification asynchronously
-    sendHostingLifecycleNotification("AUTOPAY_CANCELLED", id);
-
-    await logAuditEvent({
-      projectId: id,
-      eventType: "Hosting AutoPay Cancelled",
-      requestId: req.reqId,
-      actor: req.user?.fullName || "Client",
-      status: "Success",
-      notes: `Cancelled AutoPay mandate for project ${id}`
-    });
-
-    return res.json({
-      success: true,
-      message: "AutoPay mandate has been cancelled. Your website will remain live through the end of the current billing cycle.",
-      subscription: updatedSub
-    });
-  } catch (err: any) {
-    logger.error("Failed to cancel AutoPay:", err);
-    return res.status(500).json({ success: false, error: err.message || "Failed to cancel AutoPay." });
   }
 });
 

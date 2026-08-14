@@ -79,8 +79,7 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
   const [invoices, setInvoices] = useState<HostingInvoiceData[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const [setupLoading, setSetupLoading] = useState(false);
-  const [cancellingLoading, setCancellingLoading] = useState(false);
+  const [payLoading, setPayLoading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const [modalNotification, setModalNotification] = useState<{
@@ -137,13 +136,13 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
     });
   };
 
-  const handleInitiateAutoPay = async () => {
-    setSetupLoading(true);
+  const handlePayHostingBill = async () => {
+    setPayLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || localStorage.getItem("fuser_token") || "";
 
-      const res = await fetch(`/api/projects/${project.id}/hosting/setup-autopay`, {
+      const res = await fetch(`/api/projects/${project.id}/hosting/create-invoice-order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,30 +151,28 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
       });
 
       const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Failed to initiate AutoPay setup.");
+      if (!json.success) throw new Error(json.error || "Failed to create hosting invoice payment order.");
 
       if (json.isRealRazorpay) {
         const isLoaded = await loadRazorpayScript();
         if (!isLoaded || !(window as any).Razorpay) {
-          throw new Error("Unable to load Razorpay Checkout SDK. Please check your internet connection and try again.");
+          throw new Error("Unable to load Razorpay Checkout SDK. Please check your internet connection.");
         }
 
         const options = {
           key: json.keyId,
-          subscription_id: json.subscriptionId,
+          amount: json.amountInPaisa,
+          currency: json.currency || "INR",
           name: "CodeFuser Cloud Hosting",
-          description: "Monthly Website Hosting & Cloud Maintenance",
+          description: `Hosting Renewal Invoice #${json.receiptNumber}`,
+          order_id: json.orderId,
           handler: async (response: any) => {
-            await verifyAutoPay(response);
-          },
-          modal: {
-            ondismiss: () => {
-              setModalNotification({
-                type: "info",
-                title: "AutoPay Authorization Incomplete",
-                message: "You closed the Razorpay authorization window before completing setup. Your mandate is currently pending authorization."
-              });
-            }
+            await verifyManualPayment({
+              invoiceId: json.invoiceId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
           },
           prefill: {
             name: project.clientName,
@@ -187,9 +184,10 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
       } else {
-        // Simulation mode
-        await verifyAutoPay({
-          razorpay_subscription_id: json.subscriptionId,
+        // Simulated manual payment flow
+        await verifyManualPayment({
+          invoiceId: json.invoiceId,
+          razorpay_order_id: json.orderId,
           razorpay_payment_id: `pay_sim_${Date.now()}`,
           razorpay_signature: "simulated_sig",
         });
@@ -197,20 +195,20 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
     } catch (err: any) {
       setModalNotification({
         type: "error",
-        title: "AutoPay Setup Error",
-        message: err.message || "AutoPay setup failed. Please try again or contact support."
+        title: "Hosting Renewal Payment Error",
+        message: err.message || "Failed to initiate hosting payment. Please try again or contact support."
       });
     } finally {
-      setSetupLoading(false);
+      setPayLoading(false);
     }
   };
 
-  const verifyAutoPay = async (payload: any) => {
+  const verifyManualPayment = async (payload: any) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || localStorage.getItem("fuser_token") || "";
 
-      const res = await fetch(`/api/projects/${project.id}/hosting/verify-autopay`, {
+      const res = await fetch(`/api/projects/${project.id}/hosting/verify-payment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -222,87 +220,21 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
       const json = await res.json();
       if (json.success) {
         await fetchHostingData();
-        const mStatus = json.subscription?.mandateStatus || "created";
-        const isAct = json.subscription?.autopayStatus === "active" || json.subscription?.status === "AUTOPAY_ACTIVE";
-
-        if (isAct) {
-          setModalNotification({
-            type: "success",
-            title: "✓ Hosting AutoPay Mandate Activated",
-            message: "Your automatic payment mandate is active. Your website hosting will renew seamlessly without any manual intervention required."
-          });
-        } else if (mStatus === "authenticated") {
-          setModalNotification({
-            type: "info",
-            title: "✓ Mandate Authorized (Pending First Charge)",
-            message: "Your AutoPay authorization has been successfully recorded on Razorpay. Official activation will finalize upon your first cycle charge. Your hosting remains 100% active."
-          });
-        } else if (mStatus === "created") {
-          setModalNotification({
-            type: "info",
-            title: "Mandate Created (Authorization Pending)",
-            message: "Your AutoPay mandate has been created, but payment authorization is required before it becomes active. Please authorize through the Razorpay checkout window."
-          });
-        } else {
-          setModalNotification({
-            type: "info",
-            title: "AutoPay Mandate Update",
-            message: `Mandate recorded with status: ${mStatus.toUpperCase()}.`
-          });
-        }
-      } else {
-        throw new Error(json.error || "AutoPay verification failed.");
-      }
-    } catch (err: any) {
-      setModalNotification({
-        type: "error",
-        title: "AutoPay Verification Failed",
-        message: err.message || "Failed to verify AutoPay mandate status."
-      });
-    }
-  };
-
-  const executeCancelAutoPay = async () => {
-    setCancellingLoading(true);
-    setModalNotification(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || localStorage.getItem("fuser_token") || "";
-
-      const res = await fetch(`/api/projects/${project.id}/hosting/cancel-autopay`, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-
-      const json = await res.json();
-      if (json.success) {
         setModalNotification({
-          type: "info",
-          title: "AutoPay Cancelled",
-          message: "Your AutoPay mandate has been cancelled. Your website will remain live until the end of your active billing cycle."
+          type: "success",
+          title: "✓ Hosting Renewal Paid Successfully",
+          message: "Thank you! Your manual hosting payment has been processed and verified. Your website hosting remains 100% active."
         });
-        fetchHostingData();
       } else {
-        throw new Error(json.error || "Failed to cancel AutoPay.");
+        throw new Error(json.error || "Payment verification failed.");
       }
     } catch (err: any) {
       setModalNotification({
         type: "error",
-        title: "Cancellation Error",
-        message: err.message || "Could not cancel AutoPay mandate."
+        title: "Payment Verification Failed",
+        message: err.message || "Failed to verify hosting renewal payment."
       });
-    } finally {
-      setCancellingLoading(false);
     }
-  };
-
-  const handleCancelAutoPay = () => {
-    setModalNotification({
-      type: "confirm",
-      title: "Cancel AutoPay Mandate?",
-      message: "Are you sure you want to cancel your hosting AutoPay mandate? Your website will remain online until the end of your current cycle.",
-      onConfirm: executeCancelAutoPay
-    });
   };
 
   const handleDownloadInvoice = async (invoiceId: string, receiptNumber: string) => {
@@ -386,16 +318,16 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
             <div>
               <h3 className="text-sm font-bold text-red-200">Hosting Currently Suspended</h3>
               <p className="text-xs text-red-300/80 mt-0.5">
-                Your hosting payment was unpaid and the grace period has ended. Set up AutoPay or complete payment to restore website access immediately.
+                Your hosting payment was unpaid and the grace period has ended. Pay your hosting renewal invoice to restore website access immediately.
               </p>
             </div>
           </div>
           <button
-            onClick={handleInitiateAutoPay}
-            disabled={setupLoading}
+            onClick={handlePayHostingBill}
+            disabled={payLoading}
             className="px-4 py-2 bg-red-500 hover:bg-red-400 text-black font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0"
           >
-            {setupLoading ? "Processing..." : "PAY & REACTIVATE HOSTING →"}
+            {payLoading ? "Processing..." : "PAY & REACTIVATE HOSTING →"}
           </button>
         </div>
       )}
@@ -411,16 +343,16 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
                 <strong className="text-white">
                   {subData?.gracePeriodEndsAt ? new Date(subData.gracePeriodEndsAt).toLocaleDateString() : "Soon"}
                 </strong>
-                . Please update AutoPay to prevent service interruption.
+                . Please pay your hosting renewal invoice to prevent service interruption.
               </p>
             </div>
           </div>
           <button
-            onClick={handleInitiateAutoPay}
-            disabled={setupLoading}
+            onClick={handlePayHostingBill}
+            disabled={payLoading}
             className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0"
           >
-            {setupLoading ? "Processing..." : "UPDATE AUTOPAY →"}
+            {payLoading ? "Processing..." : "PAY HOSTING RENEWAL →"}
           </button>
         </div>
       )}
@@ -442,26 +374,16 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
 
             <span
               className={`text-[10px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
-                isAutoPayActive
+                isFreeTrial
                   ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                  : isMandateAuthenticated
-                  ? "text-blue-400 bg-blue-500/10 border-blue-500/20"
-                  : isMandatePending
-                  ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
-                  : isFreeTrial
-                  ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
                   : isSuspended
                   ? "text-red-400 bg-red-500/10 border-red-500/20"
-                  : "text-neutral-400 bg-neutral-900 border-neutral-800"
+                  : isGracePeriod
+                  ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                  : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
               }`}
             >
-              {isAutoPayActive
-                ? "AUTOPAY ACTIVE"
-                : isMandateAuthenticated
-                ? "MANDATE AUTHENTICATED"
-                : isMandatePending
-                ? "MANDATE PENDING"
-                : (subData?.status?.replace(/_/g, " ") || "ACTIVE")}
+              {isFreeTrial ? "FREE TRIAL ACTIVE" : isSuspended ? "HOSTING SUSPENDED" : isGracePeriod ? "GRACE PERIOD" : "HOSTING ACTIVE"}
             </span>
           </div>
 
@@ -511,57 +433,40 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
           {/* SUBSCRIPTION DETAILS GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 space-y-1">
-              <span className="text-neutral-500 text-[10px] font-mono uppercase block">First Paid Billing Date</span>
+              <span className="text-neutral-500 text-[10px] font-mono uppercase block">Next Hosting Renewal Date</span>
               <span className="text-white font-bold text-sm block">
                 {subData?.nextBillingDate ? new Date(subData.nextBillingDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A"}
               </span>
-              <span className="text-neutral-400 text-[10px] block">Automatic payments begin after free period ends</span>
+              <span className="text-neutral-400 text-[10px] block">Hosting invoice renewal date</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 space-y-1">
-              <span className="text-neutral-500 text-[10px] font-mono uppercase block">AutoPay Mandate Status</span>
+              <span className="text-neutral-500 text-[10px] font-mono uppercase block">Billing Type</span>
               <span className="text-white font-bold text-sm flex items-center gap-1.5">
-                <ShieldCheck size={16} className={isAutoPayActive ? "text-emerald-400" : isMandateAuthenticated ? "text-blue-400" : isMandatePending ? "text-amber-400" : "text-neutral-400"} />
-                <span className="capitalize">
-                  {isAutoPayActive
-                    ? "Active"
-                    : isMandateAuthenticated
-                    ? "Mandate Authorized — Pending First Charge"
-                    : isMandatePending
-                    ? "Pending Authorization"
-                    : (subData?.autopayStatus || "Inactive")}
-                </span>
+                <ShieldCheck size={16} className="text-emerald-400" />
+                <span>Manual Invoice Renewal</span>
               </span>
               <span className="text-neutral-400 text-[10px] block">
-                {subData?.razorpaySubscriptionId ? `Ref: ${subData.razorpaySubscriptionId}` : "Secure Payment Reference ID"}
+                Pay renewal invoices manually via Razorpay
               </span>
             </div>
           </div>
 
-          {/* AUTOPAY ACTION BUTTONS */}
+          {/* MANUAL PAYMENT ACTION BUTTON */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-neutral-900">
             <div className="text-xs text-neutral-400 flex items-center gap-2">
               <Lock size={14} className="text-amber-500 shrink-0" />
-              <span>100% Safe & Encrypted Payment Setup</span>
+              <span>100% Safe & Encrypted Payments via Razorpay</span>
             </div>
 
-            {!isAutoPayActive && !isMandateAuthenticated ? (
-              <button
-                onClick={handleInitiateAutoPay}
-                disabled={setupLoading}
-                className="w-full sm:w-auto px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
-              >
-                {setupLoading ? "Setting Up..." : "SET UP AUTOMATIC PAYMENTS →"}
-              </button>
-            ) : (
-              <button
-                onClick={handleCancelAutoPay}
-                disabled={cancellingLoading}
-                className="w-full sm:w-auto px-4 py-2.5 bg-neutral-900 hover:bg-red-500/10 hover:border-red-500/30 border border-neutral-800 text-neutral-300 hover:text-red-400 font-bold text-xs rounded-xl transition-all cursor-pointer"
-              >
-                {cancellingLoading ? "Turning Off..." : "Turn Off Automatic Payments"}
-              </button>
-            )}
+            <button
+              onClick={handlePayHostingBill}
+              disabled={payLoading}
+              className="w-full sm:w-auto px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <CreditCard size={15} />
+              <span>{payLoading ? "Processing..." : "PAY HOSTING RENEWAL INVOICE →"}</span>
+            </button>
           </div>
         </div>
 
