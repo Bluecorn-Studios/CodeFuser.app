@@ -129,7 +129,9 @@ export default function App() {
       case '/dashboard':
         return (
           <RequireAuth onRedirectToLogin={() => navigate('/login')}>
-            <CustomerDashboard />
+            <RequirePortalAccess>
+              <CustomerDashboard />
+            </RequirePortalAccess>
           </RequireAuth>
         );
       case '/login':

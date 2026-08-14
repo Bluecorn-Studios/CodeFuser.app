@@ -346,7 +346,7 @@ export default function CustomerDashboard() {
   const timelineRef = useRef<HTMLDivElement>(null);
 
   const { signOut } = useAuth();
-  const { project: ctxProject, isLoading: projLoading, refreshProject } = useProject();
+  const { project: ctxProject, projects, isLoading: projLoading, refreshProject, selectProject } = useProject();
 
   console.log(`[TRACING] CustomerDashboard rendered | timestamp: ${new Date().toISOString()}`, {
     ctxProject: ctxProject ? { id: ctxProject.id, name: ctxProject.name } : null,
@@ -365,20 +365,8 @@ export default function CustomerDashboard() {
         setCopyInput(getDisplayValue(ctxProject.contentReady || ""));
         fetchExtraData(ctxProject.id);
       } else {
-        // Fallback check from local storage if available
-        const localData = safeLocalStorage.getItem("codefuser_current_project");
-        if (localData) {
-          try {
-            const parsed = JSON.parse(localData);
-            if (parsed && parsed.id) {
-              setProject(parsed);
-              setProjectId(parsed.id);
-              fetchExtraData(parsed.id);
-            }
-          } catch (e) {
-            console.warn("Failed to parse local stored project:", e);
-          }
-        }
+        setProject(null);
+        setProjectId(null);
       }
       setIsLoading(false);
       console.log(`[TRACING] CustomerDashboard setIsLoading(false) executed`);
@@ -941,29 +929,7 @@ export default function CustomerDashboard() {
     }
   };
 
-  const activeAuthUser = (getAuthUser() || user) as any;
-  const effectiveProject: ProjectRecord = project || (activeAuthUser ? {
-    id: `proj_${activeAuthUser.id || 'draft'}`,
-    clientName: activeAuthUser.fullName || activeAuthUser.user_metadata?.full_name || activeAuthUser.email?.split("@")[0] || "Valued Client",
-    businessName: activeAuthUser.businessName || activeAuthUser.user_metadata?.business_name || "My Business Project",
-    email: activeAuthUser.email || "",
-    whatsapp: "",
-    selectedPackage: "fusion_baseline",
-    ownershipChoice: "milestone",
-    industry: "General",
-    customIndustry: "",
-    goal: "Build Website",
-    customGoal: "",
-    hasDomain: "pending",
-    hasLogo: "pending",
-    contentReady: "pending",
-    timestamp: new Date().toISOString(),
-    status: "Onboarding In Progress",
-    paymentStatus: "pending",
-    portalAccess: true
-  } : null as any);
-
-  const activeProject = effectiveProject;
+  const activeProject = project;
   const isApprovedClient = !!activeProject;
 
   if (isLoading) {
@@ -978,40 +944,54 @@ export default function CustomerDashboard() {
     );
   }
 
-  if (!isApprovedClient) {
-    console.log("[TRACING RENDER] CustomerDashboard rendering Access Denied state | project:", project);
+  if (!isApprovedClient || !activeProject) {
+    console.log("[TRACING RENDER] CustomerDashboard rendering client area not ready state | project:", project);
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md bg-[#050505] border border-neutral-900 rounded-3xl p-8 text-center relative overflow-hidden"
-        >
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/20 to-transparent" />
-          
-          <div className="h-12 w-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-6">
-            <Lock size={20} />
-          </div>
-          <h2 className="text-xl font-black uppercase tracking-tight text-neutral-100 font-sans">
-            Access Denied
-          </h2>
-          <p className="text-sm text-neutral-300 mt-4 leading-relaxed font-sans">
-            Please sign in to access your client portal.
-          </p>
+      <div className="min-h-screen bg-[#030303] text-white flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
+        {/* Subtle ambient backdrop */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-orange-600/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none" />
 
-          <div className="mt-8 space-y-3">
+        <motion.div 
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-md bg-zinc-950/90 border border-zinc-800/80 rounded-3xl p-8 sm:p-10 text-center relative z-10 shadow-2xl backdrop-blur-xl space-y-6"
+        >
+          <div className="flex items-center justify-center gap-2">
+            <span className="font-mono text-xl font-bold tracking-tight text-white">CODEFUSER</span>
+          </div>
+
+          <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto text-amber-400">
+            <Sparkles className="w-7 h-7 text-amber-400" />
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              Your client area isn't ready yet
+            </h1>
+            <p className="text-sm text-zinc-400 leading-relaxed max-w-sm mx-auto">
+              We couldn't find a CodeFuser project for this account yet.
+            </p>
+          </div>
+
+          <div className="pt-2 space-y-3">
             <button
-              onClick={() => navigate("/login")}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs font-sans cursor-pointer transition-all shadow-md"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                navigate("/start-project");
+              }}
+              className="w-full h-12 bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
-              Sign In / Register
+              Start your website <ArrowRight size={14} />
             </button>
 
             <button
-              onClick={() => navigate("/")}
-              className="w-full bg-neutral-900 hover:bg-neutral-800 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs border border-neutral-800 font-sans cursor-pointer transition-all"
+              onClick={logoutClient}
+              className="w-full h-11 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-white font-medium text-xs rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              Return Home
+              <LogOut size={13} />
+              Back to sign in
             </button>
           </div>
         </motion.div>
@@ -1255,6 +1235,9 @@ export default function CustomerDashboard() {
           setIsProfileDropdownOpen={setIsProfileDropdownOpen}
           setActiveWorkspaceModal={setActiveWorkspaceModal}
           logoutClient={logoutClient}
+          projects={projects as any}
+          currentProjectId={activeProject?.id}
+          onSelectProject={selectProject}
         />
       </SectionErrorBoundary>
 

@@ -17,10 +17,12 @@ export type ProjectData = NormalizedProject;
 
 export interface ProjectContextType {
   project: ProjectData | null;
+  projects: ProjectData[];
   isLoading: boolean;
   error: string | null;
   portalAccess: boolean;
   refreshProject: () => Promise<void>;
+  selectProject: (projectId: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -28,6 +30,8 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading: authLoading } = useAuth();
   const [project, setProject] = useState<ProjectData | null>(null);
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,12 +42,21 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(val);
   }, []);
 
+  const selectProject = useCallback((id: string) => {
+    setSelectedProjectId(id);
+    const found = projects.find(p => p.id === id);
+    if (found) {
+      setProject(found);
+    }
+  }, [projects]);
+
   const fetchProject = useCallback(async () => {
     console.log("fetchProject started", { timestamp: new Date().toISOString() });
     console.log("user", user);
 
     if (!user) {
       setProject(null);
+      setProjects([]);
       setError(null);
       updateIsLoading(false, "fetchProject (!user)");
       console.log("fetchProject finished (!user)");
@@ -77,8 +90,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const rawProjectsList = res.projects || res.data || [];
       const projectsList = Array.isArray(rawProjectsList) ? rawProjectsList.map(normalizeProject) : [];
       
+      setProjects(projectsList);
       if (projectsList.length > 0) {
-        setProject(projectsList[0]);
+        const current = selectedProjectId ? (projectsList.find(p => p.id === selectedProjectId) || projectsList[0]) : projectsList[0];
+        setProject(current);
       } else {
         setProject(null);
       }
@@ -88,11 +103,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.warn("[ProjectProvider] Failed to fetch project:", err);
       setError(err.message || "Failed to load project details.");
       setProject(null);
+      setProjects([]);
     } finally {
       updateIsLoading(false, "fetchProject finally");
       console.log("fetchProject finished");
     }
-  }, [user, updateIsLoading]);
+  }, [user, selectedProjectId, updateIsLoading]);
 
   useEffect(() => {
     console.log(`[TRACING] ProjectContext useEffect triggered | authLoading: ${authLoading} | user: ${user ? user.email : 'null'}`);
@@ -103,6 +119,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (!user) {
       setProject(null);
+      setProjects([]);
       setError(null);
       updateIsLoading(false, "useEffect (!user)");
       return;
@@ -119,12 +136,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const value = useMemo<ProjectContextType>(
     () => ({
       project,
+      projects,
       isLoading: authLoading || isLoading,
       error,
       portalAccess,
       refreshProject: fetchProject,
+      selectProject,
     }),
-    [project, authLoading, isLoading, error, portalAccess, fetchProject]
+    [project, projects, authLoading, isLoading, error, portalAccess, fetchProject, selectProject]
   );
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;

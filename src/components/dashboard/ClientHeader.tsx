@@ -16,6 +16,9 @@ interface ClientHeaderProps {
   setIsProfileDropdownOpen: (open: boolean) => void;
   setActiveWorkspaceModal: React.Dispatch<React.SetStateAction<"settings" | "billing" | "support" | null>>;
   logoutClient: () => void;
+  projects?: Array<{ id: string; businessName?: string; name?: string }>;
+  currentProjectId?: string;
+  onSelectProject?: (id: string) => void;
 }
 
 export const ClientHeader: React.FC<ClientHeaderProps> = ({
@@ -30,6 +33,9 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
   setIsProfileDropdownOpen,
   setActiveWorkspaceModal,
   logoutClient,
+  projects,
+  currentProjectId,
+  onSelectProject,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -143,6 +149,32 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                       </span>
                     )}
                   </div>
+
+                  {projects && projects.length > 1 && (
+                    <div className="p-2 border-b border-neutral-900 mb-1">
+                      <span className="text-[10px] uppercase font-mono font-bold text-neutral-400 block mb-1">
+                        Your projects
+                      </span>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {projects.map((proj) => (
+                          <button
+                            key={proj.id}
+                            onClick={() => {
+                              onSelectProject?.(proj.id);
+                              setIsProfileDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold truncate transition-all cursor-pointer block ${
+                              proj.id === currentProjectId
+                                ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                : "text-neutral-300 hover:bg-neutral-900"
+                            }`}
+                          >
+                            {proj.businessName || proj.name || "Untitled Project"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-0.5">
                     <button
