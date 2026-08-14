@@ -4760,11 +4760,11 @@ That's enough. We'll help with the rest.`}
                       type="button"
                       onClick={() => {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
-                        navigate('/login?signup=true');
+                        navigate('/login');
                       }}
                       className="btn-pressure inline-flex items-center justify-center gap-2 bg-white text-black hover:bg-neutral-100 font-bold text-xs uppercase tracking-wider px-6 py-4 rounded-xl w-full shadow-lg active:scale-95 transition-all cursor-pointer leading-none h-12"
                     >
-                      Create Client Account <ArrowRight size={14} />
+                      Access Client Portal <ArrowRight size={14} />
                     </button>
 
                     <div className="relative flex py-1 w-full items-center">

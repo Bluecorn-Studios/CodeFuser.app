@@ -8,8 +8,6 @@ import {
   Loader2, 
   CheckCircle2, 
   ChevronLeft,
-  User,
-  Briefcase,
   Sparkles,
   Eye,
   EyeOff
@@ -21,27 +19,15 @@ import { supabase } from "../lib/supabase";
 
 export default function LoginPage() {
   const { navigate } = useAppRouter();
-  const { user, session, isLoading: authLoading, signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
+  const { user, isLoading: authLoading, signInWithEmail, signInWithGoogle } = useAuth();
   
-  // Read URL params to set initial mode
-  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>(searchParams.get("signup") === "true" ? 'signup' : 'signin');
-
-  const [fullName, setFullName] = useState<string>("");
-  const [businessName, setBusinessName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  const handlePostAuthRedirect = async (userObj?: any) => {
-    navigate("/dashboard");
-  };
 
   // Auto-redirect if already authenticated with live Supabase session
   useEffect(() => {
@@ -65,71 +51,20 @@ export default function LoginPage() {
       return;
     }
 
-    if (authMode === 'signup') {
-      if (!fullName.trim()) {
-        setErrorMsg("Full Name is required for client account setup.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        setErrorMsg("Passwords do not match.");
-        return;
-      }
-    }
-
     setIsSubmitting(true);
 
     try {
-      if (authMode === 'signup') {
-        // First try the custom API signup proxy endpoint
-        const res = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, fullName, businessName }),
-        });
-
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-          if (data.session?.access_token && data.session?.refresh_token) {
-            await supabase.auth.setSession({
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-            });
-          } else {
-            await signInWithEmail(email, password).catch(() => {});
-          }
-          setSuccessMsg("Client account registered successfully! Entering your workspace...");
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 500);
-          return;
-        }
-
-        // Fallback to client Supabase signup
-        const signUpResult = await signUpWithEmail(email, password);
-        if (signUpResult?.session) {
-          await supabase.auth.setSession(signUpResult.session);
-        }
-        setSuccessMsg("Account created! Entering your workspace...");
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 500);
-
-      } else {
-        // Sign In mode
-        const authResult = await signInWithEmail(email, password);
-        if (authResult?.session) {
-          await supabase.auth.setSession(authResult.session);
-        }
-        setSuccessMsg("Welcome back! Entering your client workspace...");
-
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 500);
+      const authResult = await signInWithEmail(email, password);
+      if (authResult?.session) {
+        await supabase.auth.setSession(authResult.session);
       }
+      setSuccessMsg("Welcome back! Entering your client workspace...");
 
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 500);
     } catch (err: any) {
-      const friendlyError = logAndMapAuthError(err, authMode === 'signup' ? "Account Registration" : "Manual Credentials Submit");
+      const friendlyError = logAndMapAuthError(err, "Manual Credentials Submit");
       setErrorMsg(friendlyError);
       setIsSubmitting(false);
     }
@@ -193,13 +128,13 @@ export default function LoginPage() {
           </motion.div>
 
           <h2 className="text-3xl sm:text-4xl font-extrabold uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-zinc-100 to-zinc-400 font-sans">
-            Client Portal
+            Client Login
           </h2>
           
           <p className="text-xs text-zinc-400 max-w-xs mx-auto mt-2.5 tracking-wide font-sans leading-relaxed">
             Reserved for authorized CodeFuser clients.
             <br />
-            <span className="text-zinc-500">Sign in below to access your project dashboard.</span>
+            <span className="text-zinc-500">Sign in to access your project dashboard.</span>
           </p>
         </motion.div>
 
@@ -217,40 +152,6 @@ export default function LoginPage() {
               transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
               className="w-1/2 h-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_#f59e0b]"
             />
-          </div>
-
-          {/* Tab Switcher: Sign In vs Create Account */}
-          <div className="flex bg-zinc-900/90 p-1 rounded-2xl border border-zinc-800 mb-6">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('signin');
-                setErrorMsg(null);
-                setSuccessMsg(null);
-              }}
-              className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
-                authMode === 'signin'
-                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('signup');
-                setErrorMsg(null);
-                setSuccessMsg(null);
-              }}
-              className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
-                authMode === 'signup'
-                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              Register
-            </button>
           </div>
 
           <form onSubmit={handleAuthSubmit} className="space-y-4">
@@ -280,41 +181,6 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
 
-            {authMode === 'signup' && (
-              <>
-                <div>
-                  <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Full Name *</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="John Doe"
-                      className="w-full bg-zinc-900/90 border border-zinc-800 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-sans placeholder:text-zinc-600"
-                      disabled={isLoading}
-                      required
-                    />
-                    <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Business / Brand Name</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={businessName}
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      placeholder="Acme Corp"
-                      className="w-full bg-zinc-900/90 border border-zinc-800 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-sans placeholder:text-zinc-600"
-                      disabled={isLoading}
-                    />
-                    <Briefcase size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-                  </div>
-                </div>
-              </>
-            )}
-
             <div>
               <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Email Address *</label>
               <div className="relative">
@@ -337,7 +203,7 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  autoComplete={authMode === 'signup' ? "new-password" : "current-password"}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -358,33 +224,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {authMode === 'signup' && (
-              <div>
-                <label className="block text-[10px] uppercase font-mono font-semibold tracking-wider text-zinc-400 mb-1.5">Confirm Password *</label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-zinc-900/90 border border-zinc-800 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 pr-10 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-sans placeholder:text-zinc-600"
-                    disabled={isLoading}
-                    required
-                  />
-                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-amber-400 transition-colors focus:outline-none cursor-pointer"
-                    tabIndex={-1}
-                  >
-                    {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={isLoading}
@@ -393,11 +232,11 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 size={16} className="animate-spin text-black" />
-                  <span>{authMode === 'signup' ? "Creating Account..." : "Authenticating..."}</span>
+                  <span>Authenticating...</span>
                 </>
               ) : (
                 <>
-                  <span>{authMode === 'signup' ? "Create Client Account" : "Access Portal"}</span>
+                  <span>Access Portal</span>
                   <ArrowRight size={15} />
                 </>
               )}
@@ -441,7 +280,14 @@ export default function LoginPage() {
           {/* Onboarding note */}
           <div className="mt-6 pt-5 border-t border-zinc-800/80 text-center">
             <p className="text-[11px] text-zinc-500 font-sans leading-relaxed">
-              New client? Onboarding & project access are enabled directly during your project booking.
+              New client? Client accounts are configured automatically upon submitting your project onboarding form.{" "}
+              <button 
+                type="button" 
+                onClick={() => navigate('/start-project')} 
+                className="text-amber-400 hover:text-amber-300 font-semibold underline underline-offset-2 ml-1 cursor-pointer transition-colors"
+              >
+                Start a Project →
+              </button>
             </p>
           </div>
         </motion.div>
