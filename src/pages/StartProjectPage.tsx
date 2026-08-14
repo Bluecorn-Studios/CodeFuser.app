@@ -465,7 +465,7 @@ const getInitialDraft = () => {
       }
     }
 
-    const draft = parsed || {};
+    const draft = parsed ? { ...parsed } : {};
     if (urlStep) draft.step = urlStep;
     if (urlStage) draft.onboardingStage = urlStage;
 
@@ -1049,16 +1049,16 @@ export const StartProjectPage: React.FC = () => {
     }
   }, [createdProjectId, isNewProjectMode, formData, step, onboardingStage, recommendationCards, aiSummary, selectedCardId, selectedPaymentTerm, localPhone, selectedCountry, step1Notice]);
 
-  // Restore active project state from Supabase on mount
+  // Restore active project state from Supabase on mount without overriding locally typed user inputs
   useEffect(() => {
     const restoreFromSupabase = async () => {
       const authUser = getAuthUser();
       if (authUser) {
         setFormData(prev => ({
           ...prev,
-          email: authUser.email || prev.email,
-          ownerName: authUser.user_metadata?.full_name || authUser.fullName || prev.ownerName || "",
-          businessName: authUser.user_metadata?.business_name || authUser.businessName || prev.businessName || ""
+          email: prev.email || authUser.email || "",
+          ownerName: prev.ownerName || authUser.user_metadata?.full_name || authUser.fullName || "",
+          businessName: prev.businessName || authUser.user_metadata?.business_name || authUser.businessName || ""
         }));
       }
 
@@ -1092,51 +1092,51 @@ export const StartProjectPage: React.FC = () => {
 
             setFormData(prev => ({
               ...prev,
-              businessName: activeProj.businessName || prev.businessName,
-              ownerName: activeProj.clientName || prev.ownerName,
-              email: activeProj.email || prev.email,
-              whatsapp: activeProj.whatsapp || prev.whatsapp,
-              packageId: activeProj.selectedPackage || prev.packageId,
-              ownership: activeProj.ownershipChoice || prev.ownership,
-              industry: activeProj.industry || prev.industry,
-              customIndustry: activeProj.customIndustry || prev.customIndustry,
-              goal: activeProj.goal || prev.goal,
-              customGoal: activeProj.customGoal || prev.customGoal,
-              hasDomain: activeProj.hasDomain || prev.hasDomain,
-              hasLogo: activeProj.hasLogo || prev.hasLogo,
-              contentReady: activeProj.contentReady || prev.contentReady,
-              aiPrompt: activeProj.aiPrompt || activeProj.quote?.aiPrompt || prev.aiPrompt
+              businessName: prev.businessName || activeProj.businessName || "",
+              ownerName: prev.ownerName || activeProj.clientName || "",
+              email: prev.email || activeProj.email || "",
+              whatsapp: prev.whatsapp || activeProj.whatsapp || "",
+              packageId: prev.packageId || activeProj.selectedPackage || "growth",
+              ownership: prev.ownership || activeProj.ownershipChoice || "managed",
+              industry: prev.industry || activeProj.industry || "",
+              customIndustry: prev.customIndustry || activeProj.customIndustry || "",
+              goal: prev.goal || activeProj.goal || "",
+              customGoal: prev.customGoal || activeProj.customGoal || "",
+              hasDomain: prev.hasDomain || activeProj.hasDomain || "help",
+              hasLogo: prev.hasLogo || activeProj.hasLogo || "help",
+              contentReady: prev.contentReady || activeProj.contentReady || "no_help",
+              aiPrompt: prev.aiPrompt || activeProj.aiPrompt || activeProj.quote?.aiPrompt || ""
             }));
 
             const quote = activeProj.quote || {};
 
             if (quote.localPhone) {
-              setLocalPhone(quote.localPhone);
+              setLocalPhone(prev => prev || quote.localPhone);
             }
             if (quote.selectedCountryCode) {
               const match = COUNTRIES.find(c => c.code === quote.selectedCountryCode);
-              if (match) setSelectedCountry(match);
+              if (match) setSelectedCountry(prev => prev.code === '+91' ? match : prev);
             }
             if (quote.currentStep) {
-              setStep(quote.currentStep);
+              setStep(prev => (prev && prev > 1) ? prev : quote.currentStep);
             }
             if (quote.onboardingStage) {
-              setOnboardingStage(quote.onboardingStage);
+              setOnboardingStage(prev => (prev && prev !== 'form') ? prev : quote.onboardingStage);
             }
             if (quote.selectedCardId) {
-              setSelectedCardId(quote.selectedCardId);
+              setSelectedCardId(prev => (prev && prev !== 'current') ? prev : quote.selectedCardId);
             }
             if (quote.selectedPaymentTerm) {
-              setSelectedPaymentTerm(quote.selectedPaymentTerm);
+              setSelectedPaymentTerm(prev => prev || quote.selectedPaymentTerm);
             }
 
             // Restore FROZEN AI recommendations directly from Supabase
             if (quote.recommendationCards && Array.isArray(quote.recommendationCards) && quote.recommendationCards.length > 0) {
               const formattedCards = splitFeaturesForCards(quote.recommendationCards, quote.aiSummary?.ourRecommendation?.recommendedFeatures);
-              setRecommendationCards(formattedCards);
-              setTempFetchedCards(formattedCards);
+              setRecommendationCards(prev => prev || formattedCards);
+              setTempFetchedCards(prev => prev || formattedCards);
               if (quote.aiSummary) {
-                setAiSummary(quote.aiSummary);
+                setAiSummary(prev => prev || quote.aiSummary);
               }
               setIsSubmitted(true);
               setLoadingFinished(true);
@@ -1155,30 +1155,38 @@ export const StartProjectPage: React.FC = () => {
           const parsed = JSON.parse(savedDraft);
           if (parsed.formData) {
             setFormData(prev => {
-              const normalized = normalizeProjectFormData({ ...prev, ...parsed.formData });
+              const raw = parsed.formData || {};
+              const normalized = normalizeProjectFormData({ ...prev, ...raw });
               return {
                 ...prev,
-                ...normalized,
-                goal: prev.goal,
-                customGoal: prev.customGoal,
-                packageId: normalized.selectedPlanId || prev.packageId,
-                ownership: prev.ownership,
-                hasDomain: (normalized.hasDomain as any) || prev.hasDomain,
-                hasLogo: (normalized.hasLogo as any) || prev.hasLogo,
-                contentReady: prev.contentReady,
+                ...raw,
+                businessName: prev.businessName || raw.businessName || normalized.businessName || prev.businessName,
+                ownerName: prev.ownerName || raw.ownerName || normalized.ownerName || prev.ownerName,
+                email: prev.email || raw.email || normalized.email || prev.email,
+                whatsapp: prev.whatsapp || raw.whatsapp || normalized.whatsapp || prev.whatsapp,
+                industry: prev.industry || raw.industry || normalized.industry || prev.industry,
+                customIndustry: prev.customIndustry || raw.customIndustry || normalized.customIndustry || prev.customIndustry,
+                goal: prev.goal || raw.goal || prev.goal,
+                customGoal: prev.customGoal || raw.customGoal || prev.customGoal,
+                packageId: prev.packageId || raw.packageId || normalized.selectedPlanId || prev.packageId,
+                ownership: prev.ownership || raw.ownership || prev.ownership,
+                hasDomain: prev.hasDomain || raw.hasDomain || (normalized.hasDomain as any) || prev.hasDomain,
+                hasLogo: prev.hasLogo || raw.hasLogo || (normalized.hasLogo as any) || prev.hasLogo,
+                contentReady: prev.contentReady || raw.contentReady || prev.contentReady,
+                aiPrompt: prev.aiPrompt || raw.aiPrompt || normalized.aiPrompt || prev.aiPrompt
               };
             });
           }
           if (parsed.step) {
-            setStep(parsed.step);
+            setStep(prev => (prev && prev > 1) ? prev : parsed.step);
           }
           if (parsed.localPhone) {
-            setLocalPhone(parsed.localPhone);
+            setLocalPhone(prev => prev || parsed.localPhone);
           }
           if (parsed.selectedCountryCode) {
             const match = COUNTRIES.find(c => c.code === parsed.selectedCountryCode);
             if (match) {
-              setSelectedCountry(match);
+              setSelectedCountry(prev => prev.code === '+91' ? match : prev);
             }
           }
         } catch (err) {
