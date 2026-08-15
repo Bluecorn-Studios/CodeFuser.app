@@ -59,6 +59,9 @@ interface ProjectRecord {
   hasDomain: string;
   hasLogo: string;
   contentReady: string;
+  galleryReady?: string;
+  businessDetails?: string;
+  address?: string;
   timestamp: string;
   status: string;
   paymentStatus?: string;
@@ -286,6 +289,12 @@ export default function CustomerDashboard() {
 
   const handleSaveModalProjectData = async (updatedData: Partial<ProjectRecord>) => {
     if (!project) return;
+    
+    // 1. Instant optimistic local update
+    const merged = { ...project, ...updatedData };
+    setProject(merged);
+    safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(merged));
+
     try {
       const response = await fetch(`/api/projects/${project.id}`, {
         method: "PUT",
@@ -297,25 +306,15 @@ export default function CustomerDashboard() {
       });
       if (response.ok) {
         const result = await response.json();
-        if (result.success) {
-          setProject(result.data);
-          safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(result.data));
-          await refreshProject();
+        if (result.success && result.data) {
+          const finalMerged = { ...merged, ...result.data };
+          setProject(finalMerged);
+          safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(finalMerged));
           setSuccessIndicator("Onboarding details updated live!");
         }
-      } else {
-        const mockUpdated = { ...project, ...updatedData };
-        setProject(mockUpdated);
-        safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(mockUpdated));
-        await refreshProject();
-        setSuccessIndicator("Onboarding details saved!");
       }
     } catch (err) {
       console.warn("API offline, saved locally:", err);
-      const mockUpdated = { ...project, ...updatedData };
-      setProject(mockUpdated);
-      safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(mockUpdated));
-      await refreshProject();
       setSuccessIndicator("Onboarding details saved!");
     } finally {
       setTimeout(() => setSuccessIndicator(null), 3000);
@@ -704,6 +703,10 @@ export default function CustomerDashboard() {
     if (field === "logo") payload.hasLogo = value;
     if (field === "copy") payload.contentReady = value;
 
+    const merged = { ...project, ...payload };
+    setProject(merged);
+    safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(merged));
+
     try {
       const response = await fetch(`/api/projects/${project.id}`, {
         method: "PUT",
@@ -714,26 +717,17 @@ export default function CustomerDashboard() {
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error("Sync failure.");
-
-      const result = await response.json();
-      if (result.success) {
-        setProject(result.data);
-        setSuccessIndicator(`${field === "domain" ? "Domain address" : field === "logo" ? "Brand logo" : "Copywriting docs"} updated live!`);
-        safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(result.data));
-        await refreshProject();
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const finalMerged = { ...merged, ...result.data };
+          setProject(finalMerged);
+          safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(finalMerged));
+          setSuccessIndicator(`${field === "domain" ? "Domain address" : field === "logo" ? "Brand logo" : "Copywriting docs"} updated live!`);
+        }
       }
     } catch (err) {
       console.warn("Server unavailable, updating local client state gracefully.", err);
-      const mockUpdated = {
-        ...project,
-        hasDomain: field === "domain" ? value : project.hasDomain,
-        hasLogo: field === "logo" ? value : project.hasLogo,
-        contentReady: field === "copy" ? value : project.contentReady
-      };
-      setProject(mockUpdated);
-      safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(mockUpdated));
-      await refreshProject();
       setSuccessIndicator(`Offline fallback state updated successfully.`);
     } finally {
       setIsUpdatingField(null);
@@ -1004,6 +998,8 @@ export default function CustomerDashboard() {
   const isDomainComplete = getAssetCategory(activeProject.hasDomain) !== "pending";
   const isLogoComplete = getAssetCategory(activeProject.hasLogo) !== "pending";
   const isCopyComplete = getAssetCategory(activeProject.contentReady) !== "pending";
+  const isGalleryComplete = Boolean(activeProject.galleryReady && activeProject.galleryReady !== "pending" && activeProject.galleryReady !== "");
+  const isBusinessComplete = Boolean(activeProject.businessName && (activeProject.whatsapp || activeProject.email));
 
   const domainState = getAssetCategory(activeProject.hasDomain);
   const logoState = getAssetCategory(activeProject.hasLogo);
@@ -1016,7 +1012,7 @@ export default function CustomerDashboard() {
         : "bg-[#050505] text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850"
     }`;
 
-  const hasEmptyAssets = !isDomainComplete || !isLogoComplete || !isCopyComplete;
+  const hasEmptyAssets = !isDomainComplete || !isLogoComplete || !isCopyComplete || !isGalleryComplete || !isBusinessComplete;
 
   const currentStageIndex = getCustomerStageIndex(activeProject.status, hasEmptyAssets);
 

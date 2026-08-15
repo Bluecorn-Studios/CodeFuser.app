@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { logger } from "./logger.js";
 
 export interface ValidationRule {
-  type: "string" | "number" | "boolean" | "array";
+  type: "string" | "number" | "boolean" | "array" | "object";
   required?: boolean;
   min?: number;
   max?: number;
@@ -355,16 +355,19 @@ export const updateProjectSchema: Schema = {
   customIndustry: { type: "string", required: false, max: 500, allowEmpty: true },
   goal: { type: "string", required: false, max: 500, allowEmpty: true },
   customGoal: { type: "string", required: false, max: 1000, allowEmpty: true },
-  hasDomain: { type: "string", required: false, max: 100, allowEmpty: true },
-  hasLogo: { type: "string", required: false, max: 100, allowEmpty: true },
-  contentReady: { type: "string", required: false, max: 100, allowEmpty: true },
+  hasDomain: { type: "string", required: false, max: 500, allowEmpty: true },
+  hasLogo: { type: "string", required: false, max: 2000000, allowEmpty: true },
+  contentReady: { type: "string", required: false, max: 2000000, allowEmpty: true },
+  galleryReady: { type: "string", required: false, max: 2000000, allowEmpty: true },
+  businessDetails: { type: "string", required: false, max: 50000, allowEmpty: true },
+  address: { type: "string", required: false, max: 2000, allowEmpty: true },
   userId: { type: "string", required: false, max: 100, allowEmpty: true },
   status: { type: "string", required: false, max: 50, allowEmpty: true },
   activeSection: { type: "string", required: false, max: 50, allowEmpty: true },
   domainName: { type: "string", required: false, max: 255, allowEmpty: true },
-  logoUrl: { type: "string", required: false, max: 500, allowEmpty: true },
-  contentReadyUrl: { type: "string", required: false, max: 500, allowEmpty: true },
-  notes: { type: "string", required: false, max: 5000, allowEmpty: true },
+  logoUrl: { type: "string", required: false, max: 2000000, allowEmpty: true },
+  contentReadyUrl: { type: "string", required: false, max: 2000000, allowEmpty: true },
+  notes: { type: "string", required: false, max: 10000, allowEmpty: true },
   clientName: { type: "string", required: false, max: 200, allowEmpty: true },
   selectedPackage: { type: "string", required: false, max: 50, allowEmpty: true },
   ownershipChoice: { type: "string", required: false, max: 50, allowEmpty: true },
@@ -375,7 +378,10 @@ export const updateProjectSchema: Schema = {
   orderId: { type: "string", required: false, max: 100, allowEmpty: true },
   paymentProvider: { type: "string", required: false, max: 50, allowEmpty: true },
   purchaseDate: { type: "string", required: false, max: 100, allowEmpty: true },
-  purchasedPlan: { type: "string", required: false, max: 100, allowEmpty: true }
+  purchasedPlan: { type: "string", required: false, max: 100, allowEmpty: true },
+  assets: { type: "array", required: false },
+  quote: { type: "object", required: false },
+  onboarding: { type: "object", required: false }
 };
 
 // 5. POST /api/projects/:id/quote

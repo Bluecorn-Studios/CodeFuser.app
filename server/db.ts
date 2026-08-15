@@ -102,6 +102,9 @@ export interface ProjectRecord {
   hasDomain: string;
   hasLogo: string;
   contentReady: string;
+  galleryReady?: string;
+  businessDetails?: string;
+  address?: string;
   timestamp: string;
   status: string; // Initial Project Status = "Assets Pending"
   paymentStatus?: string; // 'paid' | 'unpaid'
@@ -124,6 +127,9 @@ export interface ProjectRecord {
     hasDomain?: string;
     hasLogo?: string;
     contentReady?: string;
+    galleryReady?: string;
+    businessDetails?: string;
+    address?: string;
     [key: string]: any;
   };
   payment?: {
@@ -147,7 +153,10 @@ export async function addProject(proj: Partial<ProjectRecord>, reqId: string = "
     customGoal: proj.customGoal || "",
     hasDomain: proj.hasDomain || "",
     hasLogo: proj.hasLogo || "",
-    contentReady: proj.contentReady || ""
+    contentReady: proj.contentReady || "",
+    galleryReady: proj.galleryReady || "",
+    businessDetails: proj.businessDetails || "",
+    address: proj.address || ""
   };
 
   const paymentObj = proj.payment || {
@@ -219,6 +228,9 @@ export function mapProjectRow(item: any): ProjectRecord {
     hasDomain: onboarding.hasDomain || onboarding.has_domain || "",
     hasLogo: onboarding.hasLogo || onboarding.has_logo || "",
     contentReady: onboarding.contentReady || onboarding.content_ready || "",
+    galleryReady: onboarding.galleryReady || onboarding.gallery_ready || item.galleryReady || item.gallery_ready || "",
+    businessDetails: onboarding.businessDetails || onboarding.business_details || item.businessDetails || item.business_details || "",
+    address: onboarding.address || item.address || "",
     timestamp: item.timestamp || item.created_at || "",
     status: item.status || "Assets Pending",
     userId: item.user_id || item.userId || "",
@@ -308,7 +320,10 @@ export async function updateProject(id: string, updates: Partial<ProjectRecord>,
     updates.customGoal !== undefined ||
     updates.hasDomain !== undefined ||
     updates.hasLogo !== undefined ||
-    updates.contentReady !== undefined
+    updates.contentReady !== undefined ||
+    updates.galleryReady !== undefined ||
+    updates.businessDetails !== undefined ||
+    updates.address !== undefined
   ) {
     const existing = await getProjectById(id);
     const existingOnboarding = existing?.onboarding || {
@@ -318,7 +333,10 @@ export async function updateProject(id: string, updates: Partial<ProjectRecord>,
       customGoal: existing?.customGoal || "",
       hasDomain: existing?.hasDomain || "",
       hasLogo: existing?.hasLogo || "",
-      contentReady: existing?.contentReady || ""
+      contentReady: existing?.contentReady || "",
+      galleryReady: existing?.galleryReady || "",
+      businessDetails: existing?.businessDetails || "",
+      address: existing?.address || ""
     };
     dbUpdates.onboarding = {
       ...existingOnboarding,
@@ -328,7 +346,10 @@ export async function updateProject(id: string, updates: Partial<ProjectRecord>,
       ...(updates.customGoal !== undefined && { customGoal: updates.customGoal }),
       ...(updates.hasDomain !== undefined && { hasDomain: updates.hasDomain }),
       ...(updates.hasLogo !== undefined && { hasLogo: updates.hasLogo }),
-      ...(updates.contentReady !== undefined && { contentReady: updates.contentReady })
+      ...(updates.contentReady !== undefined && { contentReady: updates.contentReady }),
+      ...(updates.galleryReady !== undefined && { galleryReady: updates.galleryReady }),
+      ...(updates.businessDetails !== undefined && { businessDetails: updates.businessDetails }),
+      ...(updates.address !== undefined && { address: updates.address })
     };
   }
 

@@ -97,11 +97,13 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
 
       // Gallery parser
       const rawGallery = project.galleryReady || "";
-      if (rawGallery === "help" || rawGallery.includes("stock photos")) {
+      if (rawGallery === "help" || rawGallery.toLowerCase().includes("stock")) {
         setGalleryMode("help");
       } else if (rawGallery.includes("http://") || rawGallery.includes("https://") || rawGallery.startsWith("Provided:")) {
         setGalleryMode("link");
         setGalleryLink(rawGallery.replace(/^Provided:\s*/i, ""));
+      } else if (rawGallery.toLowerCase().includes("uploaded") || rawGallery.toLowerCase().includes("photo")) {
+        setGalleryMode("upload");
       }
 
       // Services parser
@@ -180,22 +182,22 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         : "needed";
     }
     if (step === "2") {
-      return logoMode === "help" || logoFilePreview || logoLink.trim() || project.hasLogo
+      return logoMode === "help" || logoFilePreview || logoLink.trim() || Boolean(project.hasLogo && project.hasLogo !== "pending" && project.hasLogo !== "")
         ? "done"
         : "needed";
     }
     if (step === "3") {
-      return galleryMode === "help" || galleryFilesPreviews.length > 0 || galleryLink.trim() || project.galleryReady
+      return galleryMode === "help" || galleryFilesPreviews.length > 0 || galleryLink.trim() || Boolean(project.galleryReady && project.galleryReady !== "pending" && project.galleryReady !== "")
         ? "done"
         : "needed";
     }
     if (step === "4") {
-      return servicesMode === "help" || servicesText.trim() || servicesDocName || project.contentReady
+      return servicesMode === "help" || servicesText.trim() || servicesDocName || Boolean(project.contentReady && project.contentReady !== "pending" && project.contentReady !== "")
         ? "done"
         : "needed";
     }
     if (step === "5") {
-      return domainMode === "buy_for_me" || domainMode === "subdomain" || domainName.trim() || project.hasDomain
+      return domainMode === "buy_for_me" || domainMode === "subdomain" || domainName.trim() || Boolean(project.hasDomain && project.hasDomain !== "pending" && project.hasDomain !== "")
         ? "done"
         : "needed";
     }
@@ -209,14 +211,19 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
 
     const payload: Partial<ProjectRecord> = {};
 
-    // Build payload according to active step or all steps
+    // Build payload according to active step
     if (activeStep === "1") {
-      payload.businessName = businessName.trim() || project?.businessName || "";
-      payload.clientName = clientName.trim() || project?.clientName || "";
-      payload.whatsapp = phone.trim() || project?.whatsapp || "";
-      payload.email = email.trim() || project?.email || "";
-      payload.address = address.trim() || project?.address || "";
-      payload.businessDetails = `Provided: ${businessName} | Contact: ${clientName} | Phone: ${phone} | Email: ${email} | Address: ${address}`;
+      const bName = businessName.trim() || project?.businessName || "";
+      const cName = clientName.trim() || project?.clientName || "";
+      const wPhone = phone.trim() || project?.whatsapp || "";
+      const uEmail = email.trim() || project?.email || "";
+      const bAddress = address.trim() || project?.address || "";
+      payload.businessName = bName;
+      payload.clientName = cName;
+      payload.whatsapp = wPhone;
+      payload.email = uEmail;
+      payload.address = bAddress;
+      payload.businessDetails = `Provided: ${bName} | Contact: ${cName} | Phone: ${wPhone} | Email: ${uEmail} | Address: ${bAddress}`;
     } else if (activeStep === "2") {
       if (logoMode === "help") {
         payload.hasLogo = "help";
@@ -230,20 +237,26 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         payload.hasLogo = `Provided: ${logoLink}`;
       } else if (project?.hasLogo) {
         payload.hasLogo = project.hasLogo;
+      } else {
+        payload.hasLogo = "help";
       }
     } else if (activeStep === "3") {
       if (galleryMode === "help") {
         payload.galleryReady = "help";
       } else if (galleryMode === "link" && galleryLink.trim()) {
         payload.galleryReady = galleryLink.startsWith("Provided:") ? galleryLink : `Provided: ${galleryLink}`;
-      } else if (galleryMode === "upload" && galleryFilesPreviews.length > 0) {
-        payload.galleryReady = `Uploaded ${galleryFilesPreviews.length} photos`;
+      } else if (galleryMode === "upload") {
+        payload.galleryReady = galleryFilesPreviews.length > 0
+          ? `Uploaded ${galleryFilesPreviews.length} photo${galleryFilesPreviews.length > 1 ? "s" : ""}`
+          : (project?.galleryReady || "Uploaded photos");
       } else if (galleryMode === "none") {
         payload.galleryReady = "not_required";
       } else if (galleryLink.trim()) {
         payload.galleryReady = `Provided: ${galleryLink}`;
       } else if (project?.galleryReady) {
         payload.galleryReady = project.galleryReady;
+      } else {
+        payload.galleryReady = "help";
       }
     } else if (activeStep === "4") {
       if (servicesMode === "help") {
@@ -260,10 +273,12 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         payload.contentReady = `Provided: ${servicesText.trim()}`;
       } else if (project?.contentReady) {
         payload.contentReady = project.contentReady;
+      } else {
+        payload.contentReady = "help";
       }
     } else if (activeStep === "5") {
       if (domainMode === "buy_for_me") {
-        payload.hasDomain = "help";
+        payload.hasDomain = domainName.trim() ? `Help buy: ${domainName.trim()}` : "help";
       } else if (domainMode === "subdomain") {
         payload.hasDomain = "not_required";
       } else if (domainMode === "own" && domainName.trim()) {
@@ -272,16 +287,18 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         payload.hasDomain = `Provided: ${domainName.trim()}`;
       } else if (project?.hasDomain) {
         payload.hasDomain = project.hasDomain;
+      } else {
+        payload.hasDomain = "not_required";
       }
     }
 
     try {
       await onSaveProject(payload);
-      setSaveSuccessMsg("Saved successfully!");
-
-      setTimeout(() => {
-        setSaveSuccessMsg(null);
-        if (advanceToNext) {
+      
+      if (advanceToNext) {
+        setSaveSuccessMsg("Step saved! Continuing to next step...");
+        setTimeout(() => {
+          setSaveSuccessMsg(null);
           const steps: AssetStepKey[] = ["1", "2", "3", "4", "5"];
           const currentIndex = steps.indexOf(activeStep);
           if (currentIndex < steps.length - 1) {
@@ -289,8 +306,13 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
           } else {
             onClose();
           }
-        }
-      }, 600);
+        }, 350);
+      } else {
+        setSaveSuccessMsg("Step saved successfully!");
+        setTimeout(() => {
+          setSaveSuccessMsg(null);
+        }, 2000);
+      }
     } catch (err) {
       console.error("Failed to save step:", err);
     } finally {

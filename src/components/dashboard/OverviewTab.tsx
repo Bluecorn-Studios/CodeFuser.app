@@ -74,21 +74,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const expectations = getStageExpectations(currentStageIndex);
   const isLive = currentStageIndex >= 5 || Boolean(project.websiteUrl);
 
-  // Dynamic progress percentage
-  const progressPercent = isLive
-    ? 100
-    : Math.min(95, Math.max(20, Math.round(((currentStageIndex + 1) / 6) * 100)));
-
-  // Simple 6-step timeline in plain English
-  const humanSteps = [
-    { label: "Project Started", index: 0 },
-    { label: "Business Info", index: 1 },
-    { label: "Website Design", index: 2 },
-    { label: "Development", index: 3 },
-    { label: "Review & Polish", index: 4 },
-    { label: "Website Live", index: 5 },
-  ];
-
   const handleOpenStep = (stepKey: AssetStepKey) => {
     if (onOpenAssetModal) {
       onOpenAssetModal(stepKey);
@@ -155,6 +140,29 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   ];
 
   const completedCount = checklistItems.filter((i) => i.status === "provided").length;
+
+  // Dynamic progress percentage calculation
+  let computedPercent = 20;
+  if (isLive) {
+    computedPercent = 100;
+  } else if (currentStageIndex <= 2) {
+    // During Onboarding/Asset Collection: 20% base + up to 30% for all 5 assets submitted = 50%
+    computedPercent = Math.round(20 + (completedCount / checklistItems.length) * 30);
+  } else {
+    // After assets collected (Design, Dev, Review): 55% -> 95%
+    computedPercent = Math.min(95, Math.max(55, Math.round(((currentStageIndex + 1) / 6) * 100)));
+  }
+  const progressPercent = computedPercent;
+
+  // Simple 6-step timeline in plain English
+  const humanSteps = [
+    { label: "Project Started", index: 0 },
+    { label: "Business Info", index: 1 },
+    { label: "Website Design", index: 2 },
+    { label: "Development", index: 3 },
+    { label: "Review & Polish", index: 4 },
+    { label: "Website Live", index: 5 },
+  ];
 
   return (
     <motion.div 
