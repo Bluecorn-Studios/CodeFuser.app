@@ -144,7 +144,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                       {clientEmail || "Account"}
                     </span>
                     {businessName && (
-                      <span className="text-[10px] text-amber-500/90 font-medium block truncate mt-0.5">
+                      <span className="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">
                         {businessName}
                       </span>
                     )}
@@ -165,7 +165,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                             }}
                             className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold truncate transition-all cursor-pointer block ${
                               proj.id === currentProjectId
-                                ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                ? "bg-white/10 text-white border border-white/20"
                                 : "text-neutral-300 hover:bg-neutral-900"
                             }`}
                           >
@@ -283,7 +283,7 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
 
             <div className="pt-4 border-t border-neutral-900 space-y-3">
               <div className="px-3.5 py-2.5 bg-neutral-950 border border-neutral-900 rounded-2xl flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                <span className="h-2 w-2 rounded-full bg-white animate-pulse shrink-0" />
                 <span className="text-xs font-semibold text-neutral-300 truncate">
                   {getCustomerStatusLabel(currentStageIndex)}
                 </span>
