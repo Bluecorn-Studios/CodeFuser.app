@@ -70,5 +70,14 @@ export function normalizeProject(raw: any): NormalizedProject {
     messages: Array.isArray(p.messages) ? p.messages : [],
     checklists: Array.isArray(p.checklists) ? p.checklists : [],
     aiPrompt: String(p.aiPrompt || p.ai_prompt || ""),
+    launchStatus: p.launchStatus || p.launch_status || undefined,
+    websiteStatus: p.websiteStatus || p.website_status || undefined,
+    websiteUrl: p.websiteUrl || p.website_url || undefined,
+    stagingUrl: p.stagingUrl || p.staging_url || undefined,
+    healthStatus: p.healthStatus || p.health_status || undefined,
+    lastHealthCheck: p.lastHealthCheck || p.last_health_check || undefined,
+    dnsStatus: p.dnsStatus || p.dns_status || undefined,
+    sslStatus: p.sslStatus || p.ssl_status || undefined,
+    changeRequests: p.changeRequests || p.quote?.changeRequests || [],
   };
 }

@@ -86,6 +86,23 @@ export function normalizeStatus(val: any): "draft" | "pending_payment" | "paid" 
   return "draft";
 }
 
+export interface ChangeRequestRecord {
+  id: string;
+  projectId: string;
+  requestText: string;
+  category?: string;
+  chips?: string[];
+  photoName?: string | null;
+  photoUrl?: string | null;
+  status: "SUBMITTED" | "REVIEWING" | "APPROVED" | "IN_PROGRESS" | "READY_FOR_REVIEW" | "COMPLETED" | "REJECTED";
+  priority?: "normal" | "urgent";
+  adminNotes?: string;
+  estimatedTurnaround?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+}
+
 export interface ProjectRecord {
   id: string;
   userId?: string;
@@ -119,6 +136,15 @@ export interface ProjectRecord {
   assets?: any[];
   aiPrompt?: string;
   projectVersion?: number;
+  launchStatus?: "NOT_READY" | "DRAFT" | "IN_PROGRESS" | "READY_TO_LAUNCH" | "DEPLOYING" | "VERIFYING" | "LAUNCHED" | "PAUSED" | "ATTENTION" | "VERIFICATION_FAILED";
+  websiteStatus?: "ONLINE" | "DEGRADED" | "OFFLINE" | "MAINTENANCE" | "PROVISIONING";
+  websiteUrl?: string;
+  stagingUrl?: string;
+  healthStatus?: "healthy" | "degraded" | "unreachable" | "maintenance" | "HEALTHY" | "UNHEALTHY" | "UNKNOWN";
+  lastHealthCheck?: string;
+  dnsStatus?: "connected" | "propagating" | "failed" | "unconfigured";
+  sslStatus?: "active" | "issuing" | "expired" | "unconfigured";
+  changeRequests?: ChangeRequestRecord[];
   onboarding?: {
     industry?: string;
     customIndustry?: string;
@@ -212,6 +238,20 @@ export async function addProject(proj: Partial<ProjectRecord>, reqId: string = "
 export function mapProjectRow(item: any): ProjectRecord {
   const onboarding = item.onboarding || {};
   const payment = item.payment || {};
+  const quote = item.quote || {};
+  const normStatus = normalizeStatus(item.status);
+  const isExplicitLive = typeof item.status === "string" && item.status.toLowerCase().includes("live");
+  const isCompleted = normStatus === "completed" || (typeof item.status === "string" && (item.status.toLowerCase().includes("complete") || item.status.toLowerCase().includes("delivery")));
+
+  const launchStatus = item.launch_status || quote.launchStatus || (isExplicitLive ? "LAUNCHED" : isCompleted ? "READY_TO_LAUNCH" : "NOT_READY");
+  const websiteStatus = item.website_status || quote.websiteStatus || (launchStatus === "LAUNCHED" ? "ONLINE" : "OFFLINE");
+  const websiteUrl = item.website_url || quote.websiteUrl || onboarding.websiteUrl || "";
+  const stagingUrl = item.staging_url || quote.stagingUrl || "";
+  const healthStatus = item.health_status || quote.healthStatus || (launchStatus === "LAUNCHED" && websiteStatus === "ONLINE" ? "healthy" : "maintenance");
+  const lastHealthCheck = quote.lastHealthCheck || item.last_health_check || null;
+  const dnsStatus = quote.dnsStatus || (websiteStatus === "ONLINE" ? "connected" : "unconfigured");
+  const sslStatus = quote.sslStatus || (websiteStatus === "ONLINE" ? "active" : "unconfigured");
+  const changeRequests = quote.changeRequests || [];
 
   return {
     id: item.id || "",
@@ -245,6 +285,15 @@ export function mapProjectRow(item: any): ProjectRecord {
     quote: item.quote || null,
     assets: item.assets || [],
     aiPrompt: item.quote?.aiPrompt || "",
+    launchStatus,
+    websiteStatus,
+    websiteUrl,
+    stagingUrl,
+    healthStatus,
+    lastHealthCheck,
+    dnsStatus,
+    sslStatus,
+    changeRequests,
     onboarding,
     payment
   };
@@ -306,7 +355,37 @@ export async function updateProject(id: string, updates: Partial<ProjectRecord>,
   if (updates.email !== undefined) dbUpdates.email = updates.email;
   if (updates.whatsapp !== undefined) dbUpdates.whatsapp = updates.whatsapp;
   if (updates.userId !== undefined) dbUpdates.user_id = updates.userId;
-  if (updates.quote !== undefined) dbUpdates.quote = updates.quote ?? {};
+  if (updates.quote !== undefined) {
+    dbUpdates.quote = updates.quote ?? {};
+  }
+  
+  if (
+    updates.launchStatus !== undefined ||
+    updates.websiteStatus !== undefined ||
+    updates.websiteUrl !== undefined ||
+    updates.stagingUrl !== undefined ||
+    updates.healthStatus !== undefined ||
+    updates.lastHealthCheck !== undefined ||
+    updates.dnsStatus !== undefined ||
+    updates.sslStatus !== undefined ||
+    updates.changeRequests !== undefined
+  ) {
+    const existing = await getProjectById(id);
+    const existingQuote = existing?.quote || {};
+    dbUpdates.quote = {
+      ...existingQuote,
+      ...(dbUpdates.quote || {}),
+      ...(updates.launchStatus !== undefined && { launchStatus: updates.launchStatus }),
+      ...(updates.websiteStatus !== undefined && { websiteStatus: updates.websiteStatus }),
+      ...(updates.websiteUrl !== undefined && { websiteUrl: updates.websiteUrl }),
+      ...(updates.stagingUrl !== undefined && { stagingUrl: updates.stagingUrl }),
+      ...(updates.healthStatus !== undefined && { healthStatus: updates.healthStatus }),
+      ...(updates.lastHealthCheck !== undefined && { lastHealthCheck: updates.lastHealthCheck }),
+      ...(updates.dnsStatus !== undefined && { dnsStatus: updates.dnsStatus }),
+      ...(updates.sslStatus !== undefined && { sslStatus: updates.sslStatus }),
+      ...(updates.changeRequests !== undefined && { changeRequests: updates.changeRequests })
+    };
+  }
   if (updates.assets !== undefined) dbUpdates.assets = updates.assets ?? [];
   if (updates.paymentStatus !== undefined) dbUpdates.payment_status = updates.paymentStatus;
   if (updates.portalAccess !== undefined) dbUpdates.portal_access = updates.portalAccess;
@@ -769,3 +848,75 @@ export async function getAllUserProfiles(reqId: string = "N/A"): Promise<UserPro
     }));
   }
 }
+
+export async function getChangeRequests(projectId: string): Promise<ChangeRequestRecord[]> {
+  const project = await getProjectById(projectId);
+  return project?.changeRequests || [];
+}
+
+export async function createChangeRequest(
+  projectId: string,
+  reqData: Partial<ChangeRequestRecord>
+): Promise<ChangeRequestRecord> {
+  const project = await getProjectById(projectId);
+  if (!project) throw new Error("Project not found");
+
+  const existingRequests: ChangeRequestRecord[] = project.changeRequests || [];
+
+  // Idempotency: Prevent duplicate submissions from rapid double-clicks / network retries within 15 seconds
+  const trimmedText = (reqData.requestText || "").trim();
+  const duplicate = existingRequests.find((r) => {
+    const isSameText = r.requestText.trim() === trimmedText;
+    const isRecent = Date.now() - new Date(r.createdAt).getTime() < 15000;
+    return isSameText && isRecent;
+  });
+  if (duplicate) {
+    return duplicate;
+  }
+
+  const newRequest: ChangeRequestRecord = {
+    id: `cr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    projectId,
+    requestText: reqData.requestText || "",
+    category: reqData.category || "General Update",
+    chips: reqData.chips || [],
+    photoName: reqData.photoName || null,
+    photoUrl: reqData.photoUrl || null,
+    status: (reqData.status as any) || "SUBMITTED",
+    priority: reqData.priority || "normal",
+    adminNotes: reqData.adminNotes || "",
+    estimatedTurnaround: reqData.estimatedTurnaround || "24-48 hours",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  const updatedRequests = [newRequest, ...existingRequests];
+  await updateProject(projectId, { changeRequests: updatedRequests });
+  return newRequest;
+}
+
+export async function updateChangeRequest(
+  projectId: string,
+  requestId: string,
+  updates: Partial<ChangeRequestRecord>
+): Promise<ChangeRequestRecord | null> {
+  const project = await getProjectById(projectId);
+  if (!project) throw new Error("Project not found");
+
+  const requests: ChangeRequestRecord[] = project.changeRequests || [];
+  const index = requests.findIndex((r) => r.id === requestId);
+  if (index === -1) return null;
+
+  const current = requests[index];
+  const updatedItem: ChangeRequestRecord = {
+    ...current,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+    ...(updates.status === "COMPLETED" && !current.completedAt ? { completedAt: new Date().toISOString() } : {})
+  };
+
+  requests[index] = updatedItem;
+  await updateProject(projectId, { changeRequests: requests });
+  return updatedItem;
+}
+

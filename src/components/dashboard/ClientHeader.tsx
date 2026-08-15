@@ -103,9 +103,9 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
       <div className="flex items-center gap-3">
         {/* Project Status Badge */}
         <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 bg-neutral-950 border border-neutral-800 rounded-full text-xs">
-          <span className="h-2 w-2 rounded-full bg-white animate-pulse shrink-0" />
+          <span className={`h-2 w-2 rounded-full shrink-0 ${currentStageIndex >= 8 ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-white animate-pulse"}`} />
           <span className="text-[11px] font-semibold text-neutral-300 truncate max-w-[140px]">
-            {getCustomerStatusLabel(currentStageIndex)}
+            {currentStageIndex >= 8 ? "Website Live" : getCustomerStatusLabel(currentStageIndex)}
           </span>
         </div>
 

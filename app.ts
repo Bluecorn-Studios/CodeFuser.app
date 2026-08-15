@@ -3,7 +3,7 @@ import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import compression from "compression";
-import { addProject, getProjects, updateProject, getProjectById, logAuditEvent, getUserProfile, createUserProfile, updateUserProfileRole, getAllUserProfiles, ProjectRecord, normalizeOwnershipChoice } from "./server/db.js";
+import { addProject, getProjects, updateProject, getProjectById, logAuditEvent, getUserProfile, createUserProfile, updateUserProfileRole, getAllUserProfiles, ProjectRecord, normalizeOwnershipChoice, getChangeRequests, createChangeRequest, updateChangeRequest } from "./server/db.js";
 import { getSupabase, logRuntimeEnv } from "./server/supabase.js";
 import { getExtraData, updateQuote, addAssetFile } from "./server/extra_store.js";
 import { verifyPaymentSignature, verifyWebhookSignature, getRazorpayInstance } from "./server/razorpay.js";
@@ -2004,6 +2004,334 @@ app.get("/api/projects/:id/assets/:assetId/download-url", requestTimeout(10000, 
     return res.status(500).json({ success: false, error: err.message || "Failed to process download." });
   }
 });
+
+// ==========================================
+// CHANGE REQUESTS & SUPPORT ENGINE
+// ==========================================
+
+// GET /api/projects/:id/change-requests - Retrieve all change requests for a project
+app.get("/api/projects/:id/change-requests", requestTimeout(10000, "Get Change Requests"), validateProjectIdParam, requireAuth, verifyProjectOwnership, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    checkAbort(req);
+
+    const requests = await getChangeRequests(id);
+    return res.json({ success: true, data: requests });
+  } catch (err: any) {
+    logger.error("Failed to get change requests:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to fetch change requests." });
+  }
+});
+
+// POST /api/projects/:id/change-requests - Submit a new client change/content request
+app.post("/api/projects/:id/change-requests", requestTimeout(15000, "Create Change Request"), validateProjectIdParam, requireAuth, verifyProjectOwnership, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const { requestText, category, chips, photoName, photoUrl, priority } = req.body;
+    checkAbort(req);
+
+    if (!requestText || !requestText.trim()) {
+      return res.status(400).json({ success: false, error: "Please provide details for what you would like changed." });
+    }
+
+    const project = await getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: "Project not found." });
+    }
+
+    const newRequest = await createChangeRequest(id, {
+      requestText: requestText.trim(),
+      category: category || "Content & Text",
+      chips: Array.isArray(chips) ? chips : [],
+      photoName: photoName || null,
+      photoUrl: photoUrl || null,
+      priority: priority === "urgent" ? "urgent" : "normal",
+      status: "SUBMITTED"
+    });
+
+    await logAuditEvent({
+      projectId: id,
+      eventType: "Change Request Submitted",
+      requestId: req.reqId,
+      actor: req.user?.fullName || "Client",
+      status: "Success",
+      notes: `Change request #${newRequest.id.slice(-6)} submitted: "${requestText.slice(0, 80)}..."`
+    });
+
+    return res.json({
+      success: true,
+      data: newRequest,
+      message: "Your change request has been submitted. Our team will review and apply the updates shortly."
+    });
+  } catch (err: any) {
+    logger.error("Failed to create change request:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to submit change request." });
+  }
+});
+
+// PATCH /api/projects/:id/change-requests/:requestId - Update a change request status or notes (Admin/Client)
+app.patch("/api/projects/:id/change-requests/:requestId", requestTimeout(10000, "Update Change Request"), validateProjectIdParam, requireAuth, async (req: any, res) => {
+  try {
+    const { id, requestId } = req.params;
+    const { status, adminNotes, priority, estimatedTurnaround } = req.body;
+    checkAbort(req);
+
+    const updated = await updateChangeRequest(id, requestId, {
+      ...(status && { status }),
+      ...(adminNotes !== undefined && { adminNotes }),
+      ...(priority && { priority }),
+      ...(estimatedTurnaround && { estimatedTurnaround })
+    });
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Change request not found." });
+    }
+
+    await logAuditEvent({
+      projectId: id,
+      eventType: "Change Request Updated",
+      requestId: req.reqId,
+      actor: req.isAdmin ? "Admin" : "System",
+      status: "Success",
+      notes: `Change request #${requestId.slice(-6)} updated to status: ${updated.status}`
+    });
+
+    return res.json({ success: true, data: updated, message: "Change request updated successfully." });
+  } catch (err: any) {
+    logger.error("Failed to update change request:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to update change request." });
+  }
+});
+
+// ==========================================
+// WEBSITE LAUNCH & HEALTH VERIFICATION ENGINE
+// ==========================================
+
+// POST /api/projects/:id/launch/start - Initiate website launch sequence
+app.post("/api/projects/:id/launch/start", requestTimeout(15000, "Start Website Launch"), validateProjectIdParam, requireAuth, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const project = await getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: "Project not found." });
+    }
+
+    const targetUrl = req.body.websiteUrl || project.websiteUrl || project.onboarding?.websiteUrl || "";
+
+    const updatedProject = await updateProject(id, {
+      launchStatus: "DEPLOYING",
+      websiteUrl: targetUrl || project.websiteUrl
+    });
+
+    await logAuditEvent({
+      projectId: id,
+      eventType: "Website Launch Initiated",
+      requestId: req.reqId,
+      actor: req.isAdmin ? "Admin" : "Client",
+      status: "Success",
+      notes: `Initiated deployment pipeline for ${project.businessName}. Target URL: ${targetUrl || 'default domain'}`
+    });
+
+    return res.json({
+      success: true,
+      data: updatedProject,
+      message: "Website deployment initiated. Running verification checks."
+    });
+  } catch (err: any) {
+    logger.error("Failed to initiate launch:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to start launch." });
+  }
+});
+
+// POST /api/projects/:id/launch/verify - Verify deployed website and set live
+app.post("/api/projects/:id/launch/verify", requestTimeout(20000, "Verify Live Website"), validateProjectIdParam, requireAuth, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const project = await getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: "Project not found." });
+    }
+
+    const testUrl = req.body.websiteUrl || project.websiteUrl || project.stagingUrl || "";
+    let isLive = false;
+    let checkDetails = {
+      statusCode: 0,
+      responseTimeMs: 0,
+      sslValid: false,
+      dnsResolved: false,
+      checkedAt: new Date().toISOString()
+    };
+
+    if (testUrl && (testUrl.startsWith("http://") || testUrl.startsWith("https://"))) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const startTime = Date.now();
+        const response = await fetch(testUrl, {
+          method: "GET",
+          signal: controller.signal,
+          headers: { "User-Agent": "CodeFuser-HealthChecker/1.0" }
+        });
+        clearTimeout(timeoutId);
+        checkDetails.responseTimeMs = Date.now() - startTime;
+        checkDetails.statusCode = response.status;
+        checkDetails.sslValid = testUrl.startsWith("https://");
+        checkDetails.dnsResolved = true;
+        isLive = response.status >= 200 && response.status < 400;
+      } catch (pingErr: any) {
+        console.warn(`[Health Check] Live ping to ${testUrl} encountered error:`, pingErr.message);
+        isLive = false;
+        checkDetails.statusCode = 0;
+        checkDetails.sslValid = false;
+        checkDetails.dnsResolved = false;
+      }
+    }
+
+    const launchStatus = isLive ? "LAUNCHED" : "VERIFICATION_FAILED";
+    const websiteStatus = isLive ? "ONLINE" : "OFFLINE";
+    const healthStatus = isLive ? "healthy" : "degraded";
+    const dnsStatus = isLive ? "connected" : "unconfigured";
+    const sslStatus = isLive && testUrl.startsWith("https://") ? "active" : "unconfigured";
+
+    const updated = await updateProject(id, {
+      launchStatus,
+      websiteStatus,
+      healthStatus,
+      dnsStatus,
+      sslStatus,
+      lastHealthCheck: checkDetails.checkedAt,
+      ...(testUrl ? { websiteUrl: testUrl } : {})
+    });
+
+    await logAuditEvent({
+      projectId: id,
+      eventType: isLive ? "Website Live Verified" : "Website Verification Failed",
+      requestId: req.reqId,
+      actor: req.isAdmin ? "Admin" : "System",
+      status: isLive ? "Success" : "Failed",
+      notes: isLive
+        ? `Live verification passed (${checkDetails.statusCode} OK, ${checkDetails.responseTimeMs}ms) for ${project.businessName}`
+        : `Verification check returned non-200 status for ${testUrl}`
+    });
+
+    return res.json({
+      success: true,
+      data: updated,
+      checkDetails,
+      message: isLive ? "Website verified successfully and is now marked Live." : "Verification failed. Please check website URL or server configuration."
+    });
+  } catch (err: any) {
+    logger.error("Failed to verify website launch:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to verify live website." });
+  }
+});
+
+// POST /api/projects/:id/health-check - Ping website health check
+app.post("/api/projects/:id/health-check", requestTimeout(15000, "Website Health Check"), validateProjectIdParam, requireAuth, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const project = await getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: "Project not found." });
+    }
+
+    const testUrl = project.websiteUrl || project.stagingUrl || "";
+    let isHealthy = true;
+    let latency = 120;
+    const timestamp = new Date().toISOString();
+
+    if (testUrl && (testUrl.startsWith("http://") || testUrl.startsWith("https://"))) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const startTime = Date.now();
+        const response = await fetch(testUrl, {
+          method: "HEAD",
+          signal: controller.signal,
+          headers: { "User-Agent": "CodeFuser-HealthBot/1.0" }
+        });
+        clearTimeout(timeoutId);
+        latency = Date.now() - startTime;
+        isHealthy = response.status >= 200 && response.status < 400;
+      } catch (err: any) {
+        console.warn(`[Health Check Ping] ${testUrl} ping error:`, err.message);
+        isHealthy = false;
+      }
+    } else {
+      // If no valid URL configured, mark unhealthy
+      isHealthy = false;
+    }
+
+    const healthStatus = isHealthy ? "healthy" : "degraded";
+    const websiteStatus = isHealthy ? "ONLINE" : "OFFLINE";
+    const launchStatus = isHealthy ? "LAUNCHED" : "ATTENTION";
+
+    const updated = await updateProject(id, {
+      healthStatus,
+      websiteStatus,
+      launchStatus,
+      lastHealthCheck: timestamp
+    });
+
+    return res.json({
+      success: true,
+      healthStatus,
+      lastHealthCheck: timestamp,
+      latencyMs: latency,
+      data: updated
+    });
+  } catch (err: any) {
+    logger.error("Failed to run health check:", err);
+    return res.status(500).json({ success: false, error: err.message || "Health check failed." });
+  }
+});
+
+// POST /api/projects/:id/lifecycle - Admin update lifecycle and availability statuses
+app.post("/api/projects/:id/lifecycle", requestTimeout(10000, "Update Project Lifecycle"), validateProjectIdParam, requireAuth, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      launchStatus,
+      websiteStatus,
+      websiteUrl,
+      stagingUrl,
+      healthStatus,
+      dnsStatus,
+      sslStatus
+    } = req.body;
+
+    const project = await getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: "Project not found." });
+    }
+
+    const updated = await updateProject(id, {
+      ...(launchStatus !== undefined && { launchStatus }),
+      ...(websiteStatus !== undefined && { websiteStatus }),
+      ...(websiteUrl !== undefined && { websiteUrl }),
+      ...(stagingUrl !== undefined && { stagingUrl }),
+      ...(healthStatus !== undefined && { healthStatus }),
+      ...(dnsStatus !== undefined && { dnsStatus }),
+      ...(sslStatus !== undefined && { sslStatus }),
+      lastHealthCheck: new Date().toISOString()
+    });
+
+    await logAuditEvent({
+      projectId: id,
+      eventType: "Lifecycle Updated",
+      requestId: req.reqId,
+      actor: req.isAdmin ? "Admin" : "System",
+      status: "Success",
+      notes: `Updated lifecycle state: Launch=${launchStatus || project.launchStatus}, Site=${websiteStatus || project.websiteStatus}`
+    });
+
+    return res.json({ success: true, data: updated, message: "Lifecycle status updated." });
+  } catch (err: any) {
+    logger.error("Failed to update project lifecycle:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to update lifecycle." });
+  }
+});
+
 
 // API: Expose Razorpay Public Key ID & Payment Verification Status (Single source of truth: RAZORPAY_VERIFICATION)
 app.get("/api/config/razorpay", (req, res) => {

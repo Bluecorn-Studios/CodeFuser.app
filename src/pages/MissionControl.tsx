@@ -29,35 +29,7 @@ import { getAuthUser, getAuthToken } from "../utils/auth";
 import { safeLocalStorage } from "../utils/safeStorage";
 import { PaymentSimulationPanel } from "../components/PaymentSimulationPanel";
 import { normalizeProject, normalizeUser } from "../lib/schemaNormalizer";
-
-interface ProjectRecord {
-  id: string;
-  clientName: string;
-  businessName: string;
-  email: string;
-  whatsapp: string;
-  selectedPackage: string;
-  ownershipChoice: string;
-  industry: string;
-  customIndustry: string;
-  goal: string;
-  customGoal: string;
-  hasDomain: string;
-  hasLogo: string;
-  contentReady: string;
-  timestamp: string;
-  status: string;
-  paymentStatus?: string;
-  portalAccess?: boolean;
-  paymentProvider?: string;
-  paymentId?: string;
-  orderId?: string;
-  purchasedPlan?: string;
-  purchaseDate?: string;
-  portalAccessSource?: "automatic" | "manual";
-  quote?: any;
-  assets?: any[];
-}
+import { ProjectRecord } from "../components/dashboard/dashboardTypes";
 
 import { BusinessIntelligenceCRM } from "../components/BusinessIntelligenceCRM";
 import { HostingAdminManager } from "../components/admin/HostingAdminManager";
@@ -123,7 +95,7 @@ export const MissionControl: React.FC = () => {
   const [extraLoadingMap, setExtraLoadingMap] = useState<Record<string, boolean>>({});
 
   // Phase 6 Phase-Specific States
-  const [adminSubTabs, setAdminSubTabs] = useState<Record<string, "proposal" | "checklist" | "deliverables" | "notes" | "comms" | "progress" | "overrides">>({});
+  const [adminSubTabs, setAdminSubTabs] = useState<Record<string, "proposal" | "checklist" | "deliverables" | "notes" | "comms" | "progress" | "lifecycle" | "requests" | "overrides">>({});
   const [isEmergencyMode, setIsEmergencyMode] = useState<boolean>(() => safeLocalStorage.getItem("fuser_emergency_mode") === "true");
   const [proposalEdits, setProposalEdits] = useState<Record<string, string>>({});
   const [proposalLoading, setProposalLoading] = useState<Record<string, boolean>>({});
@@ -133,6 +105,8 @@ export const MissionControl: React.FC = () => {
   const [newDeliverableName, setNewDeliverableName] = useState<Record<string, string>>({});
   const [newDeliverableCategory, setNewDeliverableCategory] = useState<Record<string, string>>({});
   const [newDeliverableAssetId, setNewDeliverableAssetId] = useState<Record<string, string>>({});
+  const [lifecycleActionLoading, setLifecycleActionLoading] = useState<Record<string, boolean>>({});
+  const [changeRequestNotes, setChangeRequestNotes] = useState<Record<string, string>>({});
 
   // Founder Operations states
   const [founderNotesMap, setFounderNotesMap] = useState<Record<string, string>>({});
@@ -254,6 +228,83 @@ export const MissionControl: React.FC = () => {
       }
     } catch (err) {
       console.error("Failed to update project configurations inside admin console:", err);
+    }
+  };
+
+  const handleTriggerLaunch = async (projId: string) => {
+    setLifecycleActionLoading(prev => ({ ...prev, [projId]: true }));
+    try {
+      const res = await fetch(`/api/projects/${projId}/launch/start`, {
+        method: "POST",
+        headers: getAdminHeaders({ "Content-Type": "application/json" })
+      });
+      if (res.ok) {
+        await fetchProjects();
+        await fetchProjectExtra(projId);
+        alert("Automated launch sequence initiated! Servers deploying.");
+      }
+    } catch (err) {
+      console.error("Launch error:", err);
+    } finally {
+      setLifecycleActionLoading(prev => ({ ...prev, [projId]: false }));
+    }
+  };
+
+  const handleVerifyLaunch = async (projId: string) => {
+    setLifecycleActionLoading(prev => ({ ...prev, [projId]: true }));
+    try {
+      const res = await fetch(`/api/projects/${projId}/launch/verify`, {
+        method: "POST",
+        headers: getAdminHeaders({ "Content-Type": "application/json" })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await fetchProjects();
+        await fetchProjectExtra(projId);
+        alert(`Verification Result: ${data.data?.isReachable ? "Site is REACHABLE & ONLINE!" : "Site not reachable yet"} (Status: ${data.data?.launchStatus})`);
+      } else {
+        alert(`Verification note: ${data.message || "Failed"}`);
+      }
+    } catch (err) {
+      console.error("Verification error:", err);
+    } finally {
+      setLifecycleActionLoading(prev => ({ ...prev, [projId]: false }));
+    }
+  };
+
+  const handleHealthCheck = async (projId: string) => {
+    setLifecycleActionLoading(prev => ({ ...prev, [projId]: true }));
+    try {
+      const res = await fetch(`/api/projects/${projId}/health-check`, {
+        method: "POST",
+        headers: getAdminHeaders({ "Content-Type": "application/json" })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await fetchProjects();
+        await fetchProjectExtra(projId);
+        alert(`Health Check: ${data.data?.healthy ? "HEALTHY (200 OK)" : "UNHEALTHY / TIMEOUT"} - HTTP Status: ${data.data?.statusCode || "N/A"}`);
+      }
+    } catch (err) {
+      console.error("Health check error:", err);
+    } finally {
+      setLifecycleActionLoading(prev => ({ ...prev, [projId]: false }));
+    }
+  };
+
+  const handleUpdateChangeRequestStatus = async (projId: string, requestId: string, status: string, adminNotes?: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projId}/change-requests/${requestId}`, {
+        method: "PATCH",
+        headers: getAdminHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status, adminNotes })
+      });
+      if (res.ok) {
+        await fetchProjectExtra(projId);
+        alert(`Change Request status updated to ${status}!`);
+      }
+    } catch (err) {
+      console.error("Failed to update change request:", err);
     }
   };
 
@@ -1288,7 +1339,7 @@ export const MissionControl: React.FC = () => {
                                 </p>
                               </div>
                               <div className="flex flex-wrap gap-1.5 bg-neutral-950 p-1 rounded-lg border border-neutral-900">
-                                {([ "proposal", "checklist", "deliverables", "notes", "comms", "progress", "overrides" ] as const).map((tab) => (
+                                {([ "proposal", "checklist", "deliverables", "notes", "comms", "progress", "lifecycle", "requests", "overrides" ] as const).map((tab) => (
                                   <button
                                     key={tab}
                                     onClick={() => setAdminSubTabs(prev => ({ ...prev, [proj.id]: tab }))}
@@ -1303,7 +1354,9 @@ export const MissionControl: React.FC = () => {
                                      tab === "deliverables" ? "🔒 Vault" :
                                      tab === "notes" ? "📝 Private Notes" :
                                      tab === "comms" ? "💬 AI Comms" :
-                                     tab === "progress" ? "⏱️ Stage Progress" : "🛠️ Founder Overrides"}
+                                     tab === "progress" ? "⏱️ Stage Progress" :
+                                     tab === "lifecycle" ? "🚀 Launch & Health" :
+                                     tab === "requests" ? "🛠️ Change Requests" : "⚙️ Founder Overrides"}
                                   </button>
                                 ))}
                               </div>
@@ -2229,6 +2282,243 @@ export const MissionControl: React.FC = () => {
                                     </div>
                                   </div>
                                 </div>
+                              </div>
+                            )}
+
+                            {/* TAB CONTENT: LIFECYCLE (LAUNCH & HEALTH) */}
+                            {(adminSubTabs[proj.id] || "proposal") === "lifecycle" && (
+                              <div className="space-y-4 font-sans text-xs">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  {/* Launch Status */}
+                                  <div className="bg-neutral-950 p-3.5 rounded-xl border border-neutral-900 space-y-1.5">
+                                    <span className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">Launch Status</span>
+                                    <select
+                                      value={proj.launchStatus || "IN_PROGRESS"}
+                                      onChange={(e) => handleModifyProject(proj.id, { launchStatus: e.target.value as any })}
+                                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs font-mono font-bold text-white focus:outline-none"
+                                    >
+                                      <option value="DRAFT">DRAFT</option>
+                                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                      <option value="READY_TO_LAUNCH">READY_TO_LAUNCH</option>
+                                      <option value="DEPLOYING">DEPLOYING</option>
+                                      <option value="VERIFYING">VERIFYING</option>
+                                      <option value="LAUNCHED">LAUNCHED</option>
+                                      <option value="ATTENTION">ATTENTION</option>
+                                    </select>
+                                    <p className="text-[9.5px] text-zinc-500">Controls client dashboard launch stage & progress.</p>
+                                  </div>
+
+                                  {/* Website Status */}
+                                  <div className="bg-neutral-950 p-3.5 rounded-xl border border-neutral-900 space-y-1.5">
+                                    <span className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">Website Status</span>
+                                    <select
+                                      value={proj.websiteStatus || "OFFLINE"}
+                                      onChange={(e) => handleModifyProject(proj.id, { websiteStatus: e.target.value as any })}
+                                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs font-mono font-bold text-white focus:outline-none"
+                                    >
+                                      <option value="OFFLINE">OFFLINE</option>
+                                      <option value="PROVISIONING">PROVISIONING</option>
+                                      <option value="ONLINE">ONLINE</option>
+                                      <option value="DEGRADED">DEGRADED</option>
+                                    </select>
+                                    <p className="text-[9.5px] text-zinc-500">Live web server accessibility state.</p>
+                                  </div>
+
+                                  {/* Health Status */}
+                                  <div className="bg-neutral-950 p-3.5 rounded-xl border border-neutral-900 space-y-1.5">
+                                    <span className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">Health Status</span>
+                                    <div className="flex items-center gap-2 py-1.5 px-2 bg-neutral-900 rounded-lg border border-neutral-800">
+                                      <span className={`h-2 w-2 rounded-full ${
+                                        proj.healthStatus === "HEALTHY" ? "bg-emerald-400" :
+                                        proj.healthStatus === "UNHEALTHY" ? "bg-red-400" : "bg-zinc-500"
+                                      }`} />
+                                      <span className="font-mono text-xs font-bold text-white">{proj.healthStatus || "UNKNOWN"}</span>
+                                    </div>
+                                    <p className="text-[9.5px] text-zinc-500">Real-time HTTP health monitor result.</p>
+                                  </div>
+                                </div>
+
+                                {/* URL Configurations */}
+                                <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-900 space-y-3">
+                                  <span className="text-[10px] font-mono uppercase text-amber-500 font-bold block">Domain & Staging Endpoints</span>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="text-[9px] font-mono text-zinc-400 block mb-1">Production Website URL</label>
+                                      <input
+                                        type="text"
+                                        defaultValue={proj.websiteUrl || ""}
+                                        onBlur={(e) => {
+                                          if (e.target.value !== proj.websiteUrl) {
+                                            handleModifyProject(proj.id, { websiteUrl: e.target.value });
+                                          }
+                                        }}
+                                        placeholder="https://example.com"
+                                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs font-mono text-white focus:outline-none"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="text-[9px] font-mono text-zinc-400 block mb-1">Staging / Preview URL</label>
+                                      <input
+                                        type="text"
+                                        defaultValue={proj.stagingUrl || ""}
+                                        onBlur={(e) => {
+                                          if (e.target.value !== proj.stagingUrl) {
+                                            handleModifyProject(proj.id, { stagingUrl: e.target.value });
+                                          }
+                                        }}
+                                        placeholder="https://preview.codefuser.com"
+                                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs font-mono text-white focus:outline-none"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Lifecycle Action Triggers */}
+                                <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-900 space-y-3">
+                                  <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Automated Lifecycle Actions</span>
+                                  <div className="flex flex-wrap gap-2.5">
+                                    <button
+                                      onClick={() => handleTriggerLaunch(proj.id)}
+                                      disabled={lifecycleActionLoading[proj.id]}
+                                      className="px-3.5 py-2 bg-white hover:bg-zinc-200 text-black text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <span>🚀 Start Launch Sequence</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleVerifyLaunch(proj.id)}
+                                      disabled={lifecycleActionLoading[proj.id]}
+                                      className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-zinc-200 hover:text-white text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <span>🔍 Verify Launch Status</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleHealthCheck(proj.id)}
+                                      disabled={lifecycleActionLoading[proj.id]}
+                                      className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-zinc-200 hover:text-white text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <span>💓 Ping Health Check</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        handleModifyProject(proj.id, { 
+                                          launchStatus: "LAUNCHED", 
+                                          websiteStatus: "ONLINE",
+                                          healthStatus: "HEALTHY",
+                                          status: "Project Completed"
+                                        });
+                                        alert("Switched project to 100% LIVE & ONLINE!");
+                                      }}
+                                      className="px-3.5 py-2 bg-emerald-500/20 border border-emerald-500/30 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+                                    >
+                                      <span>✓ Instant Mark LIVE</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* TAB CONTENT: CHANGE REQUESTS */}
+                            {(adminSubTabs[proj.id] || "proposal") === "requests" && (
+                              <div className="space-y-4 font-sans text-xs">
+                                <div className="flex justify-between items-center bg-neutral-950 p-3.5 rounded-xl border border-neutral-900">
+                                  <div>
+                                    <span className="text-[10px] font-mono uppercase text-amber-500 font-bold block">Client Change Requests</span>
+                                    <p className="text-[10px] text-zinc-400 mt-0.5">Manage live website modification requests submitted by the client.</p>
+                                  </div>
+                                  <button
+                                    onClick={async () => {
+                                      const text = prompt("Enter manual change request on behalf of client:");
+                                      if (!text) return;
+                                      try {
+                                        const res = await fetch(`/api/projects/${proj.id}/change-requests`, {
+                                          method: "POST",
+                                          headers: getAdminHeaders({ "Content-Type": "application/json" }),
+                                          body: JSON.stringify({
+                                            requestText: text,
+                                            category: "Admin Created",
+                                            priority: "HIGH"
+                                          })
+                                        });
+                                        if (res.ok) {
+                                          await fetchProjectExtra(proj.id);
+                                          alert("Change request logged successfully!");
+                                        }
+                                      } catch (err) {
+                                        console.error(err);
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 text-amber-400 text-[10px] font-mono font-bold uppercase rounded-lg cursor-pointer"
+                                  >
+                                    + Add Request
+                                  </button>
+                                </div>
+
+                                {(!extraProjectMap[proj.id]?.quote?.changeRequests || extraProjectMap[proj.id]?.quote?.changeRequests.length === 0) ? (
+                                  <div className="p-8 text-center bg-neutral-950/40 rounded-xl border border-neutral-900 border-dashed">
+                                    <span className="text-xs text-zinc-500 block">No change requests have been submitted for this project yet.</span>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                                    {extraProjectMap[proj.id].quote.changeRequests.map((req: any) => (
+                                      <div
+                                        key={req.id}
+                                        className="p-4 bg-neutral-950 rounded-xl border border-neutral-900 space-y-3"
+                                      >
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                          <div className="space-y-0.5 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-mono text-[10px] text-zinc-500 font-bold">{req.id}</span>
+                                              <span className="px-2 py-0.5 rounded text-[9.5px] font-mono uppercase bg-neutral-900 text-zinc-300 border border-neutral-800">
+                                                {req.category || "General"}
+                                              </span>
+                                            </div>
+                                            <p className="font-medium text-white text-xs pt-1 break-words whitespace-pre-wrap">{req.requestText}</p>
+                                            {req.photoName && (
+                                              <p className="text-[10px] text-zinc-400">Attached file: {req.photoName}</p>
+                                            )}
+                                          </div>
+
+                                          <div className="flex items-center gap-2 shrink-0">
+                                            <select
+                                              value={req.status}
+                                              onChange={(e) => handleUpdateChangeRequestStatus(proj.id, req.id, e.target.value, req.adminNotes)}
+                                              className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase text-white focus:outline-none cursor-pointer"
+                                            >
+                                              <option value="SUBMITTED">SUBMITTED</option>
+                                              <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                              <option value="COMPLETED">COMPLETED</option>
+                                              <option value="REJECTED">REJECTED</option>
+                                            </select>
+                                          </div>
+                                        </div>
+
+                                        {/* Admin Notes & Completion Box */}
+                                        <div className="pt-2 border-t border-neutral-900 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                                          <input
+                                            type="text"
+                                            placeholder="Developer response note to client..."
+                                            defaultValue={req.adminNotes || ""}
+                                            onChange={(e) => setChangeRequestNotes(prev => ({ ...prev, [req.id]: e.target.value }))}
+                                            className="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none"
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              const note = changeRequestNotes[req.id] !== undefined ? changeRequestNotes[req.id] : (req.adminNotes || "");
+                                              handleUpdateChangeRequestStatus(proj.id, req.id, "COMPLETED", note);
+                                            }}
+                                            className="px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-[10px] font-mono font-bold uppercase rounded-lg cursor-pointer shrink-0"
+                                          >
+                                            ✓ Complete & Notify
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
