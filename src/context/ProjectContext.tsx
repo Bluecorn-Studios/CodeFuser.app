@@ -50,8 +50,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [projects]);
 
-  const fetchProject = useCallback(async () => {
-    console.log("fetchProject started", { timestamp: new Date().toISOString() });
+  const fetchProject = useCallback(async (isBackground: boolean = false) => {
+    console.log("fetchProject started", { timestamp: new Date().toISOString(), isBackground });
     console.log("user", user);
 
     if (!user) {
@@ -75,7 +75,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const url = `/api/projects${queryString ? `?${queryString}` : ''}`;
     console.log("calling /api/projects", url);
 
-    updateIsLoading(true, "fetchProject start");
+    if (!isBackground) {
+      updateIsLoading(true, "fetchProject start");
+    }
     setError(null);
 
     try {
@@ -102,10 +104,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log("response body", err.message || err);
       console.warn("[ProjectProvider] Failed to fetch project:", err);
       setError(err.message || "Failed to load project details.");
-      setProject(null);
-      setProjects([]);
+      if (!isBackground) {
+        setProject(null);
+        setProjects([]);
+      }
     } finally {
-      updateIsLoading(false, "fetchProject finally");
+      if (!isBackground) {
+        updateIsLoading(false, "fetchProject finally");
+      }
       console.log("fetchProject finished");
     }
   }, [user, selectedProjectId, updateIsLoading]);
@@ -133,6 +139,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return project.portalAccess === true;
   }, [project]);
 
+  const refreshProject = useCallback(async () => {
+    return fetchProject(true);
+  }, [fetchProject]);
+
   const value = useMemo<ProjectContextType>(
     () => ({
       project,
@@ -140,10 +150,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       isLoading: authLoading || isLoading,
       error,
       portalAccess,
-      refreshProject: fetchProject,
+      refreshProject,
       selectProject,
     }),
-    [project, projects, authLoading, isLoading, error, portalAccess, fetchProject, selectProject]
+    [project, projects, authLoading, isLoading, error, portalAccess, refreshProject, selectProject]
   );
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;

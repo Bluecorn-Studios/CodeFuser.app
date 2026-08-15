@@ -198,8 +198,20 @@ export default function CustomerDashboard() {
     }
   };
 
-  const [project, setProject] = useState<ProjectRecord | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [project, setProject] = useState<ProjectRecord | null>(() => {
+    try {
+      const cached = safeLocalStorage.getItem("codefuser_current_project");
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return null;
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    try {
+      const cached = safeLocalStorage.getItem("codefuser_current_project");
+      if (cached) return false;
+    } catch {}
+    return true;
+  });
 
   // Extra metadata (assets & quotes) state hooks
   const [extraStore, setExtraStore] = useState<ExtraProjectData>({ projectId: "", quote: null, assets: [] });

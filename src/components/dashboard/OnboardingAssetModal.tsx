@@ -480,11 +480,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setLogoMode("upload")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     logoMode === "upload"
-                      ? "bg-amber-500/10 border-amber-500/40 text-white"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <Upload size={18} className={logoMode === "upload" ? "text-amber-400" : "text-neutral-500"} />
+                  <Upload size={18} className={logoMode === "upload" ? "text-white" : "text-zinc-500"} />
                   <div className="text-xs font-bold">Upload Logo File</div>
                   <div className="text-[11px] opacity-70">PNG, SVG, or JPG</div>
                 </button>
@@ -494,11 +494,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setLogoMode("link")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     logoMode === "link"
-                      ? "bg-amber-500/10 border-amber-500/40 text-white"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <LinkIcon size={18} className={logoMode === "link" ? "text-amber-400" : "text-neutral-500"} />
+                  <LinkIcon size={18} className={logoMode === "link" ? "text-white" : "text-zinc-500"} />
                   <div className="text-xs font-bold">Paste Drive/Dropbox Link</div>
                   <div className="text-[11px] opacity-70">Cloud folder or URL</div>
                 </button>
@@ -508,13 +508,13 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setLogoMode("help")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     logoMode === "help"
-                      ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <Sparkles size={18} className="text-amber-400" />
-                  <div className="text-xs font-bold text-amber-300">Design Logo For Me</div>
-                  <div className="text-[11px] text-amber-400/80">CodeFuser custom design</div>
+                  <Sparkles size={18} className={logoMode === "help" ? "text-white" : "text-zinc-500"} />
+                  <div className="text-xs font-bold">Design Logo For Me</div>
+                  <div className="text-[11px] opacity-70">CodeFuser custom design</div>
                 </button>
               </div>
 
@@ -575,11 +575,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
               )}
 
               {logoMode === "help" && (
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-200 space-y-1">
-                  <p className="font-bold flex items-center gap-1.5 text-amber-300">
-                    <Sparkles size={15} /> CodeFuser Design Team Assigned
+                <div className="p-4 bg-zinc-900 border border-white/20 rounded-2xl text-xs text-zinc-200 space-y-1 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                  <p className="font-bold flex items-center gap-1.5 text-white">
+                    <Sparkles size={15} className="text-white" /> CodeFuser Design Team Assigned
                   </p>
-                  <p className="leading-relaxed opacity-90">
+                  <p className="leading-relaxed opacity-90 text-zinc-400">
                     Our graphics team will design clean, modern logo options for your business based on your industry and brand identity!
                   </p>
                 </div>
@@ -604,11 +604,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setGalleryMode("upload")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     galleryMode === "upload"
-                      ? "bg-amber-500/10 border-amber-500/40 text-white"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <Upload size={18} className={galleryMode === "upload" ? "text-amber-400" : "text-neutral-500"} />
+                  <Upload size={18} className={galleryMode === "upload" ? "text-white" : "text-zinc-500"} />
                   <div className="text-xs font-bold">Upload Photos Directly</div>
                   <div className="text-[11px] opacity-70">Multiple images</div>
                 </button>
@@ -618,11 +618,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setGalleryMode("link")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     galleryMode === "link"
-                      ? "bg-amber-500/10 border-amber-500/40 text-white"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <LinkIcon size={18} className={galleryMode === "link" ? "text-amber-400" : "text-neutral-500"} />
+                  <LinkIcon size={18} className={galleryMode === "link" ? "text-white" : "text-zinc-500"} />
                   <div className="text-xs font-bold">Cloud Folder Link</div>
                   <div className="text-[11px] opacity-70">Google Drive / Dropbox</div>
                 </button>
@@ -632,13 +632,13 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setGalleryMode("help")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     galleryMode === "help"
-                      ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <Sparkles size={18} className="text-amber-400" />
-                  <div className="text-xs font-bold text-amber-300">Use Stock Photos</div>
-                  <div className="text-[11px] text-amber-400/80">CodeFuser curated HD media</div>
+                  <Sparkles size={18} className={galleryMode === "help" ? "text-white" : "text-zinc-500"} />
+                  <div className="text-xs font-bold">Use Stock Photos</div>
+                  <div className="text-[11px] opacity-70">CodeFuser curated HD media</div>
                 </button>
               </div>
 
@@ -723,11 +723,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setServicesMode("text")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     servicesMode === "text"
-                      ? "bg-amber-500/10 border-amber-500/40 text-white"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <FileText size={18} className={servicesMode === "text" ? "text-amber-400" : "text-neutral-500"} />
+                  <FileText size={18} className={servicesMode === "text" ? "text-white" : "text-zinc-500"} />
                   <div className="text-xs font-bold">Type Services / Upload Doc</div>
                   <div className="text-[11px] opacity-70">List offerings, prices, menu</div>
                 </button>
@@ -737,13 +737,13 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setServicesMode("help")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     servicesMode === "help"
-                      ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <Sparkles size={18} className="text-amber-400" />
-                  <div className="text-xs font-bold text-amber-300">CodeFuser Copywriting Help</div>
-                  <div className="text-[11px] text-amber-400/80">We write professional copy for you</div>
+                  <Sparkles size={18} className={servicesMode === "help" ? "text-white" : "text-zinc-500"} />
+                  <div className="text-xs font-bold">CodeFuser Copywriting Help</div>
+                  <div className="text-[11px] opacity-70">We write professional copy for you</div>
                 </button>
               </div>
 
@@ -809,11 +809,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setDomainMode("own")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     domainMode === "own"
-                      ? "bg-amber-500/10 border-amber-500/40 text-white"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <Globe size={18} className={domainMode === "own" ? "text-amber-400" : "text-neutral-500"} />
+                  <Globe size={18} className={domainMode === "own" ? "text-white" : "text-zinc-500"} />
                   <div className="text-xs font-bold">I Have A Domain</div>
                   <div className="text-[11px] opacity-70">e.g. mybusiness.com</div>
                 </button>
@@ -823,13 +823,13 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setDomainMode("buy_for_me")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     domainMode === "buy_for_me"
-                      ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <Sparkles size={18} className="text-amber-400" />
-                  <div className="text-xs font-bold text-amber-300">Buy/Register Domain For Me</div>
-                  <div className="text-[11px] text-amber-400/80">CodeFuser domain setup</div>
+                  <Sparkles size={18} className={domainMode === "buy_for_me" ? "text-white" : "text-zinc-500"} />
+                  <div className="text-xs font-bold">Buy/Register Domain For Me</div>
+                  <div className="text-[11px] opacity-70">CodeFuser domain setup</div>
                 </button>
 
                 <button
@@ -837,11 +837,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                   onClick={() => setDomainMode("subdomain")}
                   className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
                     domainMode === "subdomain"
-                      ? "bg-amber-500/10 border-amber-500/40 text-white"
-                      : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white"
+                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
+                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  <FileCode size={18} className="text-neutral-400" />
+                  <FileCode size={18} className={domainMode === "subdomain" ? "text-white" : "text-zinc-500"} />
                   <div className="text-xs font-bold">Free CodeFuser Domain</div>
                   <div className="text-[11px] opacity-70">mybusiness.codefuser.app</div>
                 </button>
