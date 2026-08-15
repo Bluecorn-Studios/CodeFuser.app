@@ -226,6 +226,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         payload.hasLogo = logoFilePreview;
       } else if (logoMode === "none") {
         payload.hasLogo = "not_required";
+      } else if (logoLink.trim()) {
+        payload.hasLogo = `Provided: ${logoLink}`;
+      } else if (project?.hasLogo) {
+        payload.hasLogo = project.hasLogo;
       }
     } else if (activeStep === "3") {
       if (galleryMode === "help") {
@@ -236,6 +240,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         payload.galleryReady = `Uploaded ${galleryFilesPreviews.length} photos`;
       } else if (galleryMode === "none") {
         payload.galleryReady = "not_required";
+      } else if (galleryLink.trim()) {
+        payload.galleryReady = `Provided: ${galleryLink}`;
+      } else if (project?.galleryReady) {
+        payload.galleryReady = project.galleryReady;
       }
     } else if (activeStep === "4") {
       if (servicesMode === "help") {
@@ -248,6 +256,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         payload.contentReady = contentStr ? `Provided: ${contentStr}` : "help";
       } else if (servicesMode === "none") {
         payload.contentReady = "not_required";
+      } else if (servicesText.trim()) {
+        payload.contentReady = `Provided: ${servicesText.trim()}`;
+      } else if (project?.contentReady) {
+        payload.contentReady = project.contentReady;
       }
     } else if (activeStep === "5") {
       if (domainMode === "buy_for_me") {
@@ -256,6 +268,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         payload.hasDomain = "not_required";
       } else if (domainMode === "own" && domainName.trim()) {
         payload.hasDomain = domainName.startsWith("Provided:") ? domainName : `Provided: ${domainName}`;
+      } else if (domainName.trim()) {
+        payload.hasDomain = `Provided: ${domainName.trim()}`;
+      } else if (project?.hasDomain) {
+        payload.hasDomain = project.hasDomain;
       }
     }
 

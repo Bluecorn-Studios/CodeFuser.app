@@ -288,12 +288,14 @@ export default function CustomerDashboard() {
         if (result.success) {
           setProject(result.data);
           safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(result.data));
+          await refreshProject();
           setSuccessIndicator("Onboarding details updated live!");
         }
       } else {
         const mockUpdated = { ...project, ...updatedData };
         setProject(mockUpdated);
         safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(mockUpdated));
+        await refreshProject();
         setSuccessIndicator("Onboarding details saved!");
       }
     } catch (err) {
@@ -301,6 +303,7 @@ export default function CustomerDashboard() {
       const mockUpdated = { ...project, ...updatedData };
       setProject(mockUpdated);
       safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(mockUpdated));
+      await refreshProject();
       setSuccessIndicator("Onboarding details saved!");
     } finally {
       setTimeout(() => setSuccessIndicator(null), 3000);
@@ -706,6 +709,7 @@ export default function CustomerDashboard() {
         setProject(result.data);
         setSuccessIndicator(`${field === "domain" ? "Domain address" : field === "logo" ? "Brand logo" : "Copywriting docs"} updated live!`);
         safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(result.data));
+        await refreshProject();
       }
     } catch (err) {
       console.warn("Server unavailable, updating local client state gracefully.", err);
@@ -717,6 +721,7 @@ export default function CustomerDashboard() {
       };
       setProject(mockUpdated);
       safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(mockUpdated));
+      await refreshProject();
       setSuccessIndicator(`Offline fallback state updated successfully.`);
     } finally {
       setIsUpdatingField(null);
