@@ -2711,7 +2711,7 @@ app.post("/api/projects/:id/verify-payment", requestTimeout(15000, "Verify Razor
 });
 
 // API: Development Payment Simulation Endpoint (Reuses exact core payment success flow)
-app.post("/api/projects/:id/simulate-payment", requestTimeout(15000, "Simulate Payment"), validateProjectIdParam, requireAuth, verifyProjectOwnership, validateBody(simulatePaymentSchema), async (req: any, res) => {
+app.post("/api/projects/:id/simulate-payment", requestTimeout(15000, "Simulate Payment"), validateProjectIdParam, requireAuth, requireRole(["super_admin", "admin"]), verifyProjectOwnership, validateBody(simulatePaymentSchema), async (req: any, res) => {
   try {
     // Block simulation if RAZORPAY_VERIFICATION is enabled ("true")
     if (process.env.RAZORPAY_VERIFICATION === "true") {
@@ -3162,7 +3162,7 @@ app.post("/api/projects/:id/hosting/cancel-autopay", requireAuth, validateProjec
 });
 
 // GET /api/hosting/test-matrix - Execute and return verification results for mandatory test matrix cases
-app.get("/api/hosting/test-matrix", async (_req, res) => {
+app.get("/api/hosting/test-matrix", requireAuth, requireRole(["super_admin", "admin"]), async (_req, res) => {
   try {
     const report = await runHostingLifecycleTestMatrix();
     return res.json(report);
@@ -3173,7 +3173,7 @@ app.get("/api/hosting/test-matrix", async (_req, res) => {
 });
 
 // GET /api/hosting/test-notification-matrix - Execute and return verification results for notification hardening scenarios A-I
-app.get("/api/hosting/test-notification-matrix", async (_req, res) => {
+app.get("/api/hosting/test-notification-matrix", requireAuth, requireRole(["super_admin", "admin"]), async (_req, res) => {
   try {
     const report = await runNotificationHardeningTestMatrix();
     return res.json(report);
@@ -3184,7 +3184,7 @@ app.get("/api/hosting/test-notification-matrix", async (_req, res) => {
 });
 
 // GET /api/hosting/whatsapp-status - Returns live diagnostics for the WhatsApp Notification Provider
-app.get("/api/hosting/whatsapp-status", (_req, res) => {
+app.get("/api/hosting/whatsapp-status", requireAuth, requireRole(["super_admin", "admin"]), (_req, res) => {
   try {
     const statusReport = getWhatsAppSystemStatus();
     return res.json(statusReport);
@@ -3195,7 +3195,7 @@ app.get("/api/hosting/whatsapp-status", (_req, res) => {
 });
 
 // GET /api/hosting/sms-status - Returns status of SMS provider architecture
-app.get("/api/hosting/sms-status", (_req, res) => {
+app.get("/api/hosting/sms-status", requireAuth, requireRole(["super_admin", "admin"]), (_req, res) => {
   return res.json({
     providerDetected: "None",
     providerConfigured: false,
@@ -3205,7 +3205,7 @@ app.get("/api/hosting/sms-status", (_req, res) => {
 });
 
 // GET /api/hosting/test-whatsapp - Executes a dry-run test of WhatsApp dispatch logic for validation
-app.get("/api/hosting/test-whatsapp", async (_req, res) => {
+app.get("/api/hosting/test-whatsapp", requireAuth, requireRole(["super_admin", "admin"]), async (_req, res) => {
   try {
     const { sendHostingWhatsAppNotification } = await import("./server/whatsapp_notifications.js");
     const { getProjects } = await import("./server/db.js");
@@ -3221,7 +3221,7 @@ app.get("/api/hosting/test-whatsapp", async (_req, res) => {
 });
 
 // POST /api/hosting/admin-scan - Manually trigger server-side hosting lifecycle scan
-app.post("/api/hosting/admin-scan", async (req: any, res) => {
+app.post("/api/hosting/admin-scan", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
   try {
     const stats = await runHostingLifecycleScan(req.reqId || `manual_${Date.now()}`);
     return res.json({ success: true, stats });
