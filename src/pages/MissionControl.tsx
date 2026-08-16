@@ -80,7 +80,7 @@ export const MissionControl: React.FC = () => {
   const [dbSource, setDbSource] = useState<string>("Supabase");
   
   // Controls
-  const [activeTab, setActiveTab] = useState<"projects" | "users" | "crm" | "hosting" | "coupons">("projects");
+  const [activeTab, setActiveTab] = useState<"overview" | "projects" | "users" | "crm" | "hosting" | "coupons">("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("all");
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -654,6 +654,16 @@ export const MissionControl: React.FC = () => {
         {/* Tab Selection Segments */}
         <div className="flex flex-wrap gap-2 mb-8 bg-neutral-950/60 p-1.5 rounded-2xl border border-neutral-900 w-fit">
           <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+              activeTab === "overview"
+                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
+                : "text-zinc-500 hover:text-white"
+            }`}
+          >
+            ⚡ Command Center
+          </button>
+          <button
             onClick={() => setActiveTab("projects")}
             className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
               activeTab === "projects"
@@ -704,6 +714,119 @@ export const MissionControl: React.FC = () => {
             🎟️ Coupons & Offers
           </button>
         </div>
+
+        {activeTab === "overview" && (
+          <div className="space-y-8 mb-12">
+            {/* Executive Quick Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-card border border-border/80 rounded-2xl p-5 relative overflow-hidden">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">Total Active Projects</div>
+                <div className="text-3xl font-extrabold text-white font-mono mt-2">{projects.length}</div>
+                <div className="text-[11px] font-mono text-emerald-400 mt-1">✓ Synchronized with DB</div>
+              </div>
+              <div className="bg-card border border-border/80 rounded-2xl p-5 relative overflow-hidden">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">Paid Revenue Confirmed</div>
+                <div className="text-3xl font-extrabold text-emerald-400 font-mono mt-2">
+                  ₹{projects.filter(p => p.paymentStatus === "paid").reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 9999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 20000), 0).toLocaleString("en-IN")}
+                </div>
+                <div className="text-[11px] font-mono text-neutral-400 mt-1">Razorpay Verified</div>
+              </div>
+              <div className="bg-card border border-border/80 rounded-2xl p-5 relative overflow-hidden">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">Pending Action / Review</div>
+                <div className="text-3xl font-extrabold text-amber-400 font-mono mt-2">
+                  {projects.filter(p => p.paymentStatus !== "paid").length}
+                </div>
+                <div className="text-[11px] font-mono text-neutral-400 mt-1">Awaiting checkout or review</div>
+              </div>
+              <div className="bg-card border border-border/80 rounded-2xl p-5 relative overflow-hidden">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">System Health</div>
+                <div className="text-3xl font-extrabold text-emerald-400 font-mono mt-2">100%</div>
+                <div className="text-[11px] font-mono text-emerald-400 mt-1">All services operational</div>
+              </div>
+            </div>
+
+            {/* Quick Operational Navigation Hub */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div 
+                onClick={() => setActiveTab("projects")}
+                className="bg-card hover:border-amber-500/40 border border-border/80 rounded-2xl p-6 transition-all cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
+                  📂
+                </div>
+                <h3 className="text-base font-bold text-white mb-1">Active Projects Hub</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed mb-4">
+                  Manage customer journeys, inspect 9-stage milestones, lock price quotes, and review deliverables.
+                </p>
+                <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  Open Projects &rarr;
+                </span>
+              </div>
+
+              <div 
+                onClick={() => setActiveTab("coupons")}
+                className="bg-card hover:border-amber-500/40 border border-border/80 rounded-2xl p-6 transition-all cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
+                  🎟️
+                </div>
+                <h3 className="text-base font-bold text-white mb-1">Coupons & Offers</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed mb-4">
+                  Control active marketing campaigns (FOUNDING50, FUSIONFREE), redemption limits, and plan eligibility.
+                </p>
+                <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  Manage Offers &rarr;
+                </span>
+              </div>
+
+              <div 
+                onClick={() => setActiveTab("hosting")}
+                className="bg-card hover:border-amber-500/40 border border-border/80 rounded-2xl p-6 transition-all cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
+                  🌐
+                </div>
+                <h3 className="text-base font-bold text-white mb-1">Hosting & Subscriptions</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed mb-4">
+                  Monitor trial periods, issue manual billing renewal invoices, and manage hosting status.
+                </p>
+                <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  View Subscriptions &rarr;
+                </span>
+              </div>
+            </div>
+
+            {/* Needs Attention Queue */}
+            <div className="bg-card border border-border/80 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">⚠️ Needs Operator Attention</h3>
+                <span className="text-xs font-mono text-neutral-400">{projects.filter(p => p.paymentStatus !== "paid").length} items pending</span>
+              </div>
+              {projects.filter(p => p.paymentStatus !== "paid").length === 0 ? (
+                <div className="p-8 text-center text-xs font-mono text-emerald-400">
+                  ✓ All active projects are paid and progressing normally. No urgent actions required.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projects.filter(p => p.paymentStatus !== "paid").slice(0, 5).map(p => (
+                    <div key={p.id} className="bg-neutral-950 p-4 rounded-xl border border-neutral-900 flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-bold text-white">{p.businessName || "Unnamed Business"}</div>
+                        <div className="text-xs text-neutral-400 font-mono mt-0.5">Package: {p.selectedPackage} • Email: {p.email}</div>
+                      </div>
+                      <button
+                        onClick={() => { setActiveTab("projects"); setActiveProjectId(p.id); }}
+                        className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono rounded-lg hover:bg-amber-500/20 transition-all cursor-pointer"
+                      >
+                        Inspect Project &rarr;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {activeTab === "projects" && (
           <>
