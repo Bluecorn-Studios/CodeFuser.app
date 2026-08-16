@@ -33,6 +33,7 @@ import { ProjectRecord } from "../components/dashboard/dashboardTypes";
 
 import { BusinessIntelligenceCRM } from "../components/BusinessIntelligenceCRM";
 import { HostingAdminManager } from "../components/admin/HostingAdminManager";
+import { CouponsAdminManager } from "../components/admin/CouponsAdminManager";
 
 export const MissionControl: React.FC = () => {
   const { navigate } = useAppRouter();
@@ -79,7 +80,7 @@ export const MissionControl: React.FC = () => {
   const [dbSource, setDbSource] = useState<string>("Supabase");
   
   // Controls
-  const [activeTab, setActiveTab] = useState<"projects" | "users" | "crm" | "hosting">("projects");
+  const [activeTab, setActiveTab] = useState<"projects" | "users" | "crm" | "hosting" | "coupons">("projects");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("all");
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -691,6 +692,16 @@ export const MissionControl: React.FC = () => {
             }`}
           >
             🌐 Hosting & Subscriptions
+          </button>
+          <button
+            onClick={() => setActiveTab("coupons")}
+            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+              activeTab === "coupons"
+                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
+                : "text-zinc-500 hover:text-white"
+            }`}
+          >
+            🎟️ Coupons & Offers
           </button>
         </div>
 
@@ -2702,6 +2713,10 @@ export const MissionControl: React.FC = () => {
 
         {activeTab === "hosting" && (
           <HostingAdminManager getAdminHeaders={getAdminHeaders} />
+        )}
+
+        {activeTab === "coupons" && (
+          <CouponsAdminManager />
         )}
         {activeAuditProjId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">

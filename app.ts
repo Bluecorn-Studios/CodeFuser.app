@@ -38,6 +38,18 @@ import {
   initializeAutomationScheduler,
   runPeriodicAutomationScan
 } from "./server/automation.js";
+import {
+  getAllCoupons,
+  getCouponById,
+  getCouponByCode,
+  createCoupon,
+  updateCoupon,
+  toggleCouponStatus,
+  archiveCoupon,
+  deleteCoupon,
+  validateAndCalculateCoupon,
+  recordRedemption
+} from "./server/coupons.js";
 import fs from "fs";
 import os from "os";
 import { createClient } from "@supabase/supabase-js";
@@ -1510,16 +1522,33 @@ app.get("/api/projects/:id/extra", requestTimeout(10000, "Get Extra Project Data
 app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validateProjectIdParam, requireAuth, verifyProjectOwnership, projectsRateLimiter, validateBody(saveQuoteSchema), async (req: any, res) => {
   try {
     const { id } = req.params;
-    const { packageName, price, discount, features, summary } = req.body;
+    const { packageName, price, discount, features, summary, couponCode } = req.body;
 
     checkAbort(req);
 
+    let finalPrice = Number(price);
+    let finalDiscount = Number(discount || 0);
+    let verifiedCouponCode = couponCode ? couponCode.trim().toUpperCase() : undefined;
+
+    if (verifiedCouponCode) {
+      const project = req.project;
+      const basePrice = finalDiscount > 0 ? finalPrice + finalDiscount : finalPrice;
+      const validation = validateAndCalculateCoupon(verifiedCouponCode, packageName, project?.email || "", basePrice);
+      if (validation.valid && validation.coupon) {
+        finalDiscount = validation.discountAmount !== undefined ? validation.discountAmount : finalDiscount;
+        finalPrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : finalPrice;
+      } else {
+        return res.status(400).json({ success: false, error: validation.error || "Invalid coupon code." });
+      }
+    }
+
     const extra = await updateQuote(id, {
       packageName,
-      price: Number(price),
-      discount: Number(discount || 0),
+      price: finalPrice,
+      discount: finalDiscount,
       features: features || [],
-      summary: summary || ""
+      summary: summary || "",
+      couponCode: verifiedCouponCode || undefined
     });
 
     // Log quote generation event
@@ -2395,12 +2424,22 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
 
     if (extra && extra.quote) {
       planName = extra.quote.packageName || "Standard Package";
-      const totalPrice = extra.quote.price;
+      let totalPrice = extra.quote.price;
       const quoteDiscount = Number(extra.quote.discount || 0);
+      const couponCode = extra.quote.couponCode;
+
+      if (couponCode) {
+        const basePrice = quoteDiscount > 0 ? (totalPrice + quoteDiscount) : totalPrice;
+        const validation = validateAndCalculateCoupon(couponCode, planName, project.email || "", basePrice);
+        if (!validation.valid) {
+          return res.status(400).json({ success: false, error: `Coupon revalidation failed at order creation: ${validation.error}` });
+        }
+        totalPrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : totalPrice;
+      }
 
       if (term === "upfront") {
-        if (quoteDiscount > 0) {
-          // If discount was already applied when locking quote (e.g., price is 7199, discount is 800)
+        if (quoteDiscount > 0 || couponCode) {
+          // If discount or coupon was applied when locking quote
           amountInRupees = Math.round(totalPrice);
         } else {
           // If price stored is the base price (e.g., 9999), apply 10% upfront discount
@@ -2534,6 +2573,15 @@ async function processPaymentSuccessCore({
   };
 
   const updatedProject = await updateProject(id, updates, req.reqId);
+
+  // Finalize Coupon Redemption upon successful payment verification / success execution
+  if (extra?.quote?.couponCode) {
+    const cCode = extra.quote.couponCode;
+    const custEmail = project.email || "";
+    const discAmt = Number(extra.quote.discount || 0);
+    recordRedemption(cCode, custEmail, id, discAmt, isSimulated);
+    console.log(`[Coupon Redemption] Finalized successful redemption for coupon ${cCode} on project ${id}`);
+  }
 
   // Track event in Audit Trail
   await logAuditEvent({
@@ -3358,6 +3406,163 @@ app.post("/api/admin/hosting/action", requireAuth, requireRole(["super_admin", "
   } catch (err: any) {
     logger.error("Failed to execute admin hosting action:", err);
     return res.status(500).json({ success: false, error: err.message || "Failed to execute administrative action." });
+  }
+});
+
+// --- Coupons & Offers API Routes ---
+
+// GET /api/admin/coupons
+app.get("/api/admin/coupons", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
+  try {
+    const coupons = getAllCoupons();
+    return res.json({ success: true, coupons });
+  } catch (err: any) {
+    logger.error("Failed to load admin coupons:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to load coupons." });
+  }
+});
+
+// POST /api/admin/coupons
+app.post("/api/admin/coupons", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
+  try {
+    const {
+      name,
+      code,
+      discountType,
+      discountValue,
+      eligiblePlans,
+      hostingRule,
+      freeHostingPromoRule,
+      redemptionLimit,
+      maxUsesPerCustomer,
+      customerEligibility,
+      startDate,
+      endDate,
+      status,
+      afterLimitBehavior
+    } = req.body;
+
+    if (!name || !code || !discountType) {
+      return res.status(400).json({ success: false, error: "Missing required fields: name, code, discountType." });
+    }
+
+    const existing = getCouponByCode(code);
+    if (existing) {
+      return res.status(400).json({ success: false, error: "A coupon with this code already exists." });
+    }
+
+    const coupon = createCoupon({
+      name,
+      code,
+      discountType,
+      discountValue: Number(discountValue) || 0,
+      eligiblePlans: Array.isArray(eligiblePlans) ? eligiblePlans : ["ignite", "fusion"],
+      hostingRule: hostingRule || "charge_normally",
+      freeHostingPromoRule: freeHostingPromoRule || "apply",
+      redemptionLimit: Number(redemptionLimit) || 10,
+      maxUsesPerCustomer: Number(maxUsesPerCustomer) || 1,
+      customerEligibility: customerEligibility || "new_only",
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      status: status || "ACTIVE",
+      afterLimitBehavior: afterLimitBehavior || "stop"
+    });
+
+    return res.json({ success: true, coupon });
+  } catch (err: any) {
+    logger.error("Failed to create coupon:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to create coupon." });
+  }
+});
+
+// PUT /api/admin/coupons/:id
+app.put("/api/admin/coupons/:id", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const updated = updateCoupon(id, req.body);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Coupon not found." });
+    }
+    return res.json({ success: true, coupon: updated });
+  } catch (err: any) {
+    logger.error("Failed to update coupon:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to update coupon." });
+  }
+});
+
+// POST /api/admin/coupons/:id/toggle
+app.post("/api/admin/coupons/:id/toggle", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const toggled = toggleCouponStatus(id);
+    if (!toggled) {
+      return res.status(404).json({ success: false, error: "Coupon not found." });
+    }
+    return res.json({ success: true, coupon: toggled });
+  } catch (err: any) {
+    logger.error("Failed to toggle coupon status:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to toggle status." });
+  }
+});
+
+// POST /api/admin/coupons/:id/archive
+app.post("/api/admin/coupons/:id/archive", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const archived = archiveCoupon(id);
+    if (!archived) {
+      return res.status(404).json({ success: false, error: "Coupon not found." });
+    }
+    return res.json({ success: true, coupon: archived });
+  } catch (err: any) {
+    logger.error("Failed to archive coupon:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to archive coupon." });
+  }
+});
+
+// DELETE /api/admin/coupons/:id
+app.delete("/api/admin/coupons/:id", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const result = deleteCoupon(id);
+    if (!result.success) {
+      return res.status(400).json({ success: false, error: result.error });
+    }
+    return res.json({ success: true });
+  } catch (err: any) {
+    logger.error("Failed to delete coupon:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to delete coupon." });
+  }
+});
+
+// POST /api/coupons/validate
+app.post("/api/coupons/validate", async (req: any, res) => {
+  try {
+    const { code, planId, customerEmail, baseWebsitePrice } = req.body;
+    if (!code || !planId) {
+      return res.status(400).json({ valid: false, error: "Missing coupon code or plan ID." });
+    }
+    const basePrice = Number(baseWebsitePrice) || 19999;
+    const result = validateAndCalculateCoupon(code, planId, customerEmail || "", basePrice);
+    if (!result.valid) {
+      return res.json({ valid: false, error: result.error });
+    }
+
+    return res.json({
+      valid: true,
+      code: result.coupon?.code,
+      name: result.coupon?.name,
+      discountType: result.coupon?.discountType,
+      discountValue: result.coupon?.discountValue,
+      discountAmount: result.discountAmount,
+      finalWebsitePrice: result.finalWebsitePrice,
+      hostingRule: result.coupon?.hostingRule,
+      freeHostingPromoRule: result.coupon?.freeHostingPromoRule,
+      description: result.coupon?.discountType === "free_build" ? "100% OFF website build" : result.coupon?.discountType === "percentage" ? `${result.coupon.discountValue}% OFF website build` : `₹${result.coupon?.discountValue} OFF website build`
+    });
+  } catch (err: any) {
+    logger.error("Failed to validate coupon:", err);
+    return res.status(500).json({ valid: false, error: "Failed to validate coupon." });
   }
 });
 

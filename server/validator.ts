@@ -390,7 +390,8 @@ export const saveQuoteSchema: Schema = {
   price: { type: "number", required: true, min: 0, max: 1000000 },
   discount: { type: "number", required: false, min: 0, max: 1000000 },
   features: { type: "array", required: false, max: 50, itemsType: "string" },
-  summary: { type: "string", required: false, max: 2000, allowEmpty: true }
+  summary: { type: "string", required: false, max: 2000, allowEmpty: true },
+  couponCode: { type: "string", required: false, max: 50, allowEmpty: true }
 };
 
 // 6. POST /api/projects/:id/razorpay-order
