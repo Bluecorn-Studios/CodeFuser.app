@@ -76,7 +76,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                 <span>Website Creation Stages</span>
               </h2>
               <span className="text-xs font-semibold text-neutral-400 bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
-                Stage {currentStageIndex + 1} of 6
+                Stage {Math.min(currentStageIndex + 1, customerTimelineStages.length)} of {customerTimelineStages.length}
               </span>
             </div>
 
@@ -86,6 +86,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
               {customerTimelineStages.map((stage, idx) => {
                 const isCompleted = idx < currentStageIndex;
                 const isActive = idx === currentStageIndex;
+                const isRevisionStage = idx === 6;
 
                 return (
                   <div key={idx} className="relative flex items-start gap-4">
@@ -109,7 +110,9 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                           {stage.label}
                         </span>
                         {isCompleted && (
-                          <span className="text-xs font-semibold text-emerald-400">✓ Completed</span>
+                          <span className="text-xs font-semibold text-emerald-400">
+                            {isRevisionStage ? "✓ Completed / Not Required" : "✓ Completed"}
+                          </span>
                         )}
                         {isActive && (
                           <span className="text-xs font-semibold text-white animate-pulse">
@@ -117,7 +120,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-neutral-400 mt-1 leading-relaxed">{stage.details}</p>
+                      <p className="text-xs text-neutral-400 mt-1 leading-relaxed">{stage.details || stage.desc}</p>
                     </div>
                   </div>
                 );
