@@ -34,6 +34,7 @@ import { ProjectRecord } from "../components/dashboard/dashboardTypes";
 import { BusinessIntelligenceCRM } from "../components/BusinessIntelligenceCRM";
 import { HostingAdminManager } from "../components/admin/HostingAdminManager";
 import { CouponsAdminManager } from "../components/admin/CouponsAdminManager";
+import { getCanonicalStageIndex, CANONICAL_MILESTONES, getCanonicalStatusLabel } from "../utils/milestones";
 
 export const MissionControl: React.FC = () => {
   const { navigate } = useAppRouter();
@@ -96,7 +97,7 @@ export const MissionControl: React.FC = () => {
   const [extraLoadingMap, setExtraLoadingMap] = useState<Record<string, boolean>>({});
 
   // Phase 6 Phase-Specific States
-  const [adminSubTabs, setAdminSubTabs] = useState<Record<string, "proposal" | "checklist" | "deliverables" | "notes" | "comms" | "progress" | "lifecycle" | "requests" | "overrides">>({});
+  const [adminSubTabs, setAdminSubTabs] = useState<Record<string, "proposal" | "checklist" | "deliverables" | "notes" | "comms" | "progress" | "lifecycle" | "requests" | "overrides" | "assets" | "review">>({});
   const [isEmergencyMode, setIsEmergencyMode] = useState<boolean>(() => safeLocalStorage.getItem("fuser_emergency_mode") === "true");
   const [proposalEdits, setProposalEdits] = useState<Record<string, string>>({});
   const [proposalLoading, setProposalLoading] = useState<Record<string, boolean>>({});
@@ -991,83 +992,122 @@ export const MissionControl: React.FC = () => {
                           transition={{ duration: 0.3 }}
                           className="border-t border-neutral-900/80 bg-neutral-950/40 p-5 sm:p-6"
                         >
-                          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 text-xs leading-relaxed">
-                            {/* Contact Card details */}
-                            <div className="space-y-3">
-                              <h4 className="font-mono text-[10px] uppercase text-amber-500 font-semibold tracking-wider flex items-center gap-1.5">
-                                <Shield size={11} /> Contact Identities
-                              </h4>
-                              <div className="space-y-2 text-muted-foreground">
-                                <p className="flex items-center gap-2">
-                                  <User size={13} className="text-muted-foreground/30 shrink-0" />
-                                  <span className="text-foreground font-medium">{proj.clientName}</span>
-                                </p>
-                                <p className="flex items-center gap-2">
-                                  <Mail size={13} className="text-muted-foreground/30 shrink-0" />
-                                  <a href={`mailto:${proj.email}`} className="hover:text-amber-500 hover:underline">{proj.email}</a>
-                                </p>
-                                <p className="flex items-center gap-2">
-                                  <span className="text-muted-foreground/30 shrink-0 text-xs">💬</span>
-                                  <span className="text-foreground font-mono font-bold">{proj.whatsapp}</span>
-                                  <a
-                                    href={getWhatsAppLink(`Hi ${proj.clientName}, I am reviewing your completed Start Project onboarding details for ${proj.businessName}!`)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="ml-2 px-1.5 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-[9px] font-mono text-amber-400 font-bold uppercase transition-all inline-block hover:-translate-y-0.5 active:translate-y-0"
-                                  >
-                                    Chat Prototyper
-                                  </a>
-                                </p>
+                          {/* Simplified Top Decision & Summary Grid */}
+                          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 text-xs leading-relaxed">
+                            {/* Customer Card */}
+                            <div className="bg-neutral-950 border border-neutral-900 p-4 rounded-xl space-y-2">
+                              <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold block">1. Customer</span>
+                              <div className="font-semibold text-white">{proj.clientName}</div>
+                              <div className="text-[11px] text-zinc-400">{proj.email}</div>
+                              <div className="font-mono text-[10px] text-zinc-300">{proj.whatsapp}</div>
+                            </div>
+
+                            {/* What They Bought */}
+                            <div className="bg-neutral-950 border border-neutral-900 p-4 rounded-xl space-y-2">
+                              <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold block">2. What They Bought</span>
+                              <div className="font-semibold text-white uppercase font-mono">{proj.selectedPackage || "Standard"} Package</div>
+                              <div className="text-[11px] text-zinc-400 font-mono">
+                                {proj.ownershipChoice === "full" ? "Direct Ownership" : "Managed Service"}
+                              </div>
+                              <div className="font-mono text-[10px] text-white font-bold">
+                                ₹{(extraProjectMap[proj.id]?.quote?.totalAmount || 19999).toLocaleString("en-IN")} Locked
                               </div>
                             </div>
 
-                            {/* Diagnostic Specifics */}
-                            <div className="space-y-3">
-                              <h4 className="font-mono text-[10px] uppercase text-amber-500 font-semibold tracking-wider flex items-center gap-1.5">
-                                <Layers size={11} /> Business Diagnostics
-                              </h4>
-                              <div className="space-y-2 text-muted-foreground">
-                                <p>
-                                  <span className="text-muted-foreground/45 block uppercase font-mono text-[9px]">Classification Segment</span>
-                                  <span className="text-foreground font-semibold">
-                                    {proj.industry === "other" ? proj.customIndustry : proj.industry}
-                                  </span>
-                                </p>
-                                <p>
-                                  <span className="text-muted-foreground/45 block uppercase font-mono text-[9px]">Designated Outcome Goal</span>
-                                  <span className="text-foreground font-medium">
-                                    {proj.goal === "other" ? proj.customGoal : proj.goal}
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
+                            {/* Current Stage */}
+                            {(() => {
+                              const stageIdx = getCanonicalStageIndex(proj.status, proj.contentReady !== "yes");
+                              const milestoneLabel = getCanonicalStatusLabel(stageIdx);
+                              const isActuallyLive = proj.status === "Live" || proj.status === "Launched" || proj.launchStatus === "LAUNCHED" || proj.status === "delivered" || proj.status === "completed";
+                              
+                              let waitingOn = "CodeFuser";
+                              if (proj.paymentStatus !== "paid") {
+                                waitingOn = "Customer";
+                              } else if (stageIdx === 2) {
+                                waitingOn = "Customer";
+                              } else if (stageIdx === 5) {
+                                waitingOn = "Customer";
+                              } else if (stageIdx === 8 && isActuallyLive) {
+                                waitingOn = "None (Completed)";
+                              } else {
+                                waitingOn = "CodeFuser";
+                              }
 
-                            {/* Digital Asset Readiness states */}
-                            <div className="space-y-3">
-                              <h4 className="font-mono text-[10px] uppercase text-amber-500 font-semibold tracking-wider flex items-center gap-1.5">
-                                <Globe size={11} /> Digital Asset Readiness
-                              </h4>
-                              <div className="space-y-2 text-muted-foreground">
-                                <p className="flex justify-between border-b border-border/20 pb-1.5">
-                                  <span>Domain Registry:</span>
-                                  <span className="font-bold text-foreground">
-                                    {proj.hasDomain === "yes" ? "Registered ✓" : proj.hasDomain === "no" ? "Not Ready" : "Help Select"}
-                                  </span>
-                                </p>
-                                <p className="flex justify-between border-b border-border/20 pb-1.5">
-                                  <span>Logo & Design Assets:</span>
-                                  <span className="font-bold text-foreground">
-                                    {proj.hasLogo === "yes" ? "Provided ✓" : proj.hasLogo === "no" ? "Not Ready" : "Needs Custom Brand"}
-                                  </span>
-                                </p>
-                                <p className="flex justify-between">
-                                  <span>Text & Media Assets:</span>
-                                  <span className="font-bold text-foreground">
-                                    {proj.contentReady === "yes" ? "Copywriting Ready ✓" : proj.contentReady === "progress" ? "In Progress" : "CodeFuser to Write"}
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
+                              let nextActionText = "Build / Staging";
+                              if (proj.paymentStatus !== "paid") {
+                                nextActionText = "Awaiting Payment";
+                              } else {
+                                switch (stageIdx) {
+                                  case 0: nextActionText = "Set up project / review project"; break;
+                                  case 1: nextActionText = "Review assets / start onboarding"; break;
+                                  case 2: nextActionText = "Review Client Assets"; break;
+                                  case 3: nextActionText = "Continue Design"; break;
+                                  case 4: nextActionText = "Open Staging / Build"; break;
+                                  case 5: nextActionText = "Review Customer Feedback"; break;
+                                  case 6: nextActionText = "Review Changes"; break;
+                                  case 7: nextActionText = "Complete QA"; break;
+                                  case 8:
+                                    if (isActuallyLive) {
+                                      nextActionText = "Open Live Website";
+                                    } else {
+                                      nextActionText = "Launch Website";
+                                    }
+                                    break;
+                                  default:
+                                    nextActionText = "Open Workspace";
+                                }
+                              }
+
+                              const openReqsCount = (extraProjectMap[proj.id]?.changeRequests || []).filter(
+                                r => r.status === "pending" || r.status === "in_progress"
+                              ).length;
+
+                              return (
+                                <>
+                                  <div className="bg-neutral-950 border border-neutral-900 p-4 rounded-xl space-y-2">
+                                    <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold block">3. Current Stage</span>
+                                    <div className="font-semibold text-white uppercase font-mono text-xs flex items-center gap-2">
+                                      <span>{milestoneLabel}</span>
+                                      {openReqsCount > 0 && (
+                                        <span className="px-1.5 py-0.5 bg-amber-500/20 border border-amber-500/30 text-[9px] text-amber-400 font-mono rounded">
+                                          {openReqsCount} Change Req{openReqsCount > 1 ? "s" : ""}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-900 text-[10px] font-mono text-zinc-300">
+                                      Waiting on: <strong className="text-white">{waitingOn}</strong>
+                                    </div>
+                                  </div>
+
+                                  {/* Next Action */}
+                                  <div className="bg-neutral-950 border border-neutral-900 p-4 rounded-xl flex flex-col justify-between">
+                                    <div>
+                                      <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold block">4. Next Action</span>
+                                      <div className="text-xs text-white font-medium mt-1">
+                                        {nextActionText}
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        if (isActuallyLive) {
+                                          navigate(`/client-dashboard?projectId=${proj.id}`);
+                                        } else if (stageIdx === 2) {
+                                          setAdminSubTabs(p => ({ ...p, [proj.id]: "assets" }));
+                                        } else if (stageIdx === 5) {
+                                          setAdminSubTabs(p => ({ ...p, [proj.id]: "review" }));
+                                        } else {
+                                          setAdminSubTabs(p => ({ ...p, [proj.id]: "proposal" }));
+                                        }
+                                      }}
+                                      className="mt-2 w-full py-2 bg-white hover:bg-zinc-200 text-black font-mono font-bold text-[10px] uppercase rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1"
+                                    >
+                                      <span>Open Workspace</span>
+                                      <ArrowRight size={10} />
+                                    </button>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
 
                           {/* NEW: Admin Override & Extended Workspace Modules (Part 3 & Part 7 Requirements) */}
