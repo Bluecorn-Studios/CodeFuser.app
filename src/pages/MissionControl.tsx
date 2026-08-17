@@ -1409,7 +1409,9 @@ export const MissionControl: React.FC = () => {
                                         </div>
                                         <div className="flex justify-between border-b border-neutral-900 pb-1.5">
                                           <span className="text-neutral-500">Guaranteed Amount Rate:</span>
-                                          <span className="font-extrabold text-amber-500 font-mono">₹{extraProjectMap[proj.id].quote.price.toLocaleString("en-IN")}</span>
+                                          <span className="font-extrabold text-amber-500 font-mono">{extraProjectMap[proj.id].quote.price !== undefined && extraProjectMap[proj.id].quote.price !== null && extraProjectMap[proj.id].quote.price !== ""
+                                               ? `₹${Number(extraProjectMap[proj.id].quote.price).toLocaleString("en-IN")}`
+                                               : "—"}</span>
                                         </div>
                                         <div className="flex justify-between border-b border-neutral-900 pb-1.5">
                                           <span className="text-neutral-500">Secure locks validity:</span>
