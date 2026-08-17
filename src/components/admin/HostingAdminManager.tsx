@@ -80,8 +80,33 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
     fetchAdminHostingData();
   }, []);
 
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [confirmModalState, setConfirmModalState] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const handleAdminActionConfirm = (projectId: string, action: string, days?: number, businessName?: string) => {
+    const isSuspend = action === "suspend_hosting";
+    const title = isSuspend ? `Suspend hosting for ${businessName || "this project"}?` : `Execute '${action}'?`;
+    const description = isSuspend 
+      ? "This may make the website unavailable to visitors. You can reactivate hosting at any time."
+      : `This will update the hosting subscription status for ${businessName || "this project"}.`;
+
+    setConfirmModalState({
+      title,
+      description,
+      onConfirm: () => {
+        setConfirmModalState(null);
+        handleAdminAction(projectId, action, days);
+      }
+    });
+  };
+
   const handleAdminAction = async (projectId: string, action: string, days?: number) => {
     setActionLoadingId(projectId);
+    setError(null);
     try {
       const res = await fetch("/api/admin/hosting/action", {
         method: "POST",
@@ -91,13 +116,14 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
 
       const json = await res.json();
       if (json.success) {
-        alert(`✓ Successfully executed '${action}'`);
+        setSuccessMsg(`✓ Successfully executed '${action}'`);
+        setTimeout(() => setSuccessMsg(null), 3000);
         fetchAdminHostingData();
       } else {
-        throw new Error(json.error || "Admin action failed.");
+        throw new Error(json.error || "We couldn't execute the administrative action.");
       }
     } catch (err: any) {
-      alert(err.message || "Failed to execute administrative action.");
+      setError(err.message || "We couldn't connect to the server.");
     } finally {
       setActionLoadingId(null);
     }
@@ -118,7 +144,7 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Server className="text-amber-500" size={20} />
+            <Server className="text-white" size={20} />
             <span>Hosting & Subscription Mission Control</span>
           </h2>
           <p className="text-xs text-neutral-400">
@@ -143,18 +169,25 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by client business, name, project ID or domain..."
-          className="w-full pl-10 pr-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500/50"
+          className="w-full pl-10 pr-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700"
         />
       </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-12 gap-3 text-neutral-400">
-          <Loader2 className="animate-spin text-amber-500" size={28} />
-          <span className="text-xs font-mono">Loading hosting subscriptions...</span>
+      {successMsg && (
+        <div className="p-3 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-emerald-200 text-xs font-mono">
+          {successMsg}
         </div>
-      ) : error ? (
+      )}
+      {error && (
         <div className="p-4 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs font-mono">
           {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-neutral-400">
+          <Loader2 className="animate-spin text-white" size={28} />
+          <span className="text-xs font-mono">Loading hosting subscriptions...</span>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-neutral-800 bg-neutral-950">
@@ -196,7 +229,7 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
                             ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
                             : isSuspended
                             ? "text-red-400 bg-red-500/10 border-red-500/20"
-                            : "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                            : "text-white bg-neutral-900 border-neutral-800"
                         }`}
                       >
                         {item.subscription.status.replace(/_/g, " ")}
@@ -220,9 +253,9 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
 
                     <td className="py-3.5 px-4 text-right space-x-1.5">
                       <button
-                        onClick={() => handleAdminAction(item.project.id, "extend_free_period", 30)}
+                        onClick={() => handleAdminActionConfirm(item.project.id, "extend_free_period", 30, item.project.businessName)}
                         disabled={isLoading}
-                        className="px-2.5 py-1 rounded bg-neutral-900 hover:bg-neutral-800 text-[10px] font-bold text-amber-400 border border-neutral-800 cursor-pointer transition-all"
+                        className="px-2.5 py-1 rounded bg-neutral-900 hover:bg-neutral-800 text-[10px] font-bold text-white border border-neutral-800 cursor-pointer transition-all"
                         title="Add 30 Days Free Hosting"
                       >
                         +30 Days Free
@@ -230,7 +263,7 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
 
                       {isSuspended ? (
                         <button
-                          onClick={() => handleAdminAction(item.project.id, "reactivate_hosting")}
+                          onClick={() => handleAdminActionConfirm(item.project.id, "reactivate_hosting", undefined, item.project.businessName)}
                           disabled={isLoading}
                           className="px-2.5 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-[10px] font-bold text-emerald-400 border border-emerald-500/30 cursor-pointer transition-all"
                         >
@@ -238,7 +271,7 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleAdminAction(item.project.id, "suspend_hosting")}
+                          onClick={() => handleAdminActionConfirm(item.project.id, "suspend_hosting", undefined, item.project.businessName)}
                           disabled={isLoading}
                           className="px-2.5 py-1 rounded bg-red-950 hover:bg-red-900 text-[10px] font-bold text-red-400 border border-red-500/30 cursor-pointer transition-all"
                         >
@@ -251,6 +284,41 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {confirmModalState && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+          <div className="bg-[#0c0c0c] border border-neutral-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-white font-bold">
+                ⚠️
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">{confirmModalState.title}</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">Please confirm this hosting action.</p>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-300 leading-relaxed bg-neutral-950 p-3 rounded-xl border border-neutral-900">
+              {confirmModalState.description}
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmModalState(null)}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmModalState.onConfirm}
+                className="px-4 py-2 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+              >
+                Confirm Action
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

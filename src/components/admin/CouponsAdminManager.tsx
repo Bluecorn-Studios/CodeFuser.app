@@ -154,54 +154,79 @@ export function CouponsAdminManager() {
     }
   };
 
+  const [confirmModalState, setConfirmModalState] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   const handleToggleStatus = async (id: string) => {
     try {
       const res = await fetch(`/api/admin/coupons/${id}/toggle`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
         fetchCoupons();
+        setSuccessMsg("Offer status toggled successfully.");
+        setTimeout(() => setSuccessMsg(null), 3000);
       } else {
-        alert(data.error || "Failed to toggle status");
+        setError(data.error || "We couldn't update the offer status.");
       }
     } catch (err) {
-      alert("Failed to toggle status");
+      setError("We couldn't connect to the server to update status.");
     }
   };
 
-  const handleArchive = async (id: string) => {
-    if (!confirm("Archive this offer? This stops new uses but preserves its history.")) return;
-    try {
-      const res = await fetch(`/api/admin/coupons/${id}/archive`, { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        fetchCoupons();
-      } else {
-        alert(data.error || "Failed to archive offer");
+  const handleArchive = (id: string) => {
+    setConfirmModalState({
+      title: "Archive this offer?",
+      description: "This stops new redemptions but preserves existing transaction history.",
+      onConfirm: async () => {
+        setConfirmModalState(null);
+        try {
+          const res = await fetch(`/api/admin/coupons/${id}/archive`, { method: "POST" });
+          const data = await res.json();
+          if (data.success) {
+            fetchCoupons();
+            setSuccessMsg("Offer archived successfully.");
+            setTimeout(() => setSuccessMsg(null), 3000);
+          } else {
+            setError(data.error || "We couldn't archive this offer.");
+          }
+        } catch (err) {
+          setError("We couldn't connect to the server.");
+        }
       }
-    } catch (err) {
-      alert("Failed to archive offer");
-    }
+    });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this unused offer?")) return;
-    try {
-      const res = await fetch(`/api/admin/coupons/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        fetchCoupons();
-      } else {
-        alert(data.error || "Cannot delete offer.");
+  const handleDelete = (id: string) => {
+    setConfirmModalState({
+      title: "Delete this offer?",
+      description: "This permanently removes unredeemed promotional records.",
+      onConfirm: async () => {
+        setConfirmModalState(null);
+        try {
+          const res = await fetch(`/api/admin/coupons/${id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (data.success) {
+            fetchCoupons();
+            setSuccessMsg("Offer deleted successfully.");
+            setTimeout(() => setSuccessMsg(null), 3000);
+          } else {
+            setError(data.error || "We couldn't delete this offer.");
+          }
+        } catch (err) {
+          setError("We couldn't connect to the server.");
+        }
       }
-    } catch (err) {
-      alert("Failed to delete offer");
-    }
+    });
   };
 
   const togglePlanSelection = (plan: string) => {
     if (eligiblePlans.includes(plan)) {
       if (eligiblePlans.length === 1) {
-        alert("At least one plan must be selected.");
+        setError("At least one plan must remain selected.");
+        setTimeout(() => setError(null), 3000);
         return;
       }
       setEligiblePlans(eligiblePlans.filter(p => p !== plan));
@@ -218,7 +243,7 @@ export function CouponsAdminManager() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <Tag className="text-amber-500" size={22} /> Coupons & Offers
+            <Tag className="text-white" size={22} /> Coupons & Offers
           </h2>
           <p className="text-xs text-zinc-400 mt-1">
             Manage website build pricing rules, promotional discounts, and redemption limits without code deployment.
@@ -226,7 +251,7 @@ export function CouponsAdminManager() {
         </div>
         <button
           onClick={openCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-neutral-200 text-zinc-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
         >
           <Plus size={16} /> Create Offer
         </button>
@@ -273,12 +298,12 @@ export function CouponsAdminManager() {
                   key={c.id}
                   className="bg-neutral-950/60 border border-neutral-900 rounded-2xl p-5 flex flex-col justify-between hover:border-neutral-800 transition-all relative overflow-hidden group"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/10 transition-all" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-neutral-900/40 rounded-full blur-2xl pointer-events-none group-hover:bg-neutral-800/50 transition-all" />
 
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div>
-                        <span className="text-[10px] font-mono tracking-wider text-amber-400 uppercase bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                        <span className="text-[10px] font-mono tracking-wider text-white uppercase bg-neutral-900 px-2 py-0.5 rounded-md border border-neutral-800">
                           {c.code}
                         </span>
                         <h4 className="text-sm font-bold text-white mt-2">{c.name}</h4>
@@ -287,7 +312,7 @@ export function CouponsAdminManager() {
                         className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                           c.status === "ACTIVE"
                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                            : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                            : "bg-neutral-900 text-neutral-300 border-neutral-800"
                         }`}
                       >
                         ● {c.status}
@@ -334,7 +359,7 @@ export function CouponsAdminManager() {
                       {c.currentRedemptions > 0 ? (
                         <button
                           onClick={() => handleArchive(c.id)}
-                          className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-neutral-900 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-zinc-400 hover:text-white hover:bg-neutral-900 rounded-lg transition-colors cursor-pointer"
                           title="Archive Offer"
                         >
                           <Archive size={14} />
@@ -384,7 +409,7 @@ export function CouponsAdminManager() {
           <div className="bg-neutral-950 border border-neutral-800 rounded-2xl max-w-lg w-full p-6 space-y-6 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-neutral-900">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Tag className="text-amber-500" size={18} />
+                <Tag className="text-white" size={18} />
                 {editingCoupon ? "Edit Offer" : "Create New Marketing Offer"}
               </h3>
               <button
@@ -403,7 +428,7 @@ export function CouponsAdminManager() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Founding 50"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
                   required
                 />
               </div>
@@ -415,7 +440,7 @@ export function CouponsAdminManager() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="e.g. FOUNDING50"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-amber-400 uppercase focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white uppercase focus:outline-none focus:border-neutral-700"
                   required
                 />
               </div>
@@ -426,7 +451,7 @@ export function CouponsAdminManager() {
                   <select
                     value={discountType}
                     onChange={(e) => setDiscountType(e.target.value as any)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
                   >
                     <option value="percentage">Percentage (%)</option>
                     <option value="fixed">Fixed Amount (₹)</option>
@@ -443,7 +468,7 @@ export function CouponsAdminManager() {
                       type="number"
                       value={discountValue}
                       onChange={(e) => setDiscountValue(Number(e.target.value))}
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-amber-500"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-neutral-700"
                       required
                     />
                   </div>
@@ -463,7 +488,7 @@ export function CouponsAdminManager() {
                         onClick={() => togglePlanSelection(p)}
                         className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                            ? "bg-neutral-900 text-white border-neutral-700"
                             : "bg-neutral-900 text-zinc-500 border-neutral-800 hover:text-white"
                         }`}
                       >
@@ -480,7 +505,7 @@ export function CouponsAdminManager() {
                   <select
                     value={hostingRule}
                     onChange={(e) => setHostingRule(e.target.value as any)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
                   >
                     <option value="charge_normally">Charge normally</option>
                     <option value="waive_hosting">Waive hosting</option>
@@ -492,7 +517,7 @@ export function CouponsAdminManager() {
                   <select
                     value={freeHostingPromoRule}
                     onChange={(e) => setFreeHostingPromoRule(e.target.value as any)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
                   >
                     <option value="apply">Apply normal promotion</option>
                     <option value="do_not_apply">Do not apply (Charge immediately)</option>
@@ -507,7 +532,7 @@ export function CouponsAdminManager() {
                     type="number"
                     value={redemptionLimit}
                     onChange={(e) => setRedemptionLimit(Number(e.target.value))}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-neutral-700"
                   />
                   <span className="text-[10px] text-zinc-500 mt-0.5 block">0 for unlimited</span>
                 </div>
@@ -517,7 +542,7 @@ export function CouponsAdminManager() {
                   <select
                     value={customerEligibility}
                     onChange={(e) => setCustomerEligibility(e.target.value as any)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
                   >
                     <option value="new_only">New customers only</option>
                     <option value="all">All customers</option>
@@ -535,12 +560,46 @@ export function CouponsAdminManager() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] cursor-pointer"
+                  className="px-5 py-2.5 bg-white hover:bg-neutral-200 text-zinc-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
                 >
                   {editingCoupon ? "Save Changes" : "Create Offer"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {confirmModalState && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+          <div className="bg-[#0c0c0c] border border-neutral-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-white font-bold">
+                ⚠️
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">{confirmModalState.title}</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">Please confirm this administrative action.</p>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-300 leading-relaxed bg-neutral-950 p-3 rounded-xl border border-neutral-900">
+              {confirmModalState.description}
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmModalState(null)}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmModalState.onConfirm}
+                className="px-4 py-2 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+              >
+                Confirm Action
+              </button>
+            </div>
           </div>
         </div>
       )}

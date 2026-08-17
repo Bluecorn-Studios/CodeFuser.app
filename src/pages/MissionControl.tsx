@@ -652,66 +652,66 @@ export const MissionControl: React.FC = () => {
         </div>
 
         {/* Tab Selection Segments */}
-        <div className="flex flex-wrap gap-2 mb-8 bg-neutral-950/60 p-1.5 rounded-2xl border border-neutral-900 w-fit">
+        <div className="flex flex-wrap gap-2 mb-8 bg-neutral-950 p-1 rounded-xl border border-neutral-800 w-fit">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
               activeTab === "overview"
-                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
-                : "text-zinc-500 hover:text-white"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
             }`}
           >
-            ⚡ Command Center
+            Command Center
           </button>
           <button
             onClick={() => setActiveTab("projects")}
-            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
               activeTab === "projects"
-                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
-                : "text-zinc-500 hover:text-white"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
             }`}
           >
-            📂 Active Projects
+            Projects
           </button>
           <button
             onClick={() => setActiveTab("crm")}
-            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
               activeTab === "crm"
-                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
-                : "text-zinc-500 hover:text-white"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
             }`}
           >
-            📈 BI & CRM Dashboard
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
-              activeTab === "users"
-                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
-                : "text-zinc-500 hover:text-white"
-            }`}
-          >
-            🛡️ User Roles & RBAC
+            Money
           </button>
           <button
             onClick={() => setActiveTab("hosting")}
-            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
               activeTab === "hosting"
-                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
-                : "text-zinc-500 hover:text-white"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
             }`}
           >
-            🌐 Hosting & Subscriptions
+            Operations
           </button>
           <button
             onClick={() => setActiveTab("coupons")}
-            className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
               activeTab === "coupons"
-                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
-                : "text-zinc-500 hover:text-white"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
             }`}
           >
-            🎟️ Coupons & Offers
+            Marketing
+          </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              activeTab === "users"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            System
           </button>
         </div>
 

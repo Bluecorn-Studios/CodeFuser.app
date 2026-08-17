@@ -42,9 +42,18 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
     return null;
   }
 
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"success" | "failed" | "cancelled" | "pending" | null>(null);
+
+  const handleSimulateConfirm = (action: "success" | "failed" | "cancelled" | "pending") => {
+    setPendingAction(action);
+    setShowConfirmModal(true);
+  };
+
   const handleSimulate = async (action: "success" | "failed" | "cancelled" | "pending") => {
+    setShowConfirmModal(false);
     if (!projectId) {
-      setMessage({ type: "error", text: "No active project ID found for simulation." });
+      setMessage({ type: "error", text: "We couldn't find an active project ID for this test." });
       return;
     }
 
@@ -64,58 +73,59 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || `Simulation ${action} failed.`);
+        throw new Error(data.error || `Payment test ${action} failed.`);
       }
 
       if (action === "success") {
-        setMessage({ type: "success", text: "✓ Simulated Payment Successful! Unlocking portal & updating status..." });
-        if (onStatusChange) onStatusChange("success", "Payment simulated successfully.");
+        setMessage({ type: "success", text: "✓ Payment test successful! Project marked as paid & portal unlocked." });
+        if (onStatusChange) onStatusChange("success", "Payment test completed successfully.");
         setTimeout(() => {
           onSuccess(data.project);
         }, 800);
       } else if (action === "failed") {
-        setMessage({ type: "error", text: "✕ Simulated Payment Failure recorded." });
-        if (onStatusChange) onStatusChange("failed", "Simulated transaction failed.");
+        setMessage({ type: "error", text: "✕ Payment test failure recorded." });
+        if (onStatusChange) onStatusChange("failed", "Payment test failed.");
       } else if (action === "cancelled") {
-        setMessage({ type: "info", text: "⚠ Simulated Payment Cancellation recorded." });
-        if (onStatusChange) onStatusChange("cancelled", "Simulated transaction cancelled.");
+        setMessage({ type: "info", text: "⚠ Payment test cancellation recorded." });
+        if (onStatusChange) onStatusChange("cancelled", "Payment test cancelled.");
       } else if (action === "pending") {
-        setMessage({ type: "info", text: "⏳ Simulated Payment Pending state set." });
-        if (onStatusChange) onStatusChange("pending", "Simulated transaction pending.");
+        setMessage({ type: "info", text: "⏳ Payment test pending state recorded." });
+        if (onStatusChange) onStatusChange("pending", "Payment test pending.");
       }
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Simulation request error." });
+      setMessage({ type: "error", text: err.message || "We couldn't complete the payment test." });
     } finally {
       setLoadingAction(null);
+      setPendingAction(null);
     }
   };
 
   return (
-    <div className={`mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 text-left font-sans ${className}`}>
-      <div className="flex items-center justify-between border-b border-amber-500/20 pb-3 mb-4">
+    <div className={`mt-6 rounded-2xl border border-neutral-800 bg-neutral-950 p-5 text-left font-sans ${className}`}>
+      <div className="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-mono font-bold tracking-wider text-amber-400 uppercase">
-            DEVELOPER SETTINGS
+          <ShieldAlert className="w-4 h-4 text-white" />
+          <span className="text-xs font-mono font-bold tracking-wider text-white uppercase">
+            DEVELOPER PAYMENT TEST SUITE
           </span>
         </div>
-        <span className="text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 uppercase flex items-center gap-1">
-          <Settings className="w-2.5 h-2.5" /> DEV ONLY
+        <span className="text-[9px] font-mono font-bold bg-neutral-900 text-neutral-300 px-2 py-0.5 rounded border border-neutral-800 uppercase flex items-center gap-1">
+          <Settings className="w-2.5 h-2.5" /> TEST ONLY
         </span>
       </div>
 
       {/* Development Payment Mode Status Banner */}
-      <div className="mb-5 p-3.5 rounded-xl bg-black/60 border border-amber-500/25 space-y-2">
+      <div className="mb-5 p-3.5 rounded-xl bg-black border border-neutral-800 space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-[11px] font-mono font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-amber-400" /> Payment Mode: Simulation Engine Active
+          <label className="text-[11px] font-mono font-extrabold uppercase tracking-wider text-white flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-white" /> Payment Mode: Testing Sandbox Active
           </label>
-          <span className="text-[9px] font-mono font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+          <span className="text-[9px] font-mono font-bold text-neutral-300 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">
             RAZORPAY_VERIFICATION=false
           </span>
         </div>
         <p className="text-[10px] text-neutral-400 leading-normal">
-          Razorpay checkout is disabled. Payments automatically trigger the simulation engine, unlock the portal, and record transactions without requiring real card data.
+          Test only — no real payment is collected. Use this panel to verify project state transitions, receipt generation, and milestone unlocks without real gateway transactions.
         </p>
       </div>
 
@@ -127,18 +137,18 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
         <button
           type="button"
           disabled={loadingAction !== null}
-          onClick={() => handleSimulate("success")}
-          className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer mb-2.5"
+          onClick={() => handleSimulateConfirm("success")}
+          className="w-full flex items-center justify-center gap-2 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer mb-2.5"
         >
           {loadingAction === "success" ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin text-black" />
-              <span>Simulating Success Flow...</span>
+              <span>Running Payment Test...</span>
             </>
           ) : (
             <>
               <CheckCircle className="w-4 h-4" />
-              <span>Run Success Simulation Now ({term === "upfront" ? "100% Upfront" : term === "final" ? "Final 50%" : "50% Milestone"})</span>
+              <span>Run Payment Test ({term === "upfront" ? "100% Upfront" : term === "final" ? "Final 50%" : "50% Milestone"})</span>
             </>
           )}
         </button>
@@ -148,7 +158,7 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
           <button
             type="button"
             disabled={loadingAction !== null}
-            onClick={() => handleSimulate("failed")}
+            onClick={() => handleSimulateConfirm("failed")}
             className="flex items-center justify-center gap-1.5 bg-neutral-900 hover:bg-red-950/50 text-red-400 border border-red-500/30 font-semibold text-[10px] uppercase tracking-wider py-2 px-2 rounded-lg transition-all cursor-pointer disabled:opacity-50"
           >
             {loadingAction === "failed" ? (
@@ -156,27 +166,27 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
             ) : (
               <XCircle className="w-3 h-3 text-red-400" />
             )}
-            <span>Simulate Failed</span>
+            <span>Test Failed Flow</span>
           </button>
 
           <button
             type="button"
             disabled={loadingAction !== null}
-            onClick={() => handleSimulate("cancelled")}
-            className="flex items-center justify-center gap-1.5 bg-neutral-900 hover:bg-amber-950/50 text-amber-400 border border-amber-500/30 font-semibold text-[10px] uppercase tracking-wider py-2 px-2 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+            onClick={() => handleSimulateConfirm("cancelled")}
+            className="flex items-center justify-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-800 font-semibold text-[10px] uppercase tracking-wider py-2 px-2 rounded-lg transition-all cursor-pointer disabled:opacity-50"
           >
             {loadingAction === "cancelled" ? (
               <Loader2 className="w-3 h-3 animate-spin" />
             ) : (
-              <AlertTriangle className="w-3 h-3 text-amber-400" />
+              <AlertTriangle className="w-3 h-3 text-white" />
             )}
-            <span>Simulate Cancelled</span>
+            <span>Test Cancelled Flow</span>
           </button>
 
           <button
             type="button"
             disabled={loadingAction !== null}
-            onClick={() => handleSimulate("pending")}
+            onClick={() => handleSimulateConfirm("pending")}
             className="flex items-center justify-center gap-1.5 bg-neutral-900 hover:bg-blue-950/50 text-blue-400 border border-blue-500/30 font-semibold text-[10px] uppercase tracking-wider py-2 px-2 rounded-lg transition-all cursor-pointer disabled:opacity-50"
           >
             {loadingAction === "pending" ? (
@@ -184,19 +194,55 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
             ) : (
               <Clock className="w-3 h-3 text-blue-400" />
             )}
-            <span>Simulate Pending</span>
+            <span>Test Pending Flow</span>
           </button>
         </div>
       </div>
+
+      {/* CUSTOM CONFIRMATION MODAL FOR PAYMENT TEST */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0c0c0c] border border-neutral-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-white font-bold">
+                ⚡
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">Run payment test?</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">Test only — no real payment is collected.</p>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-300 leading-relaxed bg-neutral-950 p-3 rounded-xl border border-neutral-900">
+              This marks the selected project as paid for testing. It does not charge a customer.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => pendingAction && handleSimulate(pendingAction)}
+                className="px-4 py-2 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+              >
+                Run Test
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {message && (
         <div
           className={`mt-3 p-2.5 rounded-lg text-xs font-mono ${
             message.type === "success"
-              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+              ? "bg-neutral-900 text-white border border-neutral-800"
               : message.type === "error"
-              ? "bg-red-500/20 text-red-300 border border-red-500/30"
-              : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+              ? "bg-red-950/40 text-red-300 border border-red-500/30"
+              : "bg-neutral-900 text-neutral-300 border border-neutral-800"
           }`}
         >
           {message.text}
