@@ -583,6 +583,70 @@ export const MissionControl: React.FC = () => {
           </div>
         </div>
 
+        {/* Tab Selection Segments */}
+        <div className="flex flex-wrap gap-2 mb-8 bg-neutral-950 p-1 rounded-xl border border-neutral-800 w-fit">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              activeTab === "overview"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            Command Center
+          </button>
+          <button
+            onClick={() => setActiveTab("projects")}
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              activeTab === "projects"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            Projects
+          </button>
+          <button
+            onClick={() => setActiveTab("crm")}
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              activeTab === "crm"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            Money
+          </button>
+          <button
+            onClick={() => setActiveTab("hosting")}
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              activeTab === "hosting"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            Operations
+          </button>
+          <button
+            onClick={() => setActiveTab("coupons")}
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              activeTab === "coupons"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            Marketing
+          </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              activeTab === "users"
+                ? "bg-white text-black font-bold"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            System
+          </button>
+        </div>
+
         {/* EMERGENCY MODE BANNER */}
         {isEmergencyMode && (
           <div className="mb-6 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-sans leading-relaxed flex items-start gap-3 relative overflow-hidden">
@@ -649,70 +713,6 @@ export const MissionControl: React.FC = () => {
               <div className="text-[8.5px] font-mono text-neutral-500 mt-0.5">High-margin software agency</div>
             </div>
           </div>
-        </div>
-
-        {/* Tab Selection Segments */}
-        <div className="flex flex-wrap gap-2 mb-8 bg-neutral-950 p-1 rounded-xl border border-neutral-800 w-fit">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "overview"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            Command Center
-          </button>
-          <button
-            onClick={() => setActiveTab("projects")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "projects"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            Projects
-          </button>
-          <button
-            onClick={() => setActiveTab("crm")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "crm"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            Money
-          </button>
-          <button
-            onClick={() => setActiveTab("hosting")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "hosting"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            Operations
-          </button>
-          <button
-            onClick={() => setActiveTab("coupons")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "coupons"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            Marketing
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "users"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            System
-          </button>
         </div>
 
         {activeTab === "overview" && (
