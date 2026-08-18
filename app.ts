@@ -83,6 +83,14 @@ import { checkUniqueness, registerContent } from "./server/uniqueness.js";
 import { recordFounderAction, getFounderProfile } from "./server/founder_signals.js";
 import { getGSCOpportunities, getGSCMarketInsight } from "./server/gsc_visibility.js";
 import { enforceContentSafety } from "./server/content_safety.js";
+import {
+  getFounderNotifications,
+  addFounderNotification,
+  markNotificationRead,
+  markAllNotificationsRead,
+  clearFounderNotifications,
+  resolveFounderNotificationsByType
+} from "./server/founder_notifications_store.js";
 
 dotenv.config();
 
@@ -1101,6 +1109,16 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
     console.log("Compiling and initializing new project in CodeFuser Core architecture style...");
     const savedProject = await addProject(payload, req.reqId);
 
+    addFounderNotification({
+      type: "new_project",
+      projectId: savedProject.id,
+      projectName: savedProject.businessName || savedProject.clientName || "New Client",
+      title: "New project",
+      message: `${savedProject.businessName || savedProject.clientName || "New Client"} submitted a project.`,
+      actionLabel: "Review project",
+      severity: "important"
+    });
+
     // Track business event in Audit Trail
     await logAuditEvent({
       projectId: savedProject.id,
@@ -1334,6 +1352,44 @@ app.get("/api/auth/me", requestTimeout(10000, "Get Current User Profile"), requi
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: "Failed to retrieve current user profile." });
+  }
+});
+
+// API: Founder Notifications
+app.get("/api/admin/notifications", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res: any) => {
+  try {
+    const notifications = getFounderNotifications();
+    res.json({ success: true, data: notifications });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/admin/notifications/:id/read", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    markNotificationRead(id);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/admin/notifications/read-all", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res: any) => {
+  try {
+    markAllNotificationsRead();
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete("/api/admin/notifications", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res: any) => {
+  try {
+    clearFounderNotifications();
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -2078,6 +2134,16 @@ app.post("/api/projects/:id/change-requests", requestTimeout(15000, "Create Chan
       status: "SUBMITTED"
     });
 
+    addFounderNotification({
+      type: "change_request",
+      projectId: id,
+      projectName: project.businessName || project.clientName || "Client",
+      title: "Changes requested",
+      message: `${project.businessName || project.clientName || "Client"} requested website changes.`,
+      actionLabel: "Review changes",
+      severity: "action_needed"
+    });
+
     await logAuditEvent({
       projectId: id,
       eventType: "Change Request Submitted",
@@ -2232,6 +2298,20 @@ app.post("/api/projects/:id/launch/verify", requestTimeout(20000, "Verify Live W
       ...(testUrl ? { websiteUrl: testUrl } : {})
     });
 
+    if (isLive) {
+      resolveFounderNotificationsByType(id, "launch_problem");
+    } else {
+      addFounderNotification({
+        type: "launch_problem",
+        projectId: id,
+        projectName: project.businessName || project.clientName || "Client",
+        title: "Launch problem",
+        message: `${project.businessName || project.clientName || "Client"} could not be verified as live.`,
+        actionLabel: "Check website",
+        severity: "action_needed"
+      });
+    }
+
     await logAuditEvent({
       projectId: id,
       eventType: isLive ? "Website Live Verified" : "Website Verification Failed",
@@ -2301,6 +2381,20 @@ app.post("/api/projects/:id/health-check", requestTimeout(15000, "Website Health
       launchStatus,
       lastHealthCheck: timestamp
     });
+
+    if (isHealthy) {
+      resolveFounderNotificationsByType(id, "health_problem");
+    } else {
+      addFounderNotification({
+        type: "health_problem",
+        projectId: id,
+        projectName: project.businessName || project.clientName || "Client",
+        title: "Website needs attention",
+        message: `${project.businessName || project.clientName || "Client"} is not responding normally.`,
+        actionLabel: "Check website",
+        severity: "action_needed"
+      });
+    }
 
     return res.json({
       success: true,
@@ -2573,6 +2667,16 @@ async function processPaymentSuccessCore({
   };
 
   const updatedProject = await updateProject(id, updates, req.reqId);
+
+  addFounderNotification({
+    type: "payment_received",
+    projectId: id,
+    projectName: project.businessName || project.clientName || "Client",
+    title: "Payment received",
+    message: `${project.businessName || project.clientName || "Client"} paid for ${planName}.`,
+    actionLabel: "Open project",
+    severity: "important"
+  });
 
   // Finalize Coupon Redemption upon successful payment verification / success execution
   if (extra?.quote?.couponCode) {

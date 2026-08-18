@@ -22,7 +22,8 @@ import {
   Sparkles,
   Inbox,
   Eye,
-  EyeOff
+  EyeOff,
+  Bell
 } from "lucide-react";
 import { useAppRouter, w as getWhatsAppLink } from "../components/Reveal";
 import { getAuthUser, getAuthToken } from "../utils/auth";
@@ -80,6 +81,62 @@ export const MissionControl: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
+  const [founderNotifications, setFounderNotifications] = useState<any[]>([]);
+  const [showFounderNotifications, setShowFounderNotifications] = useState<boolean>(false);
+
+  const fetchFounderNotifications = async () => {
+    try {
+      const res = await fetch("/api/admin/notifications", {
+        headers: getAdminHeaders()
+      });
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.data)) {
+        setFounderNotifications(data.data);
+      }
+    } catch (e) {
+      console.log("Failed to fetch founder notifications:", e);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchFounderNotifications();
+      const interval = setInterval(fetchFounderNotifications, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
+
+  const unreadFounderCount = founderNotifications.filter(n => !n.readAt).length;
+
+  const handleMarkNotificationRead = async (id: string) => {
+    try {
+      await fetch(`/api/admin/notifications/${id}/read`, {
+        method: "POST",
+        headers: getAdminHeaders()
+      });
+      setFounderNotifications(prev => prev.map(n => n.id === id ? { ...n, readAt: new Date().toISOString() } : n));
+    } catch (e) {}
+  };
+
+  const handleReadAllNotifications = async () => {
+    try {
+      await fetch("/api/admin/notifications/read-all", {
+        method: "POST",
+        headers: getAdminHeaders()
+      });
+      setFounderNotifications(prev => prev.map(n => ({ ...n, readAt: n.readAt || new Date().toISOString() })));
+    } catch (e) {}
+  };
+
+  const handleClearFounderNotifications = async () => {
+    try {
+      await fetch("/api/admin/notifications", {
+        method: "DELETE",
+        headers: getAdminHeaders()
+      });
+      setFounderNotifications([]);
+    } catch (e) {}
+  };
   const [isLoading, setIsLoading] = useState(true);
   const [errorValue, setErrorValue] = useState<string | null>(null);
   const [dbSource, setDbSource] = useState<string>("Supabase");
@@ -616,6 +673,111 @@ export const MissionControl: React.FC = () => {
               <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} /> Refresh Grid
             </Button>
 
+            <div className="relative">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowFounderNotifications(!showFounderNotifications)}
+                className="relative"
+              >
+                <Bell size={14} className={unreadFounderCount > 0 ? "text-amber-400 animate-bounce" : ""} />
+                <span>Notifications</span>
+                {unreadFounderCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-white text-black text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                    {unreadFounderCount}
+                  </span>
+                )}
+              </Button>
+
+              {/* Notification Drawer / Dropdown */}
+              {showFounderNotifications && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-neutral-950 border border-neutral-800 rounded-2xl shadow-2xl z-50 overflow-hidden text-left font-sans">
+                  <div className="p-4 border-b border-neutral-900 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <span>Founder Notifications</span>
+                        {unreadFounderCount > 0 && (
+                          <span className="text-[10px] font-mono bg-white/10 text-white px-2 py-0.5 rounded-full">
+                            {unreadFounderCount} new
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Real-time client & project updates</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {unreadFounderCount > 0 && (
+                        <button 
+                          onClick={handleReadAllNotifications}
+                          className="text-[10px] font-mono text-neutral-400 hover:text-white underline cursor-pointer"
+                        >
+                          Mark read
+                        </button>
+                      )}
+                      <button 
+                        onClick={handleClearFounderNotifications}
+                        className="text-[10px] font-mono text-red-400 hover:text-red-300 underline cursor-pointer ml-2"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="max-h-[380px] overflow-y-auto divide-y divide-neutral-900">
+                    {founderNotifications.length === 0 ? (
+                      <div className="py-10 text-center text-xs text-neutral-500 font-mono">
+                        No notifications yet. You're all caught up!
+                      </div>
+                    ) : (
+                      founderNotifications.map(n => (
+                        <div 
+                          key={n.id} 
+                          className={`p-3.5 transition-colors ${!n.readAt ? 'bg-neutral-900/50' : 'bg-neutral-950 hover:bg-neutral-900/20'}`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-mono font-bold uppercase px-1.5 py-0.2 rounded ${
+                                  n.severity === 'important' ? 'bg-white text-black' : 'bg-neutral-800 text-neutral-300'
+                                }`}>
+                                  {n.title}
+                                </span>
+                                <span className="text-[11px] font-bold text-white">{n.projectName}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{n.message}</p>
+                            </div>
+                            {!n.readAt && (
+                              <button 
+                                onClick={() => handleMarkNotificationRead(n.id)}
+                                className="w-2 h-2 rounded-full bg-white shrink-0 mt-1 cursor-pointer"
+                                title="Mark read"
+                              />
+                            )}
+                          </div>
+
+                          <div className="mt-2.5 flex items-center justify-between text-[11px]">
+                            <span className="text-[10px] text-neutral-500 font-mono">
+                              {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <button
+                              onClick={() => {
+                                handleMarkNotificationRead(n.id);
+                                setShowFounderNotifications(false);
+                                setActiveTab("projects");
+                                setSearchQuery(n.projectName);
+                              }}
+                              className="px-2.5 py-1 bg-white text-black font-bold text-[10px] font-mono rounded hover:bg-neutral-200 transition-colors cursor-pointer"
+                            >
+                              {n.actionLabel || "Open project"} →
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Button
               variant="primary"
               size="sm"
@@ -741,114 +903,288 @@ export const MissionControl: React.FC = () => {
         </div>
 
         {activeTab === "overview" && (
-          <div className="space-y-8 mb-12">
-            {/* Executive Quick Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-card border border-border/80 rounded-2xl p-5 relative overflow-hidden">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">Total Active Projects</div>
-                <div className="text-3xl font-extrabold text-white font-mono mt-2">{projects.length}</div>
-                <div className="text-[11px] font-mono text-emerald-400 mt-1">✓ Synchronized with DB</div>
-              </div>
-              <div className="bg-card border border-border/80 rounded-2xl p-5 relative overflow-hidden">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">Paid Revenue Confirmed</div>
-                <div className="text-3xl font-extrabold text-emerald-400 font-mono mt-2">
-                  ₹{projects.filter(p => p.paymentStatus === "paid").reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 9999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 20000), 0).toLocaleString("en-IN")}
+          <div className="space-y-6 mb-12">
+            {/* Top / Hero Area (Bento Top Row) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left / Large Hero Greeting */}
+              <div className="lg:col-span-2 bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 sm:p-8 relative overflow-hidden flex flex-col justify-between">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] rounded-full blur-3xl pointer-events-none" />
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>SYSTEM OPERATIONAL • {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  <h2 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      if (hour < 12) return "Good morning.";
+                      if (hour < 18) return "Good afternoon.";
+                      return "Good evening.";
+                    })()}
+                  </h2>
+                  <p className="text-sm text-neutral-400 mt-2 max-w-lg leading-relaxed">
+                    {projects.filter(p => p.paymentStatus !== "paid" || p.healthStatus === "degraded" || p.launchStatus === "VERIFICATION_FAILED").length > 0
+                      ? `${projects.filter(p => p.paymentStatus !== "paid" || p.healthStatus === "degraded" || p.launchStatus === "VERIFICATION_FAILED").length} items currently require your operational attention.`
+                      : "All systems and active client projects are operating normally."}
+                  </p>
                 </div>
-                <div className="text-[11px] font-mono text-neutral-400 mt-1">Razorpay Verified</div>
-              </div>
-              <div className="bg-card border border-border/80 rounded-2xl p-5 relative overflow-hidden">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">Pending Action / Review</div>
-                <div className="text-3xl font-extrabold text-amber-400 font-mono mt-2">
-                  {projects.filter(p => p.paymentStatus !== "paid").length}
+                <div className="mt-6 flex flex-wrap gap-3 items-center pt-6 border-t border-white/10">
+                  <button
+                    onClick={() => setActiveTab("projects")}
+                    className="px-4 py-2 bg-white text-black text-xs font-bold font-mono rounded-xl hover:bg-neutral-200 transition-colors cursor-pointer flex items-center gap-2"
+                  >
+                    Open Projects Hub <ArrowRight size={13} />
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("crm")}
+                    className="px-4 py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222222] transition-colors cursor-pointer"
+                  >
+                    View Money & Revenue
+                  </button>
                 </div>
-                <div className="text-[11px] font-mono text-neutral-400 mt-1">Awaiting checkout or review</div>
-              </div>
-              <div className="bg-card border border-border/80 rounded-2xl p-5 relative overflow-hidden">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">System Health</div>
-                <div className="text-3xl font-extrabold text-emerald-400 font-mono mt-2">100%</div>
-                <div className="text-[11px] font-mono text-emerald-400 mt-1">All services operational</div>
-              </div>
-            </div>
-
-            {/* Quick Operational Navigation Hub */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div 
-                onClick={() => setActiveTab("projects")}
-                className="bg-card hover:border-amber-500/40 border border-border/80 rounded-2xl p-6 transition-all cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
-                  📂
-                </div>
-                <h3 className="text-base font-bold text-white mb-1">Active Projects Hub</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed mb-4">
-                  Manage customer journeys, inspect 9-stage milestones, lock price quotes, and review deliverables.
-                </p>
-                <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  Open Projects &rarr;
-                </span>
               </div>
 
-              <div 
-                onClick={() => setActiveTab("coupons")}
-                className="bg-card hover:border-amber-500/40 border border-border/80 rounded-2xl p-6 transition-all cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
-                  🎟️
-                </div>
-                <h3 className="text-base font-bold text-white mb-1">Coupons & Offers</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed mb-4">
-                  Control active marketing campaigns (FOUNDING50, FUSIONFREE), redemption limits, and plan eligibility.
-                </p>
-                <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  Manage Offers &rarr;
-                </span>
-              </div>
-
-              <div 
-                onClick={() => setActiveTab("hosting")}
-                className="bg-card hover:border-amber-500/40 border border-border/80 rounded-2xl p-6 transition-all cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
-                  🌐
-                </div>
-                <h3 className="text-base font-bold text-white mb-1">Hosting & Subscriptions</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed mb-4">
-                  Monitor trial periods, issue manual billing renewal invoices, and manage hosting status.
-                </p>
-                <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  View Subscriptions &rarr;
-                </span>
-              </div>
-            </div>
-
-            {/* Needs Attention Queue */}
-            <div className="bg-card border border-border/80 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">⚠️ Needs Operator Attention</h3>
-                <span className="text-xs font-mono text-neutral-400">{projects.filter(p => p.paymentStatus !== "paid").length} items pending</span>
-              </div>
-              {projects.filter(p => p.paymentStatus !== "paid").length === 0 ? (
-                <div className="p-8 text-center text-xs font-mono text-emerald-400">
-                  ✓ All active projects are paid and progressing normally. No urgent actions required.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {projects.filter(p => p.paymentStatus !== "paid").slice(0, 5).map(p => (
-                    <div key={p.id} className="bg-neutral-950 p-4 rounded-xl border border-neutral-900 flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-bold text-white">{p.businessName || "Unnamed Business"}</div>
-                        <div className="text-xs text-neutral-400 font-mono mt-0.5">Package: {p.selectedPackage} • Email: {p.email}</div>
-                      </div>
-                      <button
-                        onClick={() => { setActiveTab("projects"); setActiveProjectId(p.id); }}
-                        className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono rounded-lg hover:bg-amber-500/20 transition-all cursor-pointer"
-                      >
-                        Inspect Project &rarr;
-                      </button>
+              {/* Right: Today KPI Bento Card */}
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-4 flex items-center justify-between">
+                    <span>Today's Activity</span>
+                    <span className="text-white font-bold">{new Date().toLocaleDateString()}</span>
+                  </div>
+                  <div className="space-y-4 font-mono">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                      <span className="text-xs text-neutral-400">New Projects Today</span>
+                      <span className="text-sm font-bold text-white">
+                        {projects.filter(p => new Date(p.timestamp).toDateString() === new Date().toDateString()).length}
+                      </span>
                     </div>
-                  ))}
+                    <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                      <span className="text-xs text-neutral-400">Payments Verified</span>
+                      <span className="text-sm font-bold text-emerald-400">
+                        {projects.filter(p => p.paymentStatus === "paid" && p.purchaseDate && new Date(p.purchaseDate).toDateString() === new Date().toDateString()).length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-neutral-400">Active Unread Alerts</span>
+                      <span className="text-sm font-bold text-amber-400">
+                        {founderNotifications.filter(n => !n.readAt).length}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
+                <div className="mt-4 pt-3 border-t border-white/5 text-[11px] font-mono text-neutral-500 text-right">
+                  Real-time sync active
+                </div>
+              </div>
+            </div>
+
+            {/* Middle Bento Row: Needs Attention (Large Left) & Client Activity (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* NEEDS ATTENTION (2 Cols) */}
+              <div className="lg:col-span-2 bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 sm:p-7 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      <h3 className="text-xs font-mono uppercase tracking-widest text-white font-bold">Needs Attention</h3>
+                    </div>
+                    <span className="text-[11px] font-mono bg-white/5 border border-white/10 text-neutral-300 px-2.5 py-1 rounded-full">
+                      {founderNotifications.filter(n => !n.readAt && n.severity === "action_needed").length} action items
+                    </span>
+                  </div>
+
+                  {founderNotifications.filter(n => !n.readAt).length === 0 && projects.filter(p => p.paymentStatus !== "paid").length === 0 ? (
+                    <div className="py-12 text-center text-xs font-mono text-neutral-400 bg-neutral-950/50 rounded-xl border border-white/5">
+                      Everything looks good. No active issues require your attention right now.
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                      {founderNotifications.filter(n => !n.readAt).map(n => (
+                        <div key={n.id} className="bg-[#111111] border border-white/10 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-white/10 text-white">
+                                {n.title}
+                              </span>
+                              <span className="text-xs font-bold text-white">{n.projectName}</span>
+                            </div>
+                            <p className="text-xs text-neutral-400 mt-1">{n.message}</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setActiveTab("projects");
+                              setSearchQuery(n.projectName);
+                            }}
+                            className="shrink-0 px-3.5 py-2 bg-white text-black font-bold text-xs font-mono rounded-lg hover:bg-neutral-200 transition-colors cursor-pointer text-center"
+                          >
+                            {n.actionLabel || "Open"} →
+                          </button>
+                        </div>
+                      ))}
+
+                      {projects.filter(p => p.paymentStatus !== "paid").map(p => (
+                        <div key={`p_${p.id}`} className="bg-[#111111] border border-white/10 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                Payment Pending
+                              </span>
+                              <span className="text-xs font-bold text-white">{p.businessName || "Unnamed Project"}</span>
+                            </div>
+                            <p className="text-xs text-neutral-400 mt-1">Package: {p.selectedPackage || "Standard"} • Awaiting checkout or verification</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setActiveTab("projects");
+                              setActiveProjectId(p.id);
+                            }}
+                            className="shrink-0 px-3.5 py-2 bg-white text-black font-bold text-xs font-mono rounded-lg hover:bg-neutral-200 transition-colors cursor-pointer text-center"
+                          >
+                            Open Project →
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* CLIENT ACTIVITY (1 Col) */}
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="text-xs font-mono uppercase tracking-widest text-white font-bold mb-4 flex items-center justify-between">
+                    <span>Client Activity</span>
+                    <span className="text-[10px] font-mono text-neutral-400">Live Stream</span>
+                  </div>
+
+                  {founderNotifications.length === 0 ? (
+                    <div className="py-12 text-center text-xs font-mono text-neutral-400 bg-neutral-950/50 rounded-xl border border-white/5">
+                      No recent activity.
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+                      {founderNotifications.slice(0, 6).map(n => (
+                        <div key={`act_${n.id}`} className="pb-3 border-b border-white/5 last:border-none last:pb-0">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-white">{n.projectName}</span>
+                            <span className="text-[10px] font-mono text-neutral-500">
+                              {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-400 mt-0.5 leading-relaxed">{n.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Bento Row: Money, Websites, Hosting / System */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* MONEY CARD */}
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-4 flex items-center justify-between">
+                    <span>Money & Revenue</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">Verified</span>
+                  </div>
+                  <div className="font-mono">
+                    <div className="text-3xl font-extrabold text-white tracking-tight">
+                      ₹{projects.filter(p => p.paymentStatus === "paid").reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 9999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 20000), 0).toLocaleString("en-IN")}
+                    </div>
+                    <div className="text-xs text-neutral-400 mt-1">Total Confirmed Revenue</div>
+                  </div>
+                  <div className="mt-6 space-y-2 text-xs font-mono border-t border-white/5 pt-4">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Paid Projects:</span>
+                      <span className="text-white font-bold">{projects.filter(p => p.paymentStatus === "paid").length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Pending Checkout:</span>
+                      <span className="text-amber-400 font-bold">{projects.filter(p => p.paymentStatus !== "paid").length}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 pt-4 border-t border-white/5">
+                  <button
+                    onClick={() => setActiveTab("crm")}
+                    className="w-full py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222] transition-colors cursor-pointer"
+                  >
+                    Open Revenue Ledger →
+                  </button>
+                </div>
+              </div>
+
+              {/* WEBSITES CARD */}
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-4 flex items-center justify-between">
+                    <span>Websites</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">Live Sync</span>
+                  </div>
+                  <div className="font-mono space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                      <span className="text-xs text-neutral-400">Live & Online</span>
+                      <span className="text-sm font-bold text-emerald-400">
+                        {projects.filter(p => p.launchStatus === "LAUNCHED" || p.websiteStatus === "ONLINE").length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                      <span className="text-xs text-neutral-400">Ready to Launch</span>
+                      <span className="text-sm font-bold text-white">
+                        {projects.filter(p => p.status === "READY_TO_LAUNCH" || p.launchStatus === "READY_TO_LAUNCH").length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-neutral-400">Verification Issues</span>
+                      <span className="text-sm font-bold text-amber-400">
+                        {projects.filter(p => p.launchStatus === "VERIFICATION_FAILED" || p.healthStatus === "degraded").length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 pt-4 border-t border-white/5">
+                  <button
+                    onClick={() => setActiveTab("projects")}
+                    className="w-full py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222] transition-colors cursor-pointer"
+                  >
+                    Inspect All Websites →
+                  </button>
+                </div>
+              </div>
+
+              {/* HOSTING & SYSTEM CARD */}
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-4 flex items-center justify-between">
+                    <span>Hosting & System</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">Operational</span>
+                  </div>
+                  <div className="font-mono space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                      <span className="text-xs text-neutral-400">Active Subscriptions</span>
+                      <span className="text-sm font-bold text-white">{projects.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                      <span className="text-xs text-neutral-400">Renewals Due</span>
+                      <span className="text-sm font-bold text-neutral-300">0</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-neutral-400">System Errors</span>
+                      <span className="text-sm font-bold text-emerald-400">0</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 pt-4 border-t border-white/5">
+                  <button
+                    onClick={() => setActiveTab("hosting")}
+                    className="w-full py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222] transition-colors cursor-pointer"
+                  >
+                    Manage Hosting Hub →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
