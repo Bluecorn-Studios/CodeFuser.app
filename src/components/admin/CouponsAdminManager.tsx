@@ -174,7 +174,10 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
   const [confirmModalState, setConfirmModalState] = useState<{
     title: string;
     description: string;
-    onConfirm: () => void;
+    primaryActionLabel?: string;
+    onPrimary: () => void;
+    secondaryActionLabel?: string;
+    onCancel: () => void;
   } | null>(null);
 
   const handleToggleStatus = async (id: string) => {
@@ -200,7 +203,8 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
     setConfirmModalState({
       title: "Archive this offer?",
       description: "This stops new redemptions but preserves existing transaction history.",
-      onConfirm: async () => {
+      primaryActionLabel: "Archive Offer",
+      onPrimary: async () => {
         setConfirmModalState(null);
         try {
           const res = await fetch(`/api/admin/coupons/${id}/archive`, {
@@ -218,15 +222,34 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
         } catch (err) {
           setError("We couldn't connect to the server.");
         }
-      }
+      },
+      secondaryActionLabel: "Cancel",
+      onCancel: () => setConfirmModalState(null)
     });
   };
 
   const handleDelete = (id: string) => {
+    const c = coupons.find(x => x.id === id);
+    if (c && c.currentRedemptions > 0) {
+      setConfirmModalState({
+        title: "Cannot delete this offer",
+        description: "This offer has already been used. Its history must be preserved.",
+        primaryActionLabel: "Archive Offer",
+        onPrimary: () => {
+          setConfirmModalState(null);
+          handleArchive(id);
+        },
+        secondaryActionLabel: "Cancel",
+        onCancel: () => setConfirmModalState(null)
+      });
+      return;
+    }
+
     setConfirmModalState({
       title: "Delete this offer?",
       description: "This permanently removes unredeemed promotional records.",
-      onConfirm: async () => {
+      primaryActionLabel: "Delete Offer",
+      onPrimary: async () => {
         setConfirmModalState(null);
         try {
           const res = await fetch(`/api/admin/coupons/${id}`, {
@@ -239,12 +262,28 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
             setSuccessMsg("Offer deleted successfully.");
             setTimeout(() => setSuccessMsg(null), 3000);
           } else {
-            setError(data.error || "We couldn't delete this offer.");
+            if (data.error && (data.error.includes("already been used") || data.error.includes("history"))) {
+              setConfirmModalState({
+                title: "Cannot delete this offer",
+                description: "This offer has already been used. Its history must be preserved.",
+                primaryActionLabel: "Archive Offer",
+                onPrimary: () => {
+                  setConfirmModalState(null);
+                  handleArchive(id);
+                },
+                secondaryActionLabel: "Cancel",
+                onCancel: () => setConfirmModalState(null)
+              });
+            } else {
+              setError(data.error || "We couldn't delete this offer.");
+            }
           }
         } catch (err) {
           setError("We couldn't connect to the server.");
         }
-      }
+      },
+      secondaryActionLabel: "Cancel",
+      onCancel: () => setConfirmModalState(null)
     });
   };
 
@@ -613,17 +652,17 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setConfirmModalState(null)}
+                onClick={confirmModalState.onCancel || (() => setConfirmModalState(null))}
                 className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
-                Cancel
+                {confirmModalState.secondaryActionLabel || "Cancel"}
               </button>
               <button
                 type="button"
-                onClick={confirmModalState.onConfirm}
+                onClick={confirmModalState.onPrimary}
                 className="px-4 py-2 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs font-extrabold transition-all cursor-pointer"
               >
-                Confirm Action
+                {confirmModalState.primaryActionLabel || "Confirm Action"}
               </button>
             </div>
           </div>
