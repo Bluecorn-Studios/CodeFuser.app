@@ -54,7 +54,34 @@ import { supabase } from '../lib/supabase';
 import { safeLocalStorage } from '../utils/safeStorage';
 import { normalizeProjectFormData } from '../lib/schemaNormalizer';
 import { useProject } from '../context/ProjectContext';
-import { clearPreviewSession, startAdminPreviewSession } from '../utils/previewApi';
+import { clearPreviewSession, startAdminPreviewSession, getPreviewToken } from '../utils/previewApi';
+
+const normalizeFeatures = (featuresList: any[]): string[] => {
+  if (!Array.isArray(featuresList)) return [];
+  return featuresList.map((f: any) => {
+    if (typeof f === 'string') return f.trim();
+    if (f && typeof f === 'object') {
+      if (f.title && f.description) return `${f.title}: ${f.description}`;
+      if (f.title) return String(f.title);
+      if (f.name) return String(f.name);
+      if (f.description) return String(f.description);
+    }
+    return String(f || "");
+  }).filter(Boolean);
+};
+
+const getApiHeaders = (extraHeaders?: Record<string, string>): Record<string, string> => {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${getAuthToken() || ""}`,
+    ...extraHeaders
+  };
+  const prevToken = getPreviewToken();
+  if (prevToken) {
+    headers["x-preview-token"] = prevToken;
+  }
+  return headers;
+};
 
 interface StartProjectData {
   businessName: string;
@@ -933,18 +960,16 @@ export const StartProjectPage: React.FC = () => {
 
     const freeOrderPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
     const discount = appliedCoupon ? websiteDiscount : (selectedPaymentTerm === 'upfront' ? discountVal : 0);
+    const normalizedFeats = normalizeFeatures(finalSelCardForPayment.features);
     try {
       await fetch(`/api/projects/${projId}/quote`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAuthToken() || ""}`
-        },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           packageName: finalSelCardForPayment.name || "Selected Package",
           price: freeOrderPrice,
           discount: discount,
-          features: finalSelCardForPayment.features || [],
+          features: normalizedFeats,
           summary: aiSummary?.recommendationReason || "Custom engineered web application.",
           couponCode: appliedCoupon?.code || undefined
         })
@@ -957,10 +982,7 @@ export const StartProjectPage: React.FC = () => {
     try {
       const orderRes = await fetch(`/api/projects/${projId}/razorpay-order`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAuthToken() || ""}`
-        },
+        headers: getApiHeaders(),
         body: JSON.stringify({ term: selectedPaymentTerm })
       });
       orderData = await orderRes.json();
@@ -977,7 +999,7 @@ export const StartProjectPage: React.FC = () => {
       return;
     }
 
-    if (orderData.zeroAmount) {
+    if (orderData.zeroAmount || orderData.isZeroAmount) {
       setPaymentLoading(false);
       setOnboardingStage('schedule');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1108,10 +1130,7 @@ export const StartProjectPage: React.FC = () => {
 
       const res = await fetch("/api/projects/save-draft", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAuthToken() || ""}`
-        },
+        headers: getApiHeaders(),
         body: JSON.stringify(payload)
       });
 
@@ -1158,7 +1177,7 @@ export const StartProjectPage: React.FC = () => {
         const url = `/api/projects/active${queryString ? `?${queryString}` : ''}`;
 
         const res = await fetch(url, {
-          headers: token ? { "Authorization": `Bearer ${token}` } : {}
+          headers: getApiHeaders(token ? { "Authorization": `Bearer ${token}` } : {})
         });
 
         if (res.ok) {
@@ -1445,9 +1464,7 @@ export const StartProjectPage: React.FC = () => {
       try {
         const response = await fetch("/api/projects/validate-step1", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: getApiHeaders(),
           body: JSON.stringify({
             email: formData.email,
             whatsapp: formData.whatsapp,
@@ -1538,10 +1555,7 @@ export const StartProjectPage: React.FC = () => {
 
       const response = await fetch("/api/projects", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAuthToken() || ""}`
-        },
+        headers: getApiHeaders(),
         body: JSON.stringify(payload),
       });
 
@@ -4196,7 +4210,7 @@ That's enough. We'll help with the rest.`}
                         try {
                           const res = await fetch("/api/coupons/validate", {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: getApiHeaders(),
                             body: JSON.stringify({
                               code: couponCodeInput.trim(),
                               planId: finalSelCardForPayment.name,
@@ -4480,18 +4494,16 @@ That's enough. We'll help with the rest.`}
                     // Attempt quote lock on server (non-blocking)
                     const paidFinalPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
                     const discount = appliedCoupon ? websiteDiscount : (selectedPaymentTerm === 'upfront' ? discountVal : 0);
+                    const normalizedFeats = normalizeFeatures(finalSelCardForPayment.features);
                     try {
                       await fetch(`/api/projects/${projId}/quote`, {
                         method: "POST",
-                        headers: { 
-                          "Content-Type": "application/json",
-                          "Authorization": `Bearer ${getAuthToken() || ""}`
-                        },
+                        headers: getApiHeaders(),
                         body: JSON.stringify({
                           packageName: finalSelCardForPayment.name || "Selected Package",
                           price: paidFinalPrice,
                           discount: discount,
-                          features: finalSelCardForPayment.features || [],
+                          features: normalizedFeats,
                           summary: aiSummary?.recommendationReason || "Custom engineered web application.",
                           couponCode: appliedCoupon?.code || undefined
                         })
@@ -4517,10 +4529,7 @@ That's enough. We'll help with the rest.`}
                     try {
                       const orderRes = await fetch(`/api/projects/${projId}/razorpay-order`, {
                         method: "POST",
-                        headers: { 
-                          "Content-Type": "application/json",
-                          "Authorization": `Bearer ${getAuthToken() || ""}`
-                        },
+                        headers: getApiHeaders(),
                         body: JSON.stringify({ term: selectedPaymentTerm })
                       });
                       orderData = await orderRes.json();
@@ -4537,7 +4546,7 @@ That's enough. We'll help with the rest.`}
                       return;
                     }
 
-                    if (orderData.zeroAmount) {
+                    if (orderData.zeroAmount || orderData.isZeroAmount) {
                       setPaymentLoading(false);
                       setOnboardingStage('schedule');
                       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -4578,10 +4587,7 @@ That's enough. We'll help with the rest.`}
                           try {
                             const verifyRes = await fetch(`/api/projects/${projId}/verify-payment`, {
                               method: "POST",
-                              headers: { 
-                                "Content-Type": "application/json",
-                                "Authorization": `Bearer ${getAuthToken() || ""}`
-                              },
+                              headers: getApiHeaders(),
                               body: JSON.stringify({
                                 razorpay_order_id: response.razorpay_order_id,
                                 razorpay_payment_id: response.razorpay_payment_id,

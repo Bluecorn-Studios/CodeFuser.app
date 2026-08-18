@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useAppRouter } from "../components/Reveal";
 import { getAuthUser, clearAuthSession, getAuthToken } from "../utils/auth";
+import { getPreviewToken } from "../utils/previewApi";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { safeLocalStorage } from "../utils/safeStorage";
@@ -919,11 +920,14 @@ export default function CustomerDashboard() {
     if (!project) return;
     if (!confirm("Are you sure you want to reset your quotation? Standard packages will resume.")) return;
     try {
+      const prevToken = getPreviewToken();
+      const headers: Record<string, string> = {
+        "Authorization": `Bearer ${getAuthToken() || ""}`
+      };
+      if (prevToken) headers["x-preview-token"] = prevToken;
       const res = await fetch(`/api/projects/${project.id}/quote/reset`, { 
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${getAuthToken() || ""}`
-        }
+        headers
       });
       if (res.ok) {
         const body = await res.json();

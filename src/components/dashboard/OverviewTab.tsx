@@ -37,6 +37,7 @@ import { ProjectRecord, PlanInfo, ChangeRequestItem } from "./dashboardTypes";
 import { TabType } from "./ClientHeader";
 import { AssetStepKey } from "./OnboardingAssetModal";
 import { getAuthToken } from "../../utils/auth";
+import { getPreviewToken } from "../../utils/previewApi";
 
 interface OverviewTabProps {
   project: ProjectRecord;
@@ -123,8 +124,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       setIsLoadingRequests(true);
       try {
         const token = getAuthToken();
+        const prevToken = getPreviewToken();
+        const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {};
+        if (prevToken) headers["x-preview-token"] = prevToken;
         const res = await fetch(`/api/projects/${project.id}/change-requests`, {
-          headers: token ? { "Authorization": `Bearer ${token}` } : {}
+          headers
         });
         if (res.ok) {
           const body = await res.json();
@@ -328,12 +332,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     setIsSubmittingChange(true);
     try {
       const token = getAuthToken();
+      const prevToken = getPreviewToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      };
+      if (prevToken) headers["x-preview-token"] = prevToken;
       const res = await fetch(`/api/projects/${project.id}/change-requests`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
+        headers,
         body: JSON.stringify({
           requestText: changeRequestText.trim() || (attachedPhotoName ? `Photo update: ${attachedPhotoName}` : "Website update request"),
           category: "General Update",

@@ -2904,6 +2904,13 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
         amountInRupees = term === "upfront" ? Math.round(finalWebsitePrice * 0.9) : Math.round(finalWebsitePrice * 0.5);
       }
       if (amountInRupees === 0) {
+        savePreviewProject({
+          id,
+          paymentStatus: "paid",
+          paymentId: "prev_waiver_pay_" + Date.now(),
+          orderId: "prev_waiver_order_" + Date.now(),
+          purchaseDate: new Date().toISOString()
+        });
         return res.json({
           success: true,
           orderId: "prev_waiver_order_" + Date.now(),
@@ -2911,6 +2918,7 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
           currency: "INR",
           keyId: "rzp_test_preview",
           isZeroAmount: true,
+          zeroAmount: true,
           waiverPaymentId: "prev_waiver_pay_" + Date.now(),
           message: "Full Waiver applied in Preview Mode (zero cash transaction)."
         });
