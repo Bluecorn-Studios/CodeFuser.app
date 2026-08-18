@@ -46,12 +46,20 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
   const [status, setStatus] = useState<"ACTIVE" | "PAUSED" | "ARCHIVED">("ACTIVE");
 
   const getHeaders = (extra: Record<string, string> = {}) => {
+    let parentHeaders = {};
     if (getAdminHeaders) {
-      return getAdminHeaders(extra);
+      try {
+        parentHeaders = getAdminHeaders(extra);
+      } catch (e) {
+        // fallback
+      }
     }
+    const token = localStorage.getItem("fuser_token") || sessionStorage.getItem("fuser_token") || "";
+    const adminPassword = sessionStorage.getItem("fuser_admin_password") || "";
     return {
-      "Authorization": `Bearer ${localStorage.getItem("fuser_token") || sessionStorage.getItem("fuser_token") || ""}`,
-      "x-admin-password": sessionStorage.getItem("fuser_admin_password") || "",
+      "Authorization": `Bearer ${token}`,
+      "x-admin-password": adminPassword,
+      ...parentHeaders,
       ...extra
     };
   };
