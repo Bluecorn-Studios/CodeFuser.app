@@ -892,10 +892,78 @@ export const StartProjectPage: React.FC = () => {
   };
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentErrorMsg, setPaymentErrorMsg] = useState<string | null>(null);
+  const [showFreeOrderModal, setShowFreeOrderModal] = useState(false);
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+
+  const handleConfirmFreeOrder = async () => {
+    setShowFreeOrderModal(false);
+    const projId = createdProjectId || safeLocalStorage.getItem('fuser_client_project_id');
+    if (!projId) {
+      alert("Registration session has expired. Please restart the form.");
+      return;
+    }
+
+    setPaymentLoading(true);
+    setPaymentErrorMsg(null);
+
+    const freeOrderPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
+    const discount = appliedCoupon ? websiteDiscount : (selectedPaymentTerm === 'upfront' ? discountVal : 0);
+    try {
+      await fetch(`/api/projects/${projId}/quote`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAuthToken() || ""}`
+        },
+        body: JSON.stringify({
+          packageName: finalSelCardForPayment.name || "Selected Package",
+          price: freeOrderPrice,
+          discount: discount,
+          features: finalSelCardForPayment.features || [],
+          summary: aiSummary?.recommendationReason || "Custom engineered web application.",
+          couponCode: appliedCoupon?.code || undefined
+        })
+      });
+    } catch (err: any) {
+      console.warn("Quotation lock notice (non-fatal):", err);
+    }
+
+    let orderData: any;
+    try {
+      const orderRes = await fetch(`/api/projects/${projId}/razorpay-order`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAuthToken() || ""}`
+        },
+        body: JSON.stringify({ term: selectedPaymentTerm })
+      });
+      orderData = await orderRes.json();
+    } catch (err: any) {
+      setPaymentErrorMsg("Network failure connecting to payment servers.");
+      setPaymentLoading(false);
+      return;
+    }
+
+    if (!orderData || !orderData.success) {
+      const errMsg = orderData?.error || "Payment order creation failed.";
+      setPaymentErrorMsg(errMsg);
+      setPaymentLoading(false);
+      return;
+    }
+
+    if (orderData.zeroAmount) {
+      setPaymentLoading(false);
+      setOnboardingStage('schedule');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    setPaymentLoading(false);
+  };
 
   const finalSelCardForPayment = (recommendationCards)
     ? (recommendationCards.find(c => c.id === selectedCardId) || { name: 'Fusion Baseline', price: '₹19,999' })
@@ -4251,6 +4319,12 @@ That's enough. We'll help with the rest.`}
                   type="button"
                   disabled={paymentLoading}
                   onClick={async () => {
+                    const finalPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
+                    if (finalPrice === 0) {
+                      setShowFreeOrderModal(true);
+                      return;
+                    }
+
                     const projId = createdProjectId || safeLocalStorage.getItem('fuser_client_project_id');
                     if (!projId) {
                       alert("Registration session has expired. Please restart the form.");
@@ -4274,7 +4348,7 @@ That's enough. We'll help with the rest.`}
                     }
 
                     // Attempt quote lock on server (non-blocking)
-                    const finalPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
+                    const paidFinalPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
                     const discount = appliedCoupon ? websiteDiscount : (selectedPaymentTerm === 'upfront' ? discountVal : 0);
                     try {
                       await fetch(`/api/projects/${projId}/quote`, {
@@ -4285,7 +4359,7 @@ That's enough. We'll help with the rest.`}
                         },
                         body: JSON.stringify({
                           packageName: finalSelCardForPayment.name || "Selected Package",
-                          price: finalPrice,
+                          price: paidFinalPrice,
                           discount: discount,
                           features: finalSelCardForPayment.features || [],
                           summary: aiSummary?.recommendationReason || "Custom engineered web application.",
@@ -4424,6 +4498,11 @@ That's enough. We'll help with the rest.`}
                       <div className="h-3.5 w-3.5 rounded-full border-2 border-t-transparent border-black animate-spin" />
                       <span>Connecting...</span>
                     </>
+                  ) : (selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment) === 0 ? (
+                    <>
+                      <span>Confirm Free Order</span>
+                      <ArrowRight size={14} />
+                    </>
                   ) : (
                     <>
                       <span>Pay Deposit (₹{(selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment).toLocaleString('en-IN')})</span>
@@ -4432,6 +4511,58 @@ That's enough. We'll help with the rest.`}
                   )}
                 </button>
               </div>
+
+              {/* Free Order Confirmation Modal */}
+              {showFreeOrderModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                  <div className="w-full max-w-md rounded-3xl border border-white/20 bg-[#0A0A0A] p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.9)] space-y-6 text-left">
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold text-white tracking-tight">Confirm free order?</h3>
+                      <p className="text-xs text-zinc-400 leading-relaxed">Your waiver covers the full cost. You will not be charged.</p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-zinc-900/80 border border-white/10 space-y-2.5 text-xs">
+                      <div className="flex justify-between items-center text-zinc-300">
+                        <span>Website:</span>
+                        <span className="font-mono text-white">₹0</span>
+                      </div>
+                      <div className="flex justify-between items-center text-zinc-300">
+                        <span>Hosting:</span>
+                        <span className="font-mono text-white">₹0</span>
+                      </div>
+                      <div className="pt-2 border-t border-white/10 flex justify-between items-center font-bold text-white">
+                        <span>Total:</span>
+                        <span className="font-mono text-emerald-400 text-sm">₹0</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowFreeOrderModal(false)}
+                        className="flex-1 py-3 px-4 rounded-xl border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        disabled={paymentLoading}
+                        onClick={handleConfirmFreeOrder}
+                        className="flex-1 py-3 px-4 rounded-xl bg-white hover:bg-neutral-200 text-black font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {paymentLoading ? (
+                          <>
+                            <div className="h-3.5 w-3.5 rounded-full border-2 border-t-transparent border-black animate-spin" />
+                            <span>Confirming...</span>
+                          </>
+                        ) : (
+                          <span>Confirm & Continue</span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.div>
           ) : onboardingStage === 'schedule' ? (
             <motion.div
