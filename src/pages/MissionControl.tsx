@@ -33,6 +33,9 @@ import { normalizeProject, normalizeUser } from "../lib/schemaNormalizer";
 import { ProjectRecord } from "../components/dashboard/dashboardTypes";
 
 import { BusinessIntelligenceCRM } from "../components/BusinessIntelligenceCRM";
+import { MoneyRevenueLedger } from "../components/MoneyRevenueLedger";
+import { ProjectJourneyTimeline } from "../components/ProjectJourneyTimeline";
+import { formatDateSafe, formatDateTimeSafe, formatINR, formatPaymentMethod, formatPaymentReference } from "../utils/formatters";
 import { HostingAdminManager } from "../components/admin/HostingAdminManager";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -148,7 +151,7 @@ export const MissionControl: React.FC = () => {
   const [dbSource, setDbSource] = useState<string>("Supabase");
   
   // Controls
-  const [activeTab, setActiveTab] = useState<"overview" | "projects" | "users" | "crm" | "hosting" | "coupons">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "projects" | "money" | "crm" | "hosting" | "coupons" | "users">("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("all");
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -164,7 +167,7 @@ export const MissionControl: React.FC = () => {
   const [extraLoadingMap, setExtraLoadingMap] = useState<Record<string, boolean>>({});
 
   // Phase 6 Phase-Specific States
-  const [adminSubTabs, setAdminSubTabs] = useState<Record<string, "proposal" | "checklist" | "deliverables" | "notes" | "comms" | "progress" | "lifecycle" | "requests" | "overrides" | "assets" | "review">>({});
+  const [adminSubTabs, setAdminSubTabs] = useState<Record<string, "journey" | "proposal" | "checklist" | "deliverables" | "notes" | "comms" | "progress" | "lifecycle" | "requests" | "overrides" | "assets" | "review">>({});
   const [isEmergencyMode, setIsEmergencyMode] = useState<boolean>(() => safeLocalStorage.getItem("fuser_emergency_mode") === "true");
   const [proposalEdits, setProposalEdits] = useState<Record<string, string>>({});
   const [proposalLoading, setProposalLoading] = useState<Record<string, boolean>>({});
@@ -801,11 +804,18 @@ export const MissionControl: React.FC = () => {
             Projects
           </Button>
           <Button
+            variant={activeTab === "money" ? "primary" : "quiet"}
+            size="sm"
+            onClick={() => setActiveTab("money")}
+          >
+            Money
+          </Button>
+          <Button
             variant={activeTab === "crm" ? "primary" : "quiet"}
             size="sm"
             onClick={() => setActiveTab("crm")}
           >
-            Money
+            Marketing / CRM
           </Button>
           <Button
             variant={activeTab === "hosting" ? "primary" : "quiet"}
@@ -819,7 +829,7 @@ export const MissionControl: React.FC = () => {
             size="sm"
             onClick={() => setActiveTab("coupons")}
           >
-            Marketing
+            Coupons
           </Button>
           <Button
             variant={activeTab === "users" ? "primary" : "quiet"}
@@ -1040,7 +1050,7 @@ export const MissionControl: React.FC = () => {
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5">
                   <button
-                    onClick={() => setActiveTab("crm")}
+                    onClick={() => setActiveTab("money")}
                     className="w-full py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222] transition-colors cursor-pointer"
                   >
                     Open Revenue Ledger →
@@ -1212,12 +1222,7 @@ export const MissionControl: React.FC = () => {
             <div className="grid gap-4">
               {filtered.map((proj) => {
                 const isExpanded = activeProjectId === proj.id;
-                const formattedDate = new Date(proj.timestamp).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit"
-                });
+                const formattedDate = formatDateTimeSafe(proj.timestamp);
 
                 return (
                   <div
@@ -1807,17 +1812,18 @@ export const MissionControl: React.FC = () => {
                                 </p>
                               </div>
                               <div className="flex flex-wrap gap-1.5 bg-neutral-950 p-1 rounded-lg border border-neutral-900">
-                                {([ "proposal", "checklist", "deliverables", "notes", "comms", "lifecycle", "requests", "overrides" ] as const).map((tab) => (
+                                {([ "journey", "proposal", "checklist", "deliverables", "notes", "comms", "lifecycle", "requests", "overrides" ] as const).map((tab) => (
                                   <button
                                     key={tab}
                                     onClick={() => setAdminSubTabs(prev => ({ ...prev, [proj.id]: tab }))}
                                     className={`px-2.5 py-1 rounded-md text-[9.5px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
-                                      (adminSubTabs[proj.id] || "proposal") === tab
-                                        ? "bg-amber-500/10 text-amber-400 font-bold border border-amber-500/20"
+                                      (adminSubTabs[proj.id] || "journey") === tab
+                                        ? "bg-white/10 text-white font-bold border border-white/20"
                                         : "text-zinc-400 hover:text-white border border-transparent"
                                     }`}
                                   >
-                                    {tab === "proposal" ? "📑 Proposal" :
+                                    {tab === "journey" ? "🗺️ Journey" :
+                                     tab === "proposal" ? "📑 Proposal" :
                                      tab === "checklist" ? "📋 Checklist" :
                                      tab === "deliverables" ? "🔒 Vault" :
                                      tab === "notes" ? "📝 Private Notes" :
@@ -1829,8 +1835,13 @@ export const MissionControl: React.FC = () => {
                               </div>
                             </div>
 
+                            {/* TAB CONTENT: CUSTOMER JOURNEY TIMELINE */}
+                            {(adminSubTabs[proj.id] || "journey") === "journey" && (
+                              <ProjectJourneyTimeline project={proj} />
+                            )}
+
                             {/* TAB CONTENT: PROPOSAL */}
-                            {(adminSubTabs[proj.id] || "proposal") === "proposal" && (
+                            {adminSubTabs[proj.id] === "proposal" && (
                               <div className="space-y-4 font-sans">
                                 {proposalLoading[proj.id] ? (
                                   <div className="flex flex-col items-center justify-center py-8 space-y-2">
@@ -3163,8 +3174,24 @@ export const MissionControl: React.FC = () => {
           </div>
         )}
 
+        {activeTab === "money" && (
+          <MoneyRevenueLedger 
+            projects={projects} 
+            onSelectProject={(id) => {
+              setActiveTab("projects");
+              setActiveProjectId(id);
+            }}
+          />
+        )}
+
         {activeTab === "crm" && (
-          <BusinessIntelligenceCRM projects={projects} />
+          <BusinessIntelligenceCRM 
+            projects={projects} 
+            onSelectProject={(id) => {
+              setActiveTab("projects");
+              setActiveProjectId(id);
+            }}
+          />
         )}
 
         {activeTab === "hosting" && (
