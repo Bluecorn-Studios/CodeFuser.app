@@ -19,7 +19,11 @@ interface Coupon {
   createdAt: string;
 }
 
-export function CouponsAdminManager() {
+interface CouponsAdminManagerProps {
+  getAdminHeaders?: (extra?: Record<string, string>) => Record<string, string>;
+}
+
+export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdminHeaders }) => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +45,23 @@ export function CouponsAdminManager() {
   const [customerEligibility, setCustomerEligibility] = useState<"all" | "new_only">("new_only");
   const [status, setStatus] = useState<"ACTIVE" | "PAUSED" | "ARCHIVED">("ACTIVE");
 
+  const getHeaders = (extra: Record<string, string> = {}) => {
+    if (getAdminHeaders) {
+      return getAdminHeaders(extra);
+    }
+    return {
+      "Authorization": `Bearer ${localStorage.getItem("fuser_token") || sessionStorage.getItem("fuser_token") || ""}`,
+      "x-admin-password": sessionStorage.getItem("fuser_admin_password") || "",
+      ...extra
+    };
+  };
+
   const fetchCoupons = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/coupons");
+      const res = await fetch("/api/admin/coupons", {
+        headers: getHeaders()
+      });
       const data = await res.json();
       if (data.success) {
         setCoupons(data.coupons || []);
@@ -129,13 +146,13 @@ export function CouponsAdminManager() {
       if (editingCoupon) {
         res = await fetch(`/api/admin/coupons/${editingCoupon.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: getHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(payload)
         });
       } else {
         res = await fetch("/api/admin/coupons", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(payload)
         });
       }
@@ -162,7 +179,10 @@ export function CouponsAdminManager() {
 
   const handleToggleStatus = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/coupons/${id}/toggle`, { method: "POST" });
+      const res = await fetch(`/api/admin/coupons/${id}/toggle`, {
+        method: "POST",
+        headers: getHeaders()
+      });
       const data = await res.json();
       if (data.success) {
         fetchCoupons();
@@ -183,7 +203,10 @@ export function CouponsAdminManager() {
       onConfirm: async () => {
         setConfirmModalState(null);
         try {
-          const res = await fetch(`/api/admin/coupons/${id}/archive`, { method: "POST" });
+          const res = await fetch(`/api/admin/coupons/${id}/archive`, {
+            method: "POST",
+            headers: getHeaders()
+          });
           const data = await res.json();
           if (data.success) {
             fetchCoupons();
@@ -206,7 +229,10 @@ export function CouponsAdminManager() {
       onConfirm: async () => {
         setConfirmModalState(null);
         try {
-          const res = await fetch(`/api/admin/coupons/${id}`, { method: "DELETE" });
+          const res = await fetch(`/api/admin/coupons/${id}`, {
+            method: "DELETE",
+            headers: getHeaders()
+          });
           const data = await res.json();
           if (data.success) {
             fetchCoupons();
