@@ -33,6 +33,10 @@ import { ProjectRecord } from "../components/dashboard/dashboardTypes";
 
 import { BusinessIntelligenceCRM } from "../components/BusinessIntelligenceCRM";
 import { HostingAdminManager } from "../components/admin/HostingAdminManager";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { Card } from "../components/ui/Card";
+import { Badge } from "../components/ui/Badge";
 import { CouponsAdminManager } from "../components/admin/CouponsAdminManager";
 import { getCanonicalStageIndex, CANONICAL_MILESTONES, getCanonicalStatusLabel } from "../utils/milestones";
 
@@ -474,11 +478,8 @@ export const MissionControl: React.FC = () => {
             className="mt-8 space-y-4"
           >
             <div>
-              <label htmlFor="admin-passcode" className="block text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80 mb-2">
-                ACCESS KEY
-              </label>
               <div className="relative">
-                <input
+                <Input
                   id="admin-passcode"
                   type={showAdminPassword ? "text" : "password"}
                   autoComplete="current-password"
@@ -486,17 +487,15 @@ export const MissionControl: React.FC = () => {
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   placeholder="••••••••••••••••"
-                  className={`w-full bg-[#050505] border rounded-xl px-4 py-3 pr-10 text-sm text-foreground focus:outline-none focus:ring-1 transition-all font-mono placeholder-muted-foreground/20 h-11 ${
-                    loginError 
-                      ? 'border-red-500/40 focus:ring-red-500/30' 
-                      : 'border-border/80 focus:ring-amber-500/40'
-                  }`}
+                  label="ACCESS KEY"
+                  error={loginError || undefined}
+                  className="pr-10"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={() => setShowAdminPassword(!showAdminPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-amber-400 transition-colors focus:outline-none cursor-pointer"
+                  className="absolute right-3.5 top-[38px] text-muted-foreground hover:text-white transition-colors focus:outline-none cursor-pointer"
                   tabIndex={-1}
                   aria-label={showAdminPassword ? "Hide password" : "Show password"}
                 >
@@ -518,12 +517,14 @@ export const MissionControl: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            <button
+            <Button
               type="submit"
-              className="w-full btn-pressure h-11 bg-white text-black font-bold text-xs uppercase tracking-wider rounded-xl hover:-translate-y-0.5 transition-transform flex items-center justify-center gap-2 pointer-events-auto cursor-pointer"
+              variant="primary"
+              size="lg"
+              className="w-full"
             >
               Sign In to Dashboard <ArrowRight size={13} />
-            </button>
+            </Button>
           </form>
 
           {/* Escape path */}
@@ -590,7 +591,9 @@ export const MissionControl: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5 items-center">
-            <button
+            <Button
+              variant={isEmergencyMode ? "important" : "secondary"}
+              size="sm"
               onClick={() => {
                 const nextState = !isEmergencyMode;
                 setIsEmergencyMode(nextState);
@@ -600,92 +603,73 @@ export const MissionControl: React.FC = () => {
                   : "✅ Emergency Mode Deactivated: Normal operations restored."
                 );
               }}
-              className={`px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
-                isEmergencyMode
-                  ? "bg-amber-500 text-black border-amber-400 font-extrabold animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.5)]"
-                  : "bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-amber-500/40"
-              }`}
+              className={isEmergencyMode ? "animate-pulse" : ""}
             >
               🚨 {isEmergencyMode ? "EMERGENCY MODE ACTIVE" : "EMERGENCY MODE"}
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={fetchProjects}
-              className="px-4 py-2 bg-neutral-950 hover:bg-neutral-900 border border-border/40 text-xs font-semibold rounded-xl text-white flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
             >
               <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} /> Refresh Grid
-            </button>
-            <button
+            </Button>
+
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => navigate("/start-project")}
-              className="px-4 py-2 bg-white text-black hover:bg-neutral-100 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
             >
               Submit Test <ArrowRight size={12} />
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Tab Selection Segments */}
         <div className="flex flex-wrap gap-2 mb-8 bg-neutral-950 p-1 rounded-xl border border-neutral-800 w-fit">
-          <button
+          <Button
+            variant={activeTab === "overview" ? "primary" : "quiet"}
+            size="sm"
             onClick={() => setActiveTab("overview")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "overview"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
           >
             Command Center
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={activeTab === "projects" ? "primary" : "quiet"}
+            size="sm"
             onClick={() => setActiveTab("projects")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "projects"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
           >
             Projects
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={activeTab === "crm" ? "primary" : "quiet"}
+            size="sm"
             onClick={() => setActiveTab("crm")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "crm"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
           >
             Money
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={activeTab === "hosting" ? "primary" : "quiet"}
+            size="sm"
             onClick={() => setActiveTab("hosting")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "hosting"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
           >
             Operations
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={activeTab === "coupons" ? "primary" : "quiet"}
+            size="sm"
             onClick={() => setActiveTab("coupons")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "coupons"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
           >
             Marketing
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={activeTab === "users" ? "primary" : "quiet"}
+            size="sm"
             onClick={() => setActiveTab("users")}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
-              activeTab === "users"
-                ? "bg-white text-black font-bold"
-                : "text-neutral-400 hover:text-white"
-            }`}
           >
             System
-          </button>
+          </Button>
         </div>
 
         {/* EMERGENCY MODE BANNER */}

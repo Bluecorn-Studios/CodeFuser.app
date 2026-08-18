@@ -43,6 +43,10 @@ import {
 } from 'lucide-react';
 import { useAppRouter, b as getMailtoLink, w as getWhatsAppLink, cn } from '../components/Reveal';
 import { PagePath, PricingPlan } from '../types';
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { Card } from "../components/ui/Card";
+import { Badge } from "../components/ui/Badge";
 import { pricingPlans } from '../components/Pricing';
 import { getAuthUser, getAuthToken, setAuthSession, clearAuthSession } from '../utils/auth';
 import { getInitialPlusPackagePrice } from '../utils/pricingUtils';

@@ -43,6 +43,10 @@ import { NeedHelpTab } from "../components/dashboard/NeedHelpTab";
 import { OnboardingAssetModal, AssetStepKey } from "../components/dashboard/OnboardingAssetModal";
 import { HostingSetupModal } from "../components/dashboard/HostingSetupModal";
 import { AccessDenied } from "../components/auth/AccessDenied";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { Card } from "../components/ui/Card";
+import { Badge } from "../components/ui/Badge";
 
 interface ProjectRecord {
   id: string;
@@ -1410,20 +1414,24 @@ export default function CustomerDashboard() {
                 </div>
 
                 <div className="pt-4 flex gap-3">
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="md"
                     onClick={() => setActiveWorkspaceModal(null)}
-                    className="flex-1 py-3 bg-neutral-900 hover:bg-neutral-850 text-neutral-400 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-neutral-850/60"
+                    className="flex-1"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
+                    variant="primary"
+                    size="md"
                     disabled={isSavingSettings}
-                    className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-[0_4px_12px_rgba(245,158,11,0.2)]"
+                    className="flex-1"
                   >
                     {isSavingSettings ? "Saving Changes..." : "Save Workspace"}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </motion.div>
