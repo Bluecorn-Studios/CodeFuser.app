@@ -499,7 +499,11 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setName(val);
+                    setCode(val.replace(/[^a-zA-Z0-9]/g, "").toUpperCase());
+                  }}
                   placeholder="e.g. Founding 50"
                   className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
                   required
