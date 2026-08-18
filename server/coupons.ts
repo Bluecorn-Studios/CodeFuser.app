@@ -95,6 +95,24 @@ export function getCouponsStore(): CouponsStore {
         afterLimitBehavior: "stop",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
+      },
+      {
+        id: "coupon_full_waiver_1",
+        name: "Full Platform Waiver",
+        code: "FULLWAIVER",
+        discountType: "free_build",
+        discountValue: 100,
+        eligiblePlans: ["ignite", "starter", "fusion", "growth", "catalyst", "dominance"],
+        hostingRule: "waive_hosting",
+        freeHostingPromoRule: "apply",
+        redemptionLimit: 10,
+        maxUsesPerCustomer: 1,
+        customerEligibility: "new_only",
+        status: "ACTIVE",
+        currentRedemptions: 0,
+        afterLimitBehavior: "stop",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
     ],
     redemptions: []
@@ -226,8 +244,19 @@ export function validateAndCalculateCoupon(
   code: string,
   planId: string,
   customerEmail: string,
-  baseWebsitePrice: number
-): { valid: boolean; error?: string; discountAmount?: number; finalWebsitePrice?: number; coupon?: CouponRecord } {
+  baseWebsitePrice: number,
+  baseHostingPrice: number = 1000
+): {
+  valid: boolean;
+  error?: string;
+  discountAmount?: number;
+  finalWebsitePrice?: number;
+  hostingWaived?: boolean;
+  hostingDiscountAmount?: number;
+  finalHostingPrice?: number;
+  finalTotal?: number;
+  coupon?: CouponRecord;
+} {
   const coupon = getCouponByCode(code);
   if (!coupon) {
     return { valid: false, error: "We couldn't find that offer." };
@@ -289,10 +318,20 @@ export function validateAndCalculateCoupon(
   discountAmount = Math.max(0, Math.min(baseWebsitePrice, discountAmount));
   const finalWebsitePrice = Math.max(0, baseWebsitePrice - discountAmount);
 
+  // Calculate hosting waiver
+  const hostingWaived = coupon.hostingRule === "waive_hosting";
+  const hostingDiscountAmount = hostingWaived ? baseHostingPrice : 0;
+  const finalHostingPrice = hostingWaived ? 0 : baseHostingPrice;
+  const finalTotal = finalWebsitePrice + finalHostingPrice;
+
   return {
     valid: true,
     discountAmount,
     finalWebsitePrice,
+    hostingWaived,
+    hostingDiscountAmount,
+    finalHostingPrice,
+    finalTotal,
     coupon
   };
 }

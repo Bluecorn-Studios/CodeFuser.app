@@ -892,14 +892,26 @@ export const StartProjectPage: React.FC = () => {
   };
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentErrorMsg, setPaymentErrorMsg] = useState<string | null>(null);
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const finalSelCardForPayment = (recommendationCards)
     ? (recommendationCards.find(c => c.id === selectedCardId) || { name: 'Fusion Baseline', price: '₹19,999' })
     : { name: 'Fusion Baseline', price: '₹19,999' };
   const numericPriceForPayment = parseInt((finalSelCardForPayment.price || "").replace(/[^\d]/g, ""), 10) || 19999;
-  const partPayment = Math.round(numericPriceForPayment * 0.5);
-  const discountVal = Math.round(numericPriceForPayment * 0.1);
-  const upfrontTotal = Math.round(numericPriceForPayment * 0.9);
+  
+  const baseHostingPrice = 1000;
+  const websiteDiscount = appliedCoupon ? (appliedCoupon.discountAmount || 0) : 0;
+  const finalWebsitePrice = appliedCoupon ? (appliedCoupon.finalWebsitePrice ?? Math.max(0, numericPriceForPayment - websiteDiscount)) : numericPriceForPayment;
+  const hostingWaived = appliedCoupon ? Boolean(appliedCoupon.hostingWaived) : false;
+  const finalHostingPrice = hostingWaived ? 0 : baseHostingPrice;
+  const finalTotal = finalWebsitePrice + finalHostingPrice;
+
+  const partPayment = Math.round(finalWebsitePrice * 0.5) + finalHostingPrice;
+  const discountVal = appliedCoupon ? 0 : Math.round(finalWebsitePrice * 0.1);
+  const upfrontTotal = appliedCoupon ? finalWebsitePrice + finalHostingPrice : Math.round(finalWebsitePrice * 0.9) + finalHostingPrice;
 
   useEffect(() => {
     setMaxStep(prev => Math.max(prev, step));
@@ -4028,6 +4040,90 @@ That's enough. We'll help with the rest.`}
                 </div>
               </div>
 
+              {/* Coupon / Offer Code Section */}
+              <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 space-y-3 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono">
+                    Have an Offer or Waiver Code?
+                  </span>
+                  {appliedCoupon && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAppliedCoupon(null);
+                        setCouponCodeInput("");
+                      }}
+                      className="text-xs text-red-400 hover:text-red-300 underline cursor-pointer"
+                    >
+                      Remove Offer
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value)}
+                    placeholder="e.g. FULLWAIVER or FOUNDING50"
+                    className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-white uppercase tracking-wider font-mono focus:outline-none focus:border-amber-500"
+                    disabled={couponLoading || !!appliedCoupon}
+                  />
+                  {!appliedCoupon ? (
+                    <button
+                      type="button"
+                      disabled={couponLoading || !couponCodeInput.trim()}
+                      onClick={async () => {
+                        setCouponLoading(true);
+                        setCouponError(null);
+                        try {
+                          const res = await fetch("/api/coupons/validate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              code: couponCodeInput.trim(),
+                              planId: finalSelCardForPayment.name,
+                              customerEmail: formData.email,
+                              baseWebsitePrice: numericPriceForPayment
+                            })
+                          });
+                          const data = await res.json();
+                          if (data.valid) {
+                            setAppliedCoupon(data);
+                          } else {
+                            setCouponError(data.error || "Invalid offer code.");
+                          }
+                        } catch (err) {
+                          setCouponError("Failed to validate offer code.");
+                        } finally {
+                          setCouponLoading(false);
+                        }
+                      }}
+                      className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {couponLoading ? "Checking..." : "Apply"}
+                    </button>
+                  ) : (
+                    <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs rounded-xl flex items-center gap-1.5">
+                      <Check size={14} /> Applied
+                    </div>
+                  )}
+                </div>
+                {couponError && (
+                  <p className="text-xs text-red-400 font-medium">{couponError}</p>
+                )}
+                {appliedCoupon && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <ShieldCheck size={14} /> {appliedCoupon.name} Applied Successfully!
+                    </p>
+                    <p className="text-[11px] opacity-90">{appliedCoupon.description}</p>
+                    {appliedCoupon.hostingWaived && (
+                      <p className="text-[11px] font-bold text-emerald-400">✓ Monthly Hosting Fee Fully Waived (₹1,000 → ₹0)</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Payment Options */}
               <div className="space-y-2.5 text-left pt-1">
                 <h3 className="text-sm font-bold text-white tracking-tight">
@@ -4178,8 +4274,8 @@ That's enough. We'll help with the rest.`}
                     }
 
                     // Attempt quote lock on server (non-blocking)
-                    const finalPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : numericPriceForPayment;
-                    const discount = selectedPaymentTerm === 'upfront' ? discountVal : 0;
+                    const finalPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
+                    const discount = appliedCoupon ? websiteDiscount : (selectedPaymentTerm === 'upfront' ? discountVal : 0);
                     try {
                       await fetch(`/api/projects/${projId}/quote`, {
                         method: "POST",
@@ -4192,7 +4288,8 @@ That's enough. We'll help with the rest.`}
                           price: finalPrice,
                           discount: discount,
                           features: finalSelCardForPayment.features || [],
-                          summary: aiSummary?.recommendationReason || "Custom engineered web application."
+                          summary: aiSummary?.recommendationReason || "Custom engineered web application.",
+                          couponCode: appliedCoupon?.code || undefined
                         })
                       });
                     } catch (err: any) {
@@ -4233,6 +4330,13 @@ That's enough. We'll help with the rest.`}
                       const errMsg = orderData?.error || "Payment order creation failed.";
                       setPaymentErrorMsg(errMsg);
                       setPaymentLoading(false);
+                      return;
+                    }
+
+                    if (orderData.zeroAmount) {
+                      setPaymentLoading(false);
+                      setOnboardingStage('schedule');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                       return;
                     }
 

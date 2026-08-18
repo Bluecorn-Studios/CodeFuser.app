@@ -2522,27 +2522,27 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
       const quoteDiscount = Number(extra.quote.discount || 0);
       const couponCode = extra.quote.couponCode;
 
+      let finalWebsitePrice = totalPrice;
       if (couponCode) {
         const basePrice = quoteDiscount > 0 ? (totalPrice + quoteDiscount) : totalPrice;
         const validation = validateAndCalculateCoupon(couponCode, planName, project.email || "", basePrice);
         if (!validation.valid) {
           return res.status(400).json({ success: false, error: `Coupon revalidation failed at order creation: ${validation.error}` });
         }
-        totalPrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : totalPrice;
+        finalWebsitePrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : totalPrice;
       }
 
       if (term === "upfront") {
         if (quoteDiscount > 0 || couponCode) {
           // If discount or coupon was applied when locking quote
-          amountInRupees = Math.round(totalPrice);
+          amountInRupees = Math.round(finalWebsitePrice);
         } else {
           // If price stored is the base price (e.g., 9999), apply 10% upfront discount
-          amountInRupees = Math.round(totalPrice * 0.9);
+          amountInRupees = Math.round(finalWebsitePrice * 0.9);
         }
       } else {
-        // Milestone term (50% of base price)
-        const basePrice = quoteDiscount > 0 ? (totalPrice + quoteDiscount) : totalPrice;
-        amountInRupees = Math.round(basePrice * 0.5);
+        // Milestone term (50% of final website price after coupon - never calculate 50% before coupon!)
+        amountInRupees = Math.round(finalWebsitePrice * 0.5);
       }
     } else {
       // Fallback manual price calculation if quote is missing
@@ -2566,6 +2566,31 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
       (extra?.quote?.packageName && extra.quote.packageName.toLowerCase().includes("ignite"));
 
     const amountInPaise = amountInRupees * 100;
+
+    // If final amount is ₹0 (e.g. Full Waiver), complete order successfully without hitting Razorpay
+    if (amountInRupees === 0) {
+      const waiverOrderId = "waiver_order_" + Date.now();
+      const waiverPaymentId = "waiver_pay_" + Date.now();
+      const updatedProject = await processPaymentSuccessCore({
+        id,
+        req,
+        project,
+        term: term || "upfront",
+        razorpay_order_id: waiverOrderId,
+        razorpay_payment_id: waiverPaymentId,
+        provider: "coupon_waiver",
+        isSimulated: false
+      });
+
+      if (res.headersSent || req.timedOut) return;
+
+      return res.json({
+        success: true,
+        zeroAmount: true,
+        message: "Full waiver applied. Order completed successfully with ₹0 payable.",
+        project: updatedProject
+      });
+    }
 
     // Initialize lazy client and generate order
     const rzp = getRazorpayInstance();
@@ -3720,6 +3745,10 @@ app.post("/api/coupons/validate", async (req: any, res) => {
       discountAmount: result.discountAmount,
       finalWebsitePrice: result.finalWebsitePrice,
       hostingRule: result.coupon?.hostingRule,
+      hostingWaived: result.hostingWaived,
+      hostingDiscountAmount: result.hostingDiscountAmount,
+      finalHostingPrice: result.finalHostingPrice,
+      finalTotal: result.finalTotal,
       freeHostingPromoRule: result.coupon?.freeHostingPromoRule,
       description: result.coupon?.discountType === "free_build" ? "100% OFF website build" : result.coupon?.discountType === "percentage" ? `${result.coupon.discountValue}% OFF website build` : `₹${result.coupon?.discountValue} OFF website build`
     });
