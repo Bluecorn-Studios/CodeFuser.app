@@ -32,7 +32,6 @@ import { supabase } from "../lib/supabase";
 import { safeLocalStorage } from "../utils/safeStorage";
 import { useProject } from "../context/ProjectContext";
 import { apiClient } from "../lib/apiClient";
-import { PaymentSimulationPanel } from "../components/PaymentSimulationPanel";
 import { ClientHeader, TabType } from "../components/dashboard/ClientHeader";
 import { OverviewTab } from "../components/dashboard/OverviewTab";
 import { MyProjectTab } from "../components/dashboard/MyProjectTab";
@@ -483,31 +482,6 @@ export default function CustomerDashboard() {
         }
       } catch (err) {
         console.warn("Could not check payment verification configuration:", err);
-      }
-
-      if (!isVerificationOn) {
-        // AUTOMATIC SUCCESS SIMULATION MODE: Skip Razorpay checkout popup completely!
-        const simData = await apiClient<{ success: boolean; project?: ProjectRecord; error?: string }>(
-          `/api/projects/${activeProjectId}/simulate-payment`,
-          {
-            method: "POST",
-            body: JSON.stringify({ term: "final", action: "success" })
-          }
-        );
-
-        if (simData && simData.success) {
-          if (simData.project) {
-            setProject(simData.project);
-            safeLocalStorage.setItem("codefuser_current_project", JSON.stringify(simData.project));
-          }
-          await refreshProject();
-          setSuccessIndicator("Final payment completed successfully! Your website payment is fully settled.");
-          setTimeout(() => setSuccessIndicator(null), 5000);
-        } else {
-          throw new Error("Payment simulation failed: " + (simData?.error || "Unknown error"));
-        }
-        setPaymentLoading(false);
-        return;
       }
 
       // LIVE RAZORPAY MODE

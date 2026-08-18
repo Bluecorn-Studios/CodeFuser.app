@@ -52,7 +52,6 @@ import { getAuthUser, getAuthToken, setAuthSession, clearAuthSession } from '../
 import { getInitialPlusPackagePrice } from '../utils/pricingUtils';
 import { supabase } from '../lib/supabase';
 import { safeLocalStorage } from '../utils/safeStorage';
-import { PaymentSimulationPanel } from '../components/PaymentSimulationPanel';
 import { normalizeProjectFormData } from '../lib/schemaNormalizer';
 import { useProject } from '../context/ProjectContext';
 
@@ -879,31 +878,6 @@ export const StartProjectPage: React.FC = () => {
         console.warn("Could not check payment verification config:", err);
       }
 
-      if (!isVerificationOn && projId) {
-        setAuthSuccess("Workspace registered! Simulating automatic payment completion...");
-        try {
-          const simRes = await fetch(`/api/projects/${projId}/simulate-payment`, {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${sessionToken || getAuthToken() || ""}`
-            },
-            body: JSON.stringify({ term: selectedPaymentTerm || "milestone", action: "success" })
-          });
-          const simData = await simRes.json();
-          if (simData.success) {
-            setAuthSuccess("Registration & Simulated Payment Complete! Redirecting to Scheduling...");
-            setTimeout(() => {
-              setOnboardingStage('schedule');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }, 1000);
-            return;
-          }
-        } catch (simErr) {
-          console.warn("Automatic post-registration simulation notice:", simErr);
-        }
-      }
-
       setAuthSuccess(authMode === 'signup' ? "Client Workspace created successfully!" : "Logged in successfully!");
       setTimeout(() => {
         setOnboardingStage('payment');
@@ -918,7 +892,6 @@ export const StartProjectPage: React.FC = () => {
   };
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentErrorMsg, setPaymentErrorMsg] = useState<string | null>(null);
-  const [showSandboxFallback, setShowSandboxFallback] = useState(false);
 
   const finalSelCardForPayment = (recommendationCards)
     ? (recommendationCards.find(c => c.id === selectedCardId) || { name: 'Fusion Baseline', price: '₹19,999' })
@@ -4190,7 +4163,6 @@ That's enough. We'll help with the rest.`}
 
                     setPaymentLoading(true);
                     setPaymentErrorMsg(null);
-                    setShowSandboxFallback(false);
 
                     // 1. Check RAZORPAY_VERIFICATION status from server
                     let isVerificationOn = verificationEnabled;
@@ -4225,32 +4197,6 @@ That's enough. We'll help with the rest.`}
                       });
                     } catch (err: any) {
                       console.warn("Quotation lock notice (non-fatal):", err);
-                    }
-
-                    if (!isVerificationOn) {
-                      // RAZORPAY_VERIFICATION=false: Automatic Payment Simulation Engine
-                      try {
-                        const simRes = await fetch(`/api/projects/${projId}/simulate-payment`, {
-                          method: "POST",
-                          headers: { 
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${getAuthToken() || ""}`
-                          },
-                          body: JSON.stringify({ term: selectedPaymentTerm, action: "success" })
-                        });
-                        const simData = await simRes.json();
-                        if (simData.success) {
-                          setOnboardingStage('schedule');
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        } else {
-                          setPaymentErrorMsg("Automatic payment simulation failed: " + (simData.error || "Unknown error"));
-                        }
-                      } catch (err: any) {
-                        setPaymentErrorMsg("Failed to process payment simulation: " + (err.message || "Network error"));
-                      } finally {
-                        setPaymentLoading(false);
-                      }
-                      return;
                     }
 
                     // 3. Load Razorpay Checkout Script (For Live Razorpay Mode)
@@ -4367,17 +4313,12 @@ That's enough. We'll help with the rest.`}
                       setPaymentLoading(false);
                     }
                   }}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-amber-400 text-black hover:bg-amber-300 font-bold text-xs uppercase tracking-wider px-8 py-3.5 rounded-full shadow-lg active:scale-95 transition-all cursor-pointer leading-none disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-black hover:bg-neutral-200 font-extrabold text-xs uppercase tracking-wider px-8 py-3.5 rounded-full shadow-lg active:scale-95 transition-all cursor-pointer leading-none disabled:opacity-50"
                 >
                   {paymentLoading ? (
                     <>
                       <div className="h-3.5 w-3.5 rounded-full border-2 border-t-transparent border-black animate-spin" />
-                      <span>{!verificationEnabled ? 'Simulating Payment...' : 'Connecting...'}</span>
-                    </>
-                  ) : !verificationEnabled ? (
-                    <>
-                      <Zap className="w-4 h-4 text-black fill-black shrink-0" />
-                      <span>Simulate Payment (₹{(selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment).toLocaleString('en-IN')})</span>
+                      <span>Connecting...</span>
                     </>
                   ) : (
                     <>
@@ -4387,24 +4328,6 @@ That's enough. We'll help with the rest.`}
                   )}
                 </button>
               </div>
-
-              {/* Dev Simulation Panel */}
-              <PaymentSimulationPanel
-                projectId={createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || ''}
-                term={selectedPaymentTerm}
-                getAuthToken={getAuthToken}
-                onSuccess={(updatedProject) => {
-                  setOnboardingStage('schedule');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                onStatusChange={(status, msg) => {
-                  if (status === 'failed' || status === 'cancelled') {
-                    setPaymentErrorMsg(msg);
-                  } else {
-                    setPaymentErrorMsg(null);
-                  }
-                }}
-              />
             </motion.div>
           ) : onboardingStage === 'schedule' ? (
             <motion.div
