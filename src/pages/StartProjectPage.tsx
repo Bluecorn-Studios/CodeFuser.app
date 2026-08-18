@@ -450,10 +450,19 @@ function getDraftAgeDays(dateStr?: string): number {
 // Synchronous draft loader to ensure zero step reset/flash upon browser refresh
 const getInitialDraft = () => {
   try {
+    // Check URL parameters for preview and step/stage overrides
+    if (typeof window !== 'undefined' && window.location) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPreview = urlParams.get('preview') === 'true' || urlParams.get('admin_preview') === 'true';
+      if (isPreview) {
+        // Admin Preview Mode: Start completely fresh without loading previous customer draft
+        return null;
+      }
+    }
+
     const raw = safeLocalStorage.getItem("codefuser_start_project_draft");
     const parsed = raw ? JSON.parse(raw) : null;
     
-    // Check URL parameters for step/stage overrides
     let urlStep: number | null = null;
     let urlStage: string | null = null;
     if (typeof window !== 'undefined' && window.location) {
@@ -493,6 +502,15 @@ export const StartProjectPage: React.FC = () => {
     }));
   }, []);
 
+  // Detect if opened in isolated Admin Customer Preview mode
+  const isAdminPreview = React.useMemo(() => {
+    if (typeof window !== 'undefined' && window.location) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('preview') === 'true' || urlParams.get('admin_preview') === 'true';
+    }
+    return false;
+  }, []);
+
   // Synchronously initialize all navigation & form states from preserved local storage & URL
   const initialDraft = React.useMemo(() => getInitialDraft(), []);
 
@@ -526,6 +544,7 @@ export const StartProjectPage: React.FC = () => {
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(() => {
+    if (isAdminPreview) return null;
     return initialDraft?.projectId || safeLocalStorage.getItem('fuser_client_project_id') || null;
   });
 
@@ -639,7 +658,7 @@ export const StartProjectPage: React.FC = () => {
 
   // Form State
   const [formData, setFormData] = useState<StartProjectData>(() => {
-    const authUser = getAuthUser();
+    const authUser = !isAdminPreview ? getAuthUser() : null;
     const defaults: StartProjectData = {
       businessName: authUser?.user_metadata?.business_name || authUser?.businessName || '',
       ownerName: authUser?.user_metadata?.full_name || authUser?.fullName || '',
@@ -656,7 +675,7 @@ export const StartProjectPage: React.FC = () => {
       contentReady: 'no_help',
       aiPrompt: ''
     };
-    if (initialDraft && initialDraft.formData) {
+    if (!isAdminPreview && initialDraft && initialDraft.formData) {
       return { ...defaults, ...initialDraft.formData };
     }
     return defaults;
@@ -667,13 +686,14 @@ export const StartProjectPage: React.FC = () => {
 
   // International Country phone selection states
   const [selectedCountry, setSelectedCountry] = useState<Country>(() => {
-    if (initialDraft?.selectedCountryCode) {
+    if (!isAdminPreview && initialDraft?.selectedCountryCode) {
       const match = COUNTRIES.find(c => c.code === initialDraft.selectedCountryCode);
       if (match) return match;
     }
     return COUNTRIES[0];
   });
   const [localPhone, setLocalPhone] = useState<string>(() => {
+    if (isAdminPreview) return '';
     return initialDraft?.localPhone || '';
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -681,7 +701,7 @@ export const StartProjectPage: React.FC = () => {
 
   // Continuous Synchronous Local Persistence & URL state mirroring across all steps/pages
   useEffect(() => {
-    if (step1Notice) return;
+    if (step1Notice || isAdminPreview) return;
     try {
       const draftPayload = {
         step,
@@ -728,7 +748,8 @@ export const StartProjectPage: React.FC = () => {
     selectedPaymentTerm,
     createdProjectId,
     isSubmitted,
-    step1Notice
+    step1Notice,
+    isAdminPreview
   ]);
 
   useEffect(() => {
@@ -1727,6 +1748,31 @@ ${formData.ownerName}
         transition={{ duration: 1.6, ease: "easeInOut", delay: 0.2 }}
         className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent skew-x-12 pointer-events-none z-20"
       />
+
+      {/* Customer Preview Banner for Admin Testing */}
+      {isAdminPreview && (
+        <div 
+          id="customer-preview-banner"
+          className="relative z-30 max-w-2xl mx-auto mb-8 rounded-2xl bg-neutral-950/95 border border-white/20 p-3 sm:p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="px-2 py-0.5 rounded bg-white text-black font-mono font-black text-[10px] tracking-wider uppercase">
+              Customer Preview
+            </span>
+            <span className="text-zinc-400 font-sans text-xs">
+              Test mode — no real customer account
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/mission-control")}
+            className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-semibold transition-all duration-200 border border-white/10 flex items-center gap-1.5 cursor-pointer active:scale-95"
+            id="back-to-mission-control-btn"
+          >
+            ← Back to Mission Control
+          </button>
+        </div>
+      )}
 
       <div className={`relative z-10 mx-auto transition-all duration-500 ${onboardingStage !== 'form' && onboardingStage !== 'ai_loading' ? 'max-w-6xl' : 'max-w-2xl'}`}>
         <AnimatePresence mode="wait">

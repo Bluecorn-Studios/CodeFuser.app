@@ -770,9 +770,10 @@ export const MissionControl: React.FC = () => {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => navigate("/start-project")}
+              onClick={() => navigate("/start-project?preview=true")}
+              title="Test customer onboarding flow in a clean preview mode"
             >
-              Submit Test <ArrowRight size={12} />
+              Test Customer Flow <ArrowRight size={12} />
             </Button>
 
             <Button
@@ -1204,7 +1205,7 @@ export const MissionControl: React.FC = () => {
             </p>
             {!searchQuery && selectedPlanFilter === "all" && (
               <button
-                onClick={() => navigate("/start-project")}
+                onClick={() => navigate("/start-project?preview=true")}
                 className="mt-6 px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-xl hover:bg-neutral-800 text-xs font-bold text-white tracking-wide transition-all active:scale-95 cursor-pointer"
               >
                 Launch Onboarding Setup
