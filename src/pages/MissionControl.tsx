@@ -119,6 +119,46 @@ export const MissionControl: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [auditLoading, setAuditLoading] = useState<boolean>(false);
 
+  // Manual Payment Reconciliation modal state
+  const [manualPaymentModal, setManualPaymentModal] = useState<{
+    project: ProjectRecord;
+    targetStatus: "paid" | "partially_paid" | "unpaid";
+  } | null>(null);
+  const [manualPaymentReason, setManualPaymentReason] = useState("");
+  const [manualPaymentSubmitting, setManualPaymentSubmitting] = useState(false);
+
+  const handleConfirmManualPayment = async () => {
+    if (!manualPaymentModal || !manualPaymentReason.trim()) return;
+    setManualPaymentSubmitting(true);
+    try {
+      const res = await fetch(`/api/projects/${manualPaymentModal.project.id}/manual-payment-reconciliation`, {
+        method: "POST",
+        headers: getAdminHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          newStatus: manualPaymentModal.targetStatus,
+          reason: manualPaymentReason.trim()
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message || "Payment status reconciled successfully.");
+        setManualPaymentModal(null);
+        setManualPaymentReason("");
+        await fetchProjects();
+        if (activeProjectId) {
+          await fetchProjectExtra(activeProjectId);
+        }
+      } else {
+        alert(data.error || "Failed to reconcile payment status.");
+      }
+    } catch (err: any) {
+      console.error("Failed manual payment reconciliation:", err);
+      alert("Error communicating with server.");
+    } finally {
+      setManualPaymentSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     const user = getAuthUser();
     if (user && user.role) {
@@ -1515,7 +1555,7 @@ export const MissionControl: React.FC = () => {
                                 </p>
                               </div>
                               <div className="flex flex-wrap gap-1.5 bg-neutral-950 p-1 rounded-lg border border-neutral-900">
-                                {([ "proposal", "checklist", "deliverables", "notes", "comms", "progress", "lifecycle", "requests", "overrides" ] as const).map((tab) => (
+                                {([ "proposal", "checklist", "deliverables", "notes", "comms", "lifecycle", "requests", "overrides" ] as const).map((tab) => (
                                   <button
                                     key={tab}
                                     onClick={() => setAdminSubTabs(prev => ({ ...prev, [proj.id]: tab }))}
@@ -1530,7 +1570,6 @@ export const MissionControl: React.FC = () => {
                                      tab === "deliverables" ? "🔒 Vault" :
                                      tab === "notes" ? "📝 Private Notes" :
                                      tab === "comms" ? "💬 AI Comms" :
-                                     tab === "progress" ? "⏱️ Stage Progress" :
                                      tab === "lifecycle" ? "🚀 Launch & Health" :
                                      tab === "requests" ? "🛠️ Change Requests" : "⚙️ Founder Overrides"}
                                   </button>
@@ -2247,45 +2286,7 @@ export const MissionControl: React.FC = () => {
                               </div>
                             )}
 
-                            {/* TAB CONTENT: PROJECT PROGRESS CONTROLLER */}
-                            {(adminSubTabs[proj.id] === "progress") && (
-                              <div className="space-y-4 font-sans">
-                                <div className="bg-neutral-950 border border-neutral-900 rounded-xl p-4 space-y-3">
-                                  <div className="flex items-center justify-between border-b border-neutral-900 pb-2">
-                                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400">
-                                      ⏱️ Project Progress Controller
-                                    </span>
-                                    <span className="text-[8px] font-mono uppercase bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded text-amber-300">
-                                      Syncs to Client Portal Live
-                                    </span>
-                                  </div>
 
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {[
-                                      { pct: "10", title: "10% - Requirements Received", statusKey: "requirements" },
-                                      { pct: "25", title: "25% - Planning & Strategy", statusKey: "planning" },
-                                      { pct: "40", title: "40% - Design Started", statusKey: "design" },
-                                      { pct: "60", title: "60% - Development Started", statusKey: "development" },
-                                      { pct: "80", title: "80% - Review Phase", statusKey: "review" },
-                                      { pct: "100", title: "100% - Website Live", statusKey: "live" },
-                                    ].map((st) => (
-                                      <button
-                                        key={st.pct}
-                                        onClick={() => {
-                                          safeLocalStorage.setItem(`fuser_project_progress_${proj.id}`, st.pct);
-                                          handleModifyProject(proj.id, { status: st.statusKey });
-                                          alert(`Project status updated to: ${st.title}. Client portal synced!`);
-                                        }}
-                                        className="p-3 bg-black hover:bg-neutral-900 border border-neutral-850 hover:border-amber-500/40 rounded-xl text-left transition-all cursor-pointer space-y-1"
-                                      >
-                                        <div className="text-xs font-bold text-white uppercase">{st.title}</div>
-                                        <div className="text-[9px] font-mono text-neutral-400">Set stage to {st.pct}%</div>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
 
                             {/* TAB CONTENT: FOUNDER OVERRIDES - FULLY CONFIGURABLE */}
                             {(adminSubTabs[proj.id] === "overrides") && (
@@ -2550,54 +2551,39 @@ export const MissionControl: React.FC = () => {
                                   </div>
                                 </div>
 
-                                {/* Lifecycle Action Triggers */}
-                                <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-900 space-y-3">
-                                  <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Automated Lifecycle Actions</span>
-                                  <div className="flex flex-wrap gap-2.5">
-                                    <button
-                                      onClick={() => handleTriggerLaunch(proj.id)}
-                                      disabled={lifecycleActionLoading[proj.id]}
-                                      className="px-3.5 py-2 bg-white hover:bg-zinc-200 text-black text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-                                    >
-                                      <span>🚀 Start Launch Sequence</span>
-                                    </button>
+                                                                 {/* Lifecycle Action Triggers */}
+                                 <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-900 space-y-3">
+                                   <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Automated Lifecycle Actions</span>
+                                   <div className="flex flex-wrap gap-2.5">
+                                     <button
+                                       onClick={() => handleTriggerLaunch(proj.id)}
+                                       disabled={lifecycleActionLoading[proj.id]}
+                                       className="px-3.5 py-2 bg-white hover:bg-zinc-200 text-black text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                                     >
+                                       <span>🚀 Start Launch Sequence</span>
+                                     </button>
 
-                                    <button
-                                      onClick={() => handleVerifyLaunch(proj.id)}
-                                      disabled={lifecycleActionLoading[proj.id]}
-                                      className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-zinc-200 hover:text-white text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-                                    >
-                                      <span>🔍 Verify Launch Status</span>
-                                    </button>
+                                     <button
+                                       onClick={() => handleVerifyLaunch(proj.id)}
+                                       disabled={lifecycleActionLoading[proj.id]}
+                                       className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-zinc-200 hover:text-white text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                                     >
+                                       <span>🔍 Verify Launch Status</span>
+                                     </button>
 
-                                    <button
-                                      onClick={() => handleHealthCheck(proj.id)}
-                                      disabled={lifecycleActionLoading[proj.id]}
-                                      className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-zinc-200 hover:text-white text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-                                    >
-                                      <span>💓 Ping Health Check</span>
-                                    </button>
+                                     <button
+                                       onClick={() => handleHealthCheck(proj.id)}
+                                       disabled={lifecycleActionLoading[proj.id]}
+                                       className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-zinc-200 hover:text-white text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                                     >
+                                       <span>💓 Ping Health Check</span>
+                                     </button>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
 
-                                    <button
-                                      onClick={() => {
-                                        handleModifyProject(proj.id, { 
-                                          launchStatus: "LAUNCHED", 
-                                          websiteStatus: "ONLINE",
-                                          healthStatus: "HEALTHY",
-                                          status: "Project Completed"
-                                        });
-                                        alert("Switched project to 100% LIVE & ONLINE!");
-                                      }}
-                                      className="px-3.5 py-2 bg-emerald-500/20 border border-emerald-500/30 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all cursor-pointer"
-                                    >
-                                      <span>✓ Instant Mark LIVE</span>
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* TAB CONTENT: CHANGE REQUESTS */}
+                             {/* TAB CONTENT: CHANGE REQUESTS */}
                             {(adminSubTabs[proj.id] || "proposal") === "requests" && (
                               <div className="space-y-4 font-sans text-xs">
                                 <div className="flex justify-between items-center bg-neutral-950 p-3.5 rounded-xl border border-neutral-900">
@@ -2963,6 +2949,70 @@ export const MissionControl: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Manual Payment Reconciliation Modal */}
+      {manualPaymentModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider block">Manual Payment Reconciliation</span>
+              <h3 className="text-lg font-bold text-white tracking-tight">Change Payment Status</h3>
+              <p className="text-xs text-zinc-400 font-sans">
+                Project: <strong className="text-white">{manualPaymentModal.project.businessName}</strong>
+              </p>
+            </div>
+
+            <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-zinc-400">Current Status:</span>
+                <span className="text-white uppercase font-bold">{manualPaymentModal.project.paymentStatus || "unpaid"}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-zinc-400">Target Status:</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-white text-black">
+                  {manualPaymentModal.targetStatus}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-zinc-300 uppercase tracking-wider font-bold">
+                Reconciliation Reason <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={manualPaymentReason}
+                onChange={(e) => setManualPaymentReason(e.target.value)}
+                placeholder="Enter justification (e.g. Bank transfer reference #12345, Founder waiver approved)..."
+                rows={3}
+                className="w-full bg-black border border-neutral-800 rounded-xl p-3 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-all font-sans"
+              />
+              <p className="text-[10px] text-zinc-500 font-mono">
+                Required (minimum 3 characters). This reason will be recorded immutably in the audit trail.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-900">
+              <button
+                onClick={() => {
+                  setManualPaymentModal(null);
+                  setManualPaymentReason("");
+                }}
+                disabled={manualPaymentSubmitting}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-zinc-300 text-xs font-mono uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmManualPayment}
+                disabled={manualPaymentSubmitting || !manualPaymentReason.trim() || manualPaymentReason.trim().length < 3}
+                className="px-5 py-2 bg-white hover:bg-zinc-200 disabled:opacity-40 text-black text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg"
+              >
+                {manualPaymentSubmitting ? "Processing..." : "Confirm Reconciliation"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

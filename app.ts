@@ -2816,6 +2816,65 @@ app.post("/api/projects/:id/simulate-payment", requestTimeout(15000, "Simulate P
   }
 });
 
+// API: Manual Payment Reconciliation (Admin / Super Admin)
+app.post("/api/projects/:id/manual-payment-reconciliation", requestTimeout(10000, "Manual Payment Reconciliation"), validateProjectIdParam, requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const { newStatus, reason } = req.body || {};
+
+    if (!["paid", "partially_paid", "unpaid"].includes(newStatus)) {
+      return res.status(400).json({ success: false, error: "Invalid payment status specified." });
+    }
+
+    if (!reason || typeof reason !== "string" || reason.trim().length < 3) {
+      return res.status(400).json({ success: false, error: "A valid reconciliation reason (at least 3 characters) is required." });
+    }
+
+    const previousProject = await getProjectById(id);
+    if (!previousProject) {
+      return res.status(404).json({ success: false, error: "Project not found." });
+    }
+
+    const previousStatus = previousProject.paymentStatus || "unpaid";
+
+    // Update project payment status
+    const updated = await updateProject(id, { paymentStatus: newStatus }, req.reqId);
+
+    const timestamp = new Date().toISOString();
+    const actorEmail = req.user?.email || req.user?.id || "Admin";
+    const actorRole = req.user?.role || "admin";
+
+    // Immutable audit entry
+    await logAuditEvent({
+      projectId: id,
+      eventType: "Manual Payment Reconciliation",
+      requestId: req.reqId,
+      actor: "Admin",
+      status: "Success",
+      notes: JSON.stringify({
+        source: "MANUAL_RECONCILIATION",
+        projectId: id,
+        actorIdentity: actorEmail,
+        actorRole,
+        previousPaymentStatus: previousStatus,
+        newPaymentStatus: newStatus,
+        reason: reason.trim(),
+        timestamp
+      })
+    });
+
+    return res.json({
+      success: true,
+      project: updated,
+      message: `Payment status successfully reconciled from "${previousStatus}" to "${newStatus}".`
+    });
+  } catch (err: any) {
+    if (res.headersSent) return;
+    logger.error("Failed manual payment reconciliation", err);
+    return res.status(500).json({ success: false, error: err.message || String(err) });
+  }
+});
+
 // API: Generate & Download Official CodeFuser Payment Receipt PDF
 app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Payment Receipt"), validateProjectIdParam, requireAuth, verifyProjectOwnership, projectsRateLimiter, async (req: any, res) => {
   try {
