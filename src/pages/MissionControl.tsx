@@ -28,6 +28,7 @@ import {
 import { useAppRouter, w as getWhatsAppLink } from "../components/Reveal";
 import { getAuthUser, getAuthToken } from "../utils/auth";
 import { safeLocalStorage } from "../utils/safeStorage";
+import { startAdminPreviewSession } from "../utils/previewApi";
 import { PaymentSimulationPanel } from "../components/PaymentSimulationPanel";
 import { normalizeProject, normalizeUser } from "../lib/schemaNormalizer";
 import { ProjectRecord } from "../components/dashboard/dashboardTypes";
@@ -770,8 +771,15 @@ export const MissionControl: React.FC = () => {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => navigate("/start-project?preview=true")}
-              title="Test customer onboarding flow in a clean preview mode"
+              onClick={async () => {
+                const res = await startAdminPreviewSession();
+                if (res.success && res.session) {
+                  navigate(`/start-project?preview=true&token=${res.session.previewToken}`);
+                } else {
+                  navigate("/start-project?preview=true");
+                }
+              }}
+              title="Test customer onboarding flow in a clean, fully isolated preview mode"
             >
               Test Customer Flow <ArrowRight size={12} />
             </Button>

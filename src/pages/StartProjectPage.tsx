@@ -54,6 +54,7 @@ import { supabase } from '../lib/supabase';
 import { safeLocalStorage } from '../utils/safeStorage';
 import { normalizeProjectFormData } from '../lib/schemaNormalizer';
 import { useProject } from '../context/ProjectContext';
+import { clearPreviewSession, startAdminPreviewSession } from '../utils/previewApi';
 
 interface StartProjectData {
   businessName: string;
@@ -1765,7 +1766,10 @@ ${formData.ownerName}
           </div>
           <button
             type="button"
-            onClick={() => navigate("/mission-control")}
+            onClick={() => {
+              clearPreviewSession();
+              navigate("/mission-control");
+            }}
             className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-semibold transition-all duration-200 border border-white/10 flex items-center gap-1.5 cursor-pointer active:scale-95"
             id="back-to-mission-control-btn"
           >
@@ -4226,199 +4230,188 @@ That's enough. We'll help with the rest.`}
                   <p className="text-xs text-red-400 font-medium">{couponError}</p>
                 )}
                 {appliedCoupon && (
-                  <div className="p-4 rounded-2xl bg-zinc-950/90 border border-white/20 text-xs text-white space-y-3.5 shadow-lg">
-                    {/* Header: Coupon status & clear discount rule */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950 border border-white/20 text-xs text-white space-y-3.5 shadow-lg">
+                    {/* Header: Coupon code + Applied badge */}
                     <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded bg-white text-black font-mono font-bold text-[10px] tracking-wider uppercase">
-                          Coupon Applied
-                        </span>
-                        <span className="font-mono font-bold text-white tracking-wide">
-                          {appliedCoupon.code || appliedCoupon.name}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        {appliedCoupon.discountType === 'free_build' || finalWebsitePrice === 0 ? (
-                          <span className="text-xs font-bold text-emerald-400">
-                            {appliedCoupon.hostingWaived ? "100% off website build + hosting" : "100% off website build"}
-                          </span>
+                      <span className="font-mono font-bold text-white text-xs uppercase tracking-wider">
+                        {appliedCoupon.code || appliedCoupon.name}
+                      </span>
+                      <span className="text-emerald-400 font-bold text-xs flex items-center gap-1">
+                        <Check size={14} strokeWidth={3} /> Applied
+                      </span>
+                    </div>
+
+                    {/* Clean itemized breakdown */}
+                    <div className="space-y-2 text-xs">
+                      {/* Website build line */}
+                      <div className="flex justify-between items-center text-zinc-300">
+                        <span>Website build</span>
+                        {finalWebsitePrice === 0 ? (
+                          <div className="flex items-center gap-2">
+                            {numericPriceForPayment > 0 && (
+                              <span className="text-zinc-500 text-[11px] font-sans">Was ₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
+                            )}
+                            <span className="font-bold text-emerald-400 font-mono tracking-wider">FREE</span>
+                          </div>
+                        ) : websiteDiscount > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-zinc-500 text-[11px] font-sans">Was ₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
+                            <span className="font-bold text-white font-mono">₹{finalWebsitePrice.toLocaleString('en-IN')}</span>
+                          </div>
                         ) : (
-                          <span className="text-xs font-bold text-emerald-400">
-                            {appliedCoupon.discountType === 'percentage' 
-                              ? `${appliedCoupon.discountValue}% off website build` 
-                              : `₹${Number(appliedCoupon.discountValue || 0).toLocaleString('en-IN')} off website build`}
-                          </span>
+                          <span className="font-bold text-white font-mono">₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
                         )}
                       </div>
-                    </div>
 
-                    {/* Accurate itemized breakdown: What is free vs what is still charged */}
-                    <div className="space-y-2 font-mono text-xs">
+                      {/* Hosting line */}
                       <div className="flex justify-between items-center text-zinc-300">
-                        <span className="font-sans text-xs">Website build</span>
-                        <div className="flex items-center gap-2">
-                          {websiteDiscount > 0 ? (
-                            <>
-                              <span className="line-through text-zinc-500 font-sans text-xs">₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
-                              <span className="font-bold text-white">₹{finalWebsitePrice.toLocaleString('en-IN')}</span>
-                            </>
-                          ) : (
-                            <span className="font-bold text-white">₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
-                          )}
-                        </div>
+                        <span>Hosting</span>
+                        {hostingWaived ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-zinc-500 text-[11px] font-sans">Was ₹1,000</span>
+                            <span className="font-bold text-emerald-400 font-mono tracking-wider">FREE</span>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-zinc-200">₹1,000 <span className="text-[10px] text-zinc-400 font-sans">/ month</span></span>
+                        )}
                       </div>
 
-                      <div className="flex justify-between items-center text-zinc-300">
-                        <span className="font-sans text-xs">Hosting</span>
-                        <div className="flex items-center gap-2">
-                          {hostingWaived ? (
-                            <>
-                              <span className="line-through text-zinc-500 font-sans text-xs">₹1,000</span>
-                              <span className="font-bold text-emerald-400">₹0 <span className="text-[10px] font-normal text-zinc-400">/month</span></span>
-                            </>
-                          ) : (
-                            <span className="font-bold text-white">₹1,000 <span className="text-[10px] font-normal text-zinc-400">/month</span></span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="border-t border-white/10 pt-2 flex justify-between items-center">
-                        <span className="font-bold uppercase tracking-wider text-white text-xs font-sans">Total today</span>
-                        <span className="text-base font-extrabold text-white">
-                          ₹{finalTotal.toLocaleString('en-IN')}
+                      {/* You pay today */}
+                      <div className="border-t border-white/10 pt-2.5 flex justify-between items-baseline">
+                        <span className="font-bold text-white text-xs uppercase tracking-wider">You pay today</span>
+                        <span className="text-xl sm:text-2xl font-extrabold text-white font-display tracking-tight">
+                          ₹{(selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment).toLocaleString('en-IN')}
                         </span>
                       </div>
                     </div>
 
-                    {/* Plain-English customer summary badge */}
-                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1">
+                    {/* Small supporting explanation */}
+                    <div className="pt-1 text-[11px] text-zinc-400 border-t border-white/5">
                       {finalTotal === 0 ? (
-                        <p className="font-medium text-emerald-400">
-                          ✓ 100% off website build + hosting — You pay ₹0.
-                        </p>
+                        <span className="text-emerald-400 font-medium">No payment required.</span>
                       ) : finalWebsitePrice === 0 ? (
-                        <p className="font-medium text-zinc-300">
-                          <span className="text-emerald-400 font-semibold">✓ 100% off website build.</span> Hosting is charged normally: ₹1,000/month.
-                        </p>
+                        <span>Website build is free. Hosting is charged normally.</span>
                       ) : (
-                        <p className="font-medium text-zinc-300">
-                          <span className="text-emerald-400 font-semibold">✓ You save ₹{websiteDiscount.toLocaleString('en-IN')}.</span>
-                          {!hostingWaived && <span className="text-zinc-400"> Hosting: ₹1,000/month.</span>}
-                        </p>
+                        <span>You save ₹{websiteDiscount.toLocaleString('en-IN')} on website build.</span>
                       )}
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Payment Options */}
-              <div className="space-y-2.5 text-left pt-1">
-                <h3 className="text-sm font-bold text-white tracking-tight">
-                  Choose Payment Option
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {/* Option 1: 50% Now */}
-                  <div 
-                    onClick={() => setSelectedPaymentTerm('milestone')}
-                    className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
-                      selectedPaymentTerm === 'milestone' 
-                        ? 'border-purple-200/30 bg-[#111018] shadow-lg ring-1 ring-purple-200/20' 
-                        : 'border-zinc-800/80 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/40'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="text-base font-bold text-white block">50% Now</span>
-                          <p className="text-2xl sm:text-3xl font-extrabold mt-1 font-display text-amber-400 tracking-tight">
-                            ₹{partPayment.toLocaleString('en-IN')} <span className="text-xs font-normal text-zinc-400 font-sans">today</span>
-                          </p>
+              {/* Payment Section */}
+              {finalTotal === 0 ? (
+                <div className="p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 text-left space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-white">Full Waiver Active</span>
+                    <span className="text-[10px] font-bold font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      100% Free
+                    </span>
+                  </div>
+                  <p className="text-2xl font-extrabold font-display text-emerald-400 tracking-tight">₹0 <span className="text-xs font-normal text-zinc-400 font-sans">total</span></p>
+                  <p className="text-xs text-zinc-300">Your coupon covers the entire website build and hosting. No payment card required.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5 text-left pt-1">
+                  <h3 className="text-sm font-bold text-white tracking-tight">
+                    How would you like to pay?
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* Option 1: 50% Now */}
+                    <div 
+                      onClick={() => setSelectedPaymentTerm('milestone')}
+                      className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
+                        selectedPaymentTerm === 'milestone' 
+                          ? 'border-white bg-zinc-900 shadow-[0_0_25px_rgba(255,255,255,0.1)] ring-1 ring-white/50' 
+                          : 'border-zinc-800/80 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/40'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className={`text-base block ${selectedPaymentTerm === 'milestone' ? 'font-bold text-white' : 'font-medium text-zinc-300'}`}>
+                              50% Now
+                            </span>
+                            <p className={`text-2xl sm:text-3xl font-extrabold mt-1 font-display tracking-tight ${selectedPaymentTerm === 'milestone' ? 'text-white' : 'text-zinc-300'}`}>
+                              ₹{partPayment.toLocaleString('en-IN')} <span className="text-xs font-normal text-zinc-400 font-sans">today</span>
+                            </p>
+                          </div>
+                          <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
+                            selectedPaymentTerm === 'milestone' 
+                              ? 'border-white bg-white text-black' 
+                              : 'border-zinc-700 bg-transparent'
+                          }`}>
+                            {selectedPaymentTerm === 'milestone' && <Check className="h-3 w-3" strokeWidth={3} />}
+                          </div>
                         </div>
-                        <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
-                          selectedPaymentTerm === 'milestone' 
-                            ? 'border-purple-200 bg-purple-200/90 text-black' 
-                            : 'border-zinc-700 bg-transparent'
-                        }`}>
-                          {selectedPaymentTerm === 'milestone' && <Check className="h-3 w-3" strokeWidth={3} />}
-                        </div>
-                      </div>
 
-                      <div className="mt-4 space-y-2 text-xs text-zinc-200">
-                        <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'milestone' ? "text-purple-200" : "text-emerald-400"} />
-                          <span className="font-medium">Work starts today</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Check size={14} className={`${selectedPaymentTerm === 'milestone' ? "text-purple-200" : "text-emerald-400"} shrink-0 mt-0.5`} />
-                          <span className="font-medium">
-                            {finalTotal === 0 ? (
-                              "Full cost covered by coupon"
-                            ) : finalWebsitePrice === 0 ? (
-                              "Website build is ₹0. Only monthly hosting is due today."
-                            ) : (
-                              `Pay balance (₹${(finalWebsitePrice - Math.round(finalWebsitePrice * 0.5)).toLocaleString('en-IN')}) after you approve your website`
-                            )}
-                          </span>
+                        <div className="mt-4 space-y-1.5 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Check size={14} className={selectedPaymentTerm === 'milestone' ? "text-white" : "text-zinc-500"} />
+                            <span className={`font-medium ${selectedPaymentTerm === 'milestone' ? 'text-zinc-200' : 'text-zinc-400'}`}>Work starts today</span>
+                          </div>
+                          {finalWebsitePrice > 0 && (
+                            <div className="flex items-center gap-2">
+                              <Check size={14} className={selectedPaymentTerm === 'milestone' ? "text-white" : "text-zinc-500"} />
+                              <span className="text-zinc-400">Pay balance (₹{(finalWebsitePrice - Math.round(finalWebsitePrice * 0.5)).toLocaleString('en-IN')}) upon approval</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Option 2: Full Payment */}
-                  <div 
-                    onClick={() => setSelectedPaymentTerm('upfront')}
-                    className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
-                      selectedPaymentTerm === 'upfront' 
-                        ? 'border-purple-200/30 bg-[#111018] shadow-lg ring-1 ring-purple-200/20' 
-                        : 'border-zinc-800/80 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/40'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-base font-bold text-white block">Full Payment</span>
-                            <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              {appliedCoupon ? (finalTotal === 0 ? "100% Off" : finalWebsitePrice === 0 ? "Build Waived" : `Save ₹${websiteDiscount.toLocaleString('en-IN')}`) : "Save 10%"}
-                            </span>
+                    {/* Option 2: Full Payment */}
+                    <div 
+                      onClick={() => setSelectedPaymentTerm('upfront')}
+                      className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
+                        selectedPaymentTerm === 'upfront' 
+                          ? 'border-white bg-zinc-900 shadow-[0_0_25px_rgba(255,255,255,0.1)] ring-1 ring-white/50' 
+                          : 'border-zinc-800/80 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/40'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-base block ${selectedPaymentTerm === 'upfront' ? 'font-bold text-white' : 'font-medium text-zinc-300'}`}>
+                                Full Payment
+                              </span>
+                              {!appliedCoupon && discountVal > 0 && (
+                                <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-white/10 text-white border border-white/20">
+                                  Save 10%
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-2xl sm:text-3xl font-extrabold mt-1 font-display tracking-tight ${selectedPaymentTerm === 'upfront' ? 'text-white' : 'text-zinc-300'}`}>
+                              ₹{upfrontTotal.toLocaleString('en-IN')} <span className="text-xs font-normal text-zinc-400 font-sans">today</span>
+                            </p>
                           </div>
-                          <p className="text-2xl sm:text-3xl font-extrabold mt-1 font-display text-amber-400 tracking-tight">
-                            ₹{upfrontTotal.toLocaleString('en-IN')} <span className="text-xs font-normal text-zinc-400 font-sans">today</span>
-                          </p>
+                          <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
+                            selectedPaymentTerm === 'upfront' 
+                              ? 'border-white bg-white text-black' 
+                              : 'border-zinc-700 bg-transparent'
+                          }`}>
+                            {selectedPaymentTerm === 'upfront' && <Check className="h-3 w-3" strokeWidth={3} />}
+                          </div>
                         </div>
-                        <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
-                          selectedPaymentTerm === 'upfront' 
-                            ? 'border-purple-200 bg-purple-200/90 text-black' 
-                            : 'border-zinc-700 bg-transparent'
-                        }`}>
-                          {selectedPaymentTerm === 'upfront' && <Check className="h-3 w-3" strokeWidth={3} />}
-                        </div>
-                      </div>
 
-                      <div className="mt-4 space-y-2 text-xs text-zinc-200">
-                        <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-200" : "text-emerald-400"} />
-                          <span className="font-medium">One-time payment</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-200" : "text-emerald-400"} />
-                          <span className="font-medium">
-                            {appliedCoupon ? (
-                              finalTotal === 0 
-                                ? "Full cost covered by coupon" 
-                                : finalWebsitePrice === 0 
-                                  ? "Website build is ₹0. Monthly hosting is ₹1,000."
-                                  : `Coupon savings applied (Save ₹${websiteDiscount.toLocaleString('en-IN')})`
-                            ) : (
-                              `Extra savings (Save ₹${discountVal.toLocaleString('en-IN')})`
-                            )}
-                          </span>
+                        <div className="mt-4 space-y-1.5 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-white" : "text-zinc-500"} />
+                            <span className={`font-medium ${selectedPaymentTerm === 'upfront' ? 'text-zinc-200' : 'text-zinc-400'}`}>One-time payment</span>
+                          </div>
+                          {!appliedCoupon && discountVal > 0 && (
+                            <div className="flex items-center gap-2">
+                              <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-white" : "text-zinc-500"} />
+                              <span className="text-zinc-400">Save ₹{discountVal.toLocaleString('en-IN')}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Payment Loading or Error Panel */}
               {(paymentLoading || paymentErrorMsg) && (

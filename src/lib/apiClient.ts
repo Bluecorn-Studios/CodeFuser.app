@@ -31,6 +31,18 @@ export async function apiClient<T = any>(
     ...(customHeaders as Record<string, string>),
   };
 
+  try {
+    const previewToken = sessionStorage.getItem("codefuser_preview_token");
+    if (previewToken) {
+      headers["x-preview-token"] = previewToken;
+      if (!headers["Authorization"]) {
+        headers["Authorization"] = `Bearer ${previewToken}`;
+      }
+    }
+  } catch {
+    // sessionStorage not available or throws
+  }
+
   if (!skipAuth) {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {

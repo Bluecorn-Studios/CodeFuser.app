@@ -7,6 +7,10 @@ export interface OfficialQuoteRecord {
   features: string[];
   summary: string;
   couponCode?: string;
+  websitePrice?: number;
+  websiteDiscount?: number;
+  hostingPrice?: number;
+  hostingDiscount?: number;
   timestamp: string; // ISO string
   expiryDate: string; // ISO string (7 days later)
   status: "active" | "expiring" | "expired";

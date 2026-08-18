@@ -50,6 +50,20 @@ import {
   validateAndCalculateCoupon,
   recordRedemption
 } from "./server/coupons.js";
+import {
+  createPreviewSession,
+  getPreviewSessionByToken,
+  isProjectIdPreview,
+  getPreviewProject,
+  getPreviewProjectsForUser,
+  savePreviewProject,
+  getPreviewExtra,
+  savePreviewExtra,
+  savePreviewAsset,
+  getPreviewAsset,
+  addPreviewChangeRequest,
+  cleanupPreviewSession
+} from "./server/preview_store.js";
 import fs from "fs";
 import os from "os";
 import { createClient } from "@supabase/supabase-js";
@@ -224,6 +238,25 @@ async function requireAuth(req: any, res: any, next: any) {
       return next();
     }
 
+    // Customer Preview Token check
+    const previewToken = (
+      req.headers["x-preview-token"] ||
+      req.headers["x-codefuser-preview-token"] ||
+      (req.headers["authorization"]?.startsWith("Bearer cf_prev_") ? req.headers["authorization"].split(" ")[1] : null) ||
+      req.query.previewToken ||
+      req.query["x-preview-token"]
+    );
+    if (previewToken && typeof previewToken === "string") {
+      const previewSession = getPreviewSessionByToken(previewToken);
+      if (previewSession) {
+        req.isPreview = true;
+        req.previewSession = previewSession;
+        req.user = previewSession.user;
+        req.isAdmin = true;
+        return next();
+      }
+    }
+
     const authHeader = req.headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ success: false, error: "Authentication required. Missing token." });
@@ -304,6 +337,14 @@ async function verifyProjectOwnership(req: any, res: any, next: any) {
     const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ success: false, error: "Project ID is required." });
+    }
+
+    if (req.isPreview || isProjectIdPreview(projectId)) {
+      const previewProject = getPreviewProject(projectId);
+      if (previewProject) {
+        req.project = previewProject;
+        return next();
+      }
     }
 
     const project = await getProjectById(projectId);
@@ -570,10 +611,106 @@ const uploadsDir = isVercel
 
 app.use("/uploads", express.static(uploadsDir));
 
+// Global Customer Preview Mode Header / Query Extractor Middleware
+app.use("/api", (req: any, res: any, next: any) => {
+  const previewToken = (
+    req.headers["x-preview-token"] ||
+    req.headers["x-codefuser-preview-token"] ||
+    (req.headers["authorization"]?.startsWith("Bearer cf_prev_") ? req.headers["authorization"].split(" ")[1] : null) ||
+    req.query.previewToken ||
+    req.query["x-preview-token"]
+  );
+  if (previewToken && typeof previewToken === "string") {
+    const session = getPreviewSessionByToken(previewToken);
+    if (session) {
+      req.isPreview = true;
+      req.previewSession = session;
+    }
+  }
+  next();
+});
+
+// ADMIN PREVIEW MANAGEMENT ENDPOINTS
+
+// POST /api/admin/preview/start - Initialize a new isolated Customer Preview session
+app.post("/api/admin/preview/start", requireAuth, async (req: any, res) => {
+  try {
+    const adminUser = req.user || { id: "admin-bypass", email: "admin@codefuser.com", role: "super_admin" };
+    const session = createPreviewSession(adminUser);
+    logger.info(`[CUSTOMER PREVIEW] Admin initialized preview session token: ${session.previewToken} for project ${session.projectId}`);
+    return res.json({
+      success: true,
+      message: "Customer preview session started (Isolated Environment).",
+      session
+    });
+  } catch (err: any) {
+    logger.error("Failed to start preview session:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to start preview session." });
+  }
+});
+
+// GET /api/admin/preview/session - Verify active preview session status
+app.get("/api/admin/preview/session", async (req: any, res) => {
+  try {
+    const previewToken = (
+      req.headers["x-preview-token"] ||
+      req.headers["x-codefuser-preview-token"] ||
+      (req.headers["authorization"]?.startsWith("Bearer cf_prev_") ? req.headers["authorization"].split(" ")[1] : null) ||
+      req.query.previewToken ||
+      req.query["x-preview-token"]
+    );
+    if (!previewToken || typeof previewToken !== "string") {
+      return res.json({ success: false, active: false, message: "No preview token provided." });
+    }
+    const session = getPreviewSessionByToken(previewToken);
+    if (!session) {
+      return res.json({ success: false, active: false, message: "Invalid or expired preview session token." });
+    }
+    const project = getPreviewProject(session.projectId);
+    return res.json({
+      success: true,
+      active: true,
+      session,
+      project
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || "Failed to check preview session." });
+  }
+});
+
+// POST /api/admin/preview/exit - Exit and cleanup preview session data
+app.post("/api/admin/preview/exit", async (req: any, res) => {
+  try {
+    const previewToken = (
+      req.headers["x-preview-token"] ||
+      req.headers["x-codefuser-preview-token"] ||
+      (req.headers["authorization"]?.startsWith("Bearer cf_prev_") ? req.headers["authorization"].split(" ")[1] : null) ||
+      req.body.previewToken ||
+      req.query.previewToken
+    );
+    if (previewToken && typeof previewToken === "string") {
+      cleanupPreviewSession(previewToken);
+    }
+    return res.json({ success: true, message: "Customer preview session terminated and cleaned up." });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || "Failed to terminate preview session." });
+  }
+});
+
 // API: Validate Step 1 uniqueness
 app.post("/api/projects/validate-step1", projectsRateLimiter, async (req: any, res) => {
   try {
     const { email, whatsapp, userId, currentProjectId } = req.body;
+
+    if (req.isPreview) {
+      return res.json({
+        duplicate: false,
+        hasMatch: false,
+        noticeType: "preview_mode",
+        message: "Customer Preview Mode Active (Isolated Environment).",
+        draftProject: null
+      });
+    }
     
     // Check validation cache to prevent repeated database lookup overhead
     const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -767,6 +904,60 @@ app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) 
     const activeOwnership = normalizeOwnershipChoice(ownership || ownershipChoice);
     const activeStep = currentStep ?? step ?? 1;
 
+    if (req.isPreview || (projectId && isProjectIdPreview(projectId))) {
+      const activeProjId = projectId || req.previewSession?.projectId || "prev_proj_default";
+      const existing = getPreviewProject(activeProjId);
+      const existingQuote = existing?.quote || {};
+      const mergedCards = recommendationCards || existingQuote.recommendationCards || null;
+      const mergedAiSummary = aiSummary || existingQuote.aiSummary || null;
+      const generatedTimestamp = existingQuote.generatedTimestamp || (mergedCards ? new Date().toISOString() : null);
+
+      const updatedQuote = {
+        ...existingQuote,
+        currentStep: activeStep,
+        onboardingStage: onboardingStage || existingQuote.onboardingStage || "form",
+        completedSteps: completedSteps || existingQuote.completedSteps || [1],
+        recommendationCards: mergedCards,
+        aiSummary: mergedAiSummary,
+        selectedCardId: selectedCardId || existingQuote.selectedCardId || "current",
+        selectedPaymentTerm: selectedPaymentTerm || existingQuote.selectedPaymentTerm || "milestone",
+        frozenPrice: mergedCards?.find((c: any) => c.id === (selectedCardId || "current"))?.price || existingQuote.frozenPrice || null,
+        aiVersion: existingQuote.aiVersion || "1.0",
+        generatedTimestamp: generatedTimestamp,
+        upsell: upsell || existingQuote.upsell || null,
+        localPhone: localPhone || existingQuote.localPhone || "",
+        selectedCountryCode: selectedCountryCode || existingQuote.selectedCountryCode || "",
+        aiPrompt: aiPrompt ?? existingQuote.aiPrompt ?? ""
+      };
+
+      const previewRecord = savePreviewProject({
+        id: activeProjId,
+        clientName: activeClientName || existing?.clientName || "Preview Client",
+        businessName: activeBusinessName || existing?.businessName || "Preview Business",
+        email: cleanEmail || existing?.email || "preview@codefuser.test",
+        whatsapp: cleanWhatsapp || existing?.whatsapp || "+91 9876543210",
+        selectedPackage: activePackage || existing?.selectedPackage || "growth",
+        ownershipChoice: activeOwnership || existing?.ownershipChoice || "buyout",
+        industry: industry || existing?.industry || "",
+        customIndustry: customIndustry || existing?.customIndustry || "",
+        goal: goal || existing?.goal || "",
+        customGoal: customGoal || existing?.customGoal || "",
+        hasDomain: hasDomain || existing?.hasDomain || "help",
+        hasLogo: hasLogo || existing?.hasLogo || "help",
+        contentReady: contentReady || existing?.contentReady || "no_help",
+        timestamp: existing?.timestamp || new Date().toISOString(),
+        status: existing?.status || "draft",
+        userId: targetUserId || req.previewSession?.user?.id || existing?.userId || "prev_user_default",
+        paymentStatus: existing?.paymentStatus || "unpaid",
+        portalAccess: existing?.portalAccess || false,
+        quote: updatedQuote,
+        assets: assets || existing?.assets || [],
+        aiPrompt: aiPrompt || existing?.aiPrompt || ""
+      });
+
+      return res.json({ success: true, project: previewRecord });
+    }
+
     let existingProject: any = null;
 
     // 1. Check by explicit projectId
@@ -909,6 +1100,11 @@ app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) 
 // API: Get active project / draft for current user or session
 app.get("/api/projects/active", projectsRateLimiter, async (req: any, res) => {
   try {
+    if (req.isPreview) {
+      const projId = req.previewSession?.projectId || "prev_proj_default";
+      const previewProj = getPreviewProject(projId);
+      return res.json({ success: true, project: previewProj });
+    }
     const supabase = getSupabase();
     let authUser: any = null;
     const authHeader = req.headers.authorization;
@@ -1004,6 +1200,39 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
 
     const { projectId, isNewProject } = req.body;
     const cleanEmail = String(email || "").trim().toLowerCase();
+
+    if (req.isPreview || (projectId && isProjectIdPreview(projectId))) {
+      const activeProjId = projectId || req.previewSession?.projectId || ("prev_proj_" + Date.now());
+      const existing = getPreviewProject(activeProjId);
+      const savedProject = savePreviewProject({
+        id: activeProjId,
+        clientName: ownerName || existing?.clientName || "Preview Client",
+        businessName: businessName || existing?.businessName || "Preview Business",
+        email: cleanEmail || existing?.email || "preview@codefuser.test",
+        whatsapp: whatsapp || existing?.whatsapp || "+91 9876543210",
+        selectedPackage: packageId || existing?.selectedPackage || "growth",
+        ownershipChoice: normalizeOwnershipChoice(ownership || ownershipChoice || existing?.ownershipChoice),
+        industry: industry || existing?.industry || "",
+        customIndustry: customIndustry || existing?.customIndustry || "",
+        goal: goal || existing?.goal || "",
+        customGoal: customGoal || existing?.customGoal || "",
+        hasDomain: hasDomain || existing?.hasDomain || "",
+        hasLogo: hasLogo || existing?.hasLogo || "",
+        contentReady: contentReady || existing?.contentReady || "",
+        userId: resolvedUserId || req.previewSession?.user?.id || existing?.userId || "prev_user_default",
+        aiPrompt: aiPrompt || existing?.aiPrompt || "",
+        status: "Assets Pending"
+      });
+
+      logger.info(`[Preview Store] Project created/updated in preview mode: ${savedProject.id}`);
+
+      return res.json({
+        success: true,
+        message: "Project submitted successfully (Customer Preview Mode)",
+        data: savedProject
+      });
+    }
+
     const supabase = getSupabase();
 
     let existingProject: any = null;
@@ -1213,6 +1442,11 @@ app.get("/api/projects", requestTimeout(10000, "Get Projects"), requireAuth, pro
   const reqStart = Date.now();
   console.log(`[TRACING SERVER] GET /api/projects entered | reqId: ${req.reqId} | user: ${req.user?.id} (${req.user?.email}) | query:`, req.query);
   try {
+    if (req.isPreview) {
+      const projects = getPreviewProjectsForUser(req.user?.id || "prev_user_default");
+      return res.json({ projects });
+    }
+
     const { userId, email } = req.query;
     checkAbort(req);
     
@@ -1253,6 +1487,28 @@ app.post("/api/auth/signup", requestTimeout(10000, "Auth Signup"), validateBody(
   try {
     const { email, password, fullName, businessName } = req.body;
     checkAbort(req);
+
+    if (req.isPreview) {
+      return res.json({
+        success: true,
+        user: {
+          id: req.previewSession?.user?.id || "prev_user_default",
+          email: email || "preview@codefuser.test",
+          fullName: fullName || "Preview Client",
+          businessName: businessName || "Preview Business",
+          role: "client"
+        },
+        session: {
+          access_token: req.previewSession?.previewToken || "prev_token_mock",
+          user: {
+            id: req.previewSession?.user?.id || "prev_user_default",
+            email: email || "preview@codefuser.test"
+          }
+        },
+        message: "Customer preview account simulated (zero database users created)."
+      });
+    }
+
     const supabase = getSupabase();
     
     console.log("=== STEP 1: signUp() START ===");
@@ -1489,11 +1745,37 @@ app.post("/api/admin/automation/scan", requestTimeout(15000, "Automation Scan"),
 
 // (Obsolete server-side OAuth endpoints are replaced by Vercel-compatible direct client-side Supabase authentication flow)
 
+// API: Get a single project by ID
+app.get("/api/projects/:id", requestTimeout(10000, "Get Single Project"), validateProjectIdParam, requireAuth, verifyProjectOwnership, projectsRateLimiter, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const previewProject = getPreviewProject(id);
+      if (previewProject) {
+        return res.json({ success: true, data: previewProject, project: previewProject });
+      }
+    }
+    const project = await getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: "Project not found." });
+    }
+    return res.json({ success: true, data: project, project });
+  } catch (err: any) {
+    logger.error("Failed to get project by ID:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to fetch project." });
+  }
+});
+
 // API: Update a single project state
 app.put("/api/projects/:id", requestTimeout(10000, "Update Project"), validateProjectIdParam, requireAuth, verifyProjectOwnership, projectsRateLimiter, validateBody(updateProjectSchema), async (req: any, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
+
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const updated = savePreviewProject({ ...updates, id });
+      return res.json({ success: true, data: updated, project: updated });
+    }
 
     const restrictedFields = [
       "paymentStatus",
@@ -1599,6 +1881,12 @@ app.get("/api/projects/:id/extra", requestTimeout(10000, "Get Extra Project Data
   try {
     const { id } = req.params;
     checkAbort(req);
+
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const previewExtra = getPreviewExtra(id);
+      return res.json({ success: true, data: previewExtra });
+    }
+
     const extra = await getExtraData(id);
 
     if (res.headersSent || req.timedOut) return;
@@ -1618,6 +1906,37 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
     const { packageName, price, discount, features, summary, couponCode } = req.body;
 
     checkAbort(req);
+
+    if (req.isPreview || isProjectIdPreview(id)) {
+      let finalPrice = Number(price);
+      let finalDiscount = Number(discount || 0);
+      let verifiedCouponCode = couponCode ? couponCode.trim().toUpperCase() : undefined;
+      if (verifiedCouponCode) {
+        const basePrice = finalDiscount > 0 ? finalPrice + finalDiscount : finalPrice;
+        const validation = validateAndCalculateCoupon(verifiedCouponCode, packageName, "", basePrice);
+        if (validation.valid) {
+          finalDiscount = validation.discountAmount !== undefined ? validation.discountAmount : finalDiscount;
+          finalPrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : finalPrice;
+        }
+      }
+      const quoteRecord = {
+        packageName,
+        price: finalPrice,
+        discount: finalDiscount,
+        features: features || [],
+        summary: summary || "",
+        couponCode: verifiedCouponCode || undefined,
+        timestamp: new Date().toISOString(),
+        expiryDate: new Date(Date.now() + 7 * 86400000).toISOString(),
+        status: "active" as const
+      };
+      const extra = savePreviewExtra(id, { quote: quoteRecord });
+      return res.json({
+        success: true,
+        data: extra,
+        message: "Official Quote locked successfully in Preview Mode."
+      });
+    }
 
     let finalPrice = Number(price);
     let finalDiscount = Number(discount || 0);
@@ -1673,6 +1992,12 @@ app.post("/api/projects/:id/quote/reset", requestTimeout(10000, "Reset Quote"), 
   try {
     const { id } = req.params;
     checkAbort(req);
+
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const extra = savePreviewExtra(id, { quote: null });
+      return res.json({ success: true, data: extra, message: "Existing quotation has been unlocked in Preview Mode." });
+    }
+
     const extra = await updateQuote(id, null);
 
     if (res.headersSent || req.timedOut) return;
@@ -2137,6 +2462,11 @@ app.get("/api/projects/:id/change-requests", requestTimeout(10000, "Get Change R
     const { id } = req.params;
     checkAbort(req);
 
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const proj = getPreviewProject(id);
+      return res.json({ success: true, data: proj?.changeRequests || [] });
+    }
+
     const requests = await getChangeRequests(id);
     return res.json({ success: true, data: requests });
   } catch (err: any) {
@@ -2154,6 +2484,22 @@ app.post("/api/projects/:id/change-requests", requestTimeout(15000, "Create Chan
 
     if (!requestText || !requestText.trim()) {
       return res.status(400).json({ success: false, error: "Please provide details for what you would like changed." });
+    }
+
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const cr = addPreviewChangeRequest(id, {
+        requestText: requestText.trim(),
+        category: category || "Design / Visuals",
+        chips: chips || [],
+        photoName: photoName || undefined,
+        photoUrl: photoUrl || undefined,
+        priority: priority || "normal"
+      });
+      return res.status(201).json({
+        success: true,
+        data: cr,
+        message: "Change request submitted in Customer Preview Isolation Mode."
+      });
     }
 
     const project = await getProjectById(id);
@@ -2542,6 +2888,43 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
     // Retrieve project by ID from pre-fetched request context
     const project = req.project;
 
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const extra = getPreviewExtra(id);
+      let amountInRupees = 19999;
+      if (extra && extra.quote) {
+        let totalPrice = extra.quote.price;
+        const couponCode = extra.quote.couponCode;
+        let finalWebsitePrice = totalPrice;
+        if (couponCode) {
+          const validation = validateAndCalculateCoupon(couponCode, extra.quote.packageName || "Package", "", totalPrice);
+          if (validation.valid) {
+            finalWebsitePrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : totalPrice;
+          }
+        }
+        amountInRupees = term === "upfront" ? Math.round(finalWebsitePrice * 0.9) : Math.round(finalWebsitePrice * 0.5);
+      }
+      if (amountInRupees === 0) {
+        return res.json({
+          success: true,
+          orderId: "prev_waiver_order_" + Date.now(),
+          amount: 0,
+          currency: "INR",
+          keyId: "rzp_test_preview",
+          isZeroAmount: true,
+          waiverPaymentId: "prev_waiver_pay_" + Date.now(),
+          message: "Full Waiver applied in Preview Mode (zero cash transaction)."
+        });
+      }
+      return res.json({
+        success: true,
+        orderId: "prev_rzp_order_" + Date.now(),
+        amount: amountInRupees * 100,
+        currency: "INR",
+        keyId: "rzp_test_preview",
+        isSimulated: true
+      });
+    }
+
     // Retrieve extra details (locked price)
     const extra = await getExtraData(id);
     let amountInRupees = 19999; // Default fallback
@@ -2821,17 +3204,32 @@ async function processPaymentSuccessCore({
 // API: Verify Razorpay Payment Signature (Client-side fast checkout verification)
 app.post("/api/projects/:id/verify-payment", requestTimeout(15000, "Verify Razorpay Payment"), validateProjectIdParam, requireAuth, verifyProjectOwnership, paymentVerificationRateLimiter, validateBody(verifyPaymentSchema), async (req: any, res) => {
   try {
+    const { id } = req.params;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, term } = req.body;
+
+    checkAbort(req);
+
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const activeProj = savePreviewProject({
+        id,
+        paymentStatus: term === "upfront" ? "paid" : "partially_paid",
+        paymentId: razorpay_payment_id || "prev_pay_" + Date.now(),
+        orderId: razorpay_order_id || "prev_order_" + Date.now(),
+        portalAccess: true
+      });
+      return res.json({
+        success: true,
+        message: "Payment verified in Customer Preview Isolation Mode.",
+        project: activeProj
+      });
+    }
+
     if (process.env.RAZORPAY_VERIFICATION !== "true") {
       return res.status(400).json({
         success: false,
         error: "Razorpay payment verification is disabled when RAZORPAY_VERIFICATION is not 'true'."
       });
     }
-
-    const { id } = req.params;
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, term } = req.body;
-
-    checkAbort(req);
 
     // Validate Signature
     const isValid = verifyPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
@@ -3048,14 +3446,14 @@ app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Pay
     const { id } = req.params;
     checkAbort(req);
 
-    // Retrieve project by ID (from ownership middleware context)
-    let project = req.project || await getProjectById(id);
+    // Retrieve project by ID
+    let project = (req.isPreview || isProjectIdPreview(id)) ? getPreviewProject(id) : (req.project || await getProjectById(id));
     if (!project) {
       return res.status(404).json({ success: false, error: "Project not found." });
     }
 
     // Retrieve extra quote / package details
-    const extra = await getExtraData(id);
+    const extra = (req.isPreview || isProjectIdPreview(id)) ? getPreviewExtra(id) : await getExtraData(id);
 
     // 1. Retrieve or generate & persist persistent receipt number
     let receiptNumber = project.payment?.receiptNumber || project.payment?.receipt_number;
@@ -3072,49 +3470,88 @@ app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Pay
       }
     }
 
-    // 2. Determine Package Name & Project Total from authoritative data
+    // 2. Determine Package Base List Price & Quoted Data
     let packageName = extra?.quote?.packageName || project.selectedPackage || "Fusion Package";
     if (packageName === "foundation") packageName = "Ignite Package (Foundation)";
     else if (packageName === "growth") packageName = "Fusion Package (Growth)";
     else if (packageName === "dominance") packageName = "Scale Package (Dominance)";
 
-    let projectTotal = 19999; // Fallback
-    if (extra?.quote?.price) {
-      projectTotal = Number(extra.quote.price);
-    } else if (project.selectedPackage === "foundation" || project.selectedPackage?.toLowerCase().includes("ignite")) {
-      projectTotal = 9999;
+    let baseListPrice = 19999;
+    if (project.selectedPackage === "foundation" || project.selectedPackage?.toLowerCase().includes("ignite")) {
+      baseListPrice = 9999;
     } else if (project.selectedPackage === "growth" || project.selectedPackage?.toLowerCase().includes("fusion")) {
-      projectTotal = 19999;
+      baseListPrice = 19999;
     } else if (project.selectedPackage === "dominance" || project.selectedPackage?.toLowerCase().includes("scale")) {
-      projectTotal = 39999;
+      baseListPrice = 39999;
     }
 
-    // 3. Determine Payment Method & Identifiers
+    const quotePrice = extra?.quote?.price !== undefined ? Number(extra.quote.price) : undefined;
+    const quoteDiscount = extra?.quote?.discount !== undefined ? Number(extra.quote.discount) : 0;
+    const couponCode = String(extra?.quote?.couponCode || "").trim();
+
+    const listPrice = (quotePrice !== undefined && quoteDiscount > 0)
+      ? quotePrice + quoteDiscount
+      : (quotePrice !== undefined ? quotePrice : baseListPrice);
+
+    // 3. Determine Payment Method, Provider & Identifiers
     const provider = String(project.paymentProvider || project.payment?.provider || "").toLowerCase();
     const paymentId = String(project.paymentId || project.payment?.paymentId || "").trim();
     const orderId = String(project.orderId || project.payment?.orderId || "").trim();
     const purchasedPlan = String(project.purchasedPlan || project.payment?.purchasedPlan || "").trim();
+    const purchasedPlanLower = purchasedPlan.toLowerCase();
 
     const isSimulated = provider.includes("simulat") || 
       paymentId.startsWith("sim_pay_") || 
       orderId.startsWith("sim_order_") || 
       purchasedPlan.includes("[SIMULATED]");
 
+    const isWaiver = provider === "coupon_waiver" ||
+      paymentId.startsWith("waiver_pay_") ||
+      orderId.startsWith("waiver_order_") ||
+      couponCode.toUpperCase() === "FULLWAIVER";
+
+    const isManual = provider === "manual";
+    const isRazorpay = provider.includes("razorpay") || paymentId.startsWith("pay_") || orderId.startsWith("order_");
+
     let paymentMethod = "Pending Payment";
-    if (isSimulated) {
-      paymentMethod = "CodeFuser Payment Simulation";
-    } else if (provider.includes("razorpay") || paymentId.startsWith("pay_")) {
+    let transactionLabel = "Transaction ID:";
+    let orderLabel = "Order Reference:";
+    let documentTitle = "PAYMENT RECEIPT";
+    let documentSubtitle = "OFFICIAL PAYMENT CONFIRMATION";
+    let statusBadgeText = "PAID IN FULL";
+
+    if (isWaiver) {
+      paymentMethod = "100% Coupon Waiver";
+      transactionLabel = "Waiver Reference:";
+      orderLabel = "Waiver Order Ref:";
+      documentTitle = "PROJECT SETTLEMENT STATEMENT";
+      documentSubtitle = "PROMOTIONAL WAIVER CONFIRMATION";
+      statusBadgeText = "FULLY WAIVED (100% PROMO)";
+    } else if (isSimulated) {
+      paymentMethod = "Payment Sandbox / Simulation";
+      transactionLabel = "Simulation Reference:";
+      orderLabel = "Simulation Order Ref:";
+      documentTitle = "PAYMENT SIMULATION STATEMENT";
+      documentSubtitle = "SANDBOX TEST CONFIRMATION";
+      statusBadgeText = "TEST / SIMULATION";
+    } else if (isManual) {
+      paymentMethod = "Manual Reconciliation";
+      transactionLabel = "Reconciliation ID:";
+      orderLabel = "Order Reference:";
+      statusBadgeText = "MANUALLY SETTLED";
+    } else if (isRazorpay) {
       paymentMethod = "Razorpay Online Gateway";
     } else if (project.paymentStatus === "paid" || project.paymentStatus === "partially_paid") {
-      paymentMethod = "CodeFuser Direct Payment";
+      paymentMethod = "Verified Direct Payment";
     }
 
-    // 4. Determine Payment Term & Settlement Amounts dynamically
+    // 4. Calculate Settlement Amounts accurately matching Money Metrics
     const status = project.paymentStatus || "unpaid";
-    const purchasedPlanLower = purchasedPlan.toLowerCase();
 
     let paymentType = "Full Project Contract";
-    if (purchasedPlanLower.includes("upfront")) {
+    if (isWaiver) {
+      paymentType = "100% Promotional Waiver";
+    } else if (purchasedPlanLower.includes("upfront")) {
       paymentType = "100% Upfront Settlement";
     } else if (purchasedPlanLower.includes("milestone")) {
       paymentType = "50% Milestone Settlement";
@@ -3124,34 +3561,86 @@ app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Pay
       paymentType = "Full Contract Settlement";
     }
 
+    let discount = 0;
+    let discountLabel = "Promotional Discount / Waiver";
+    let projectTotal = listPrice;
     let previousPaid = 0;
     let currentPayment = 0;
     let totalPaid = 0;
-    let balanceRemaining = projectTotal;
+    let balanceRemaining = 0;
+    let confirmationMessage = "";
 
-    if (status === "paid") {
-      if (purchasedPlanLower.includes("upfront") || (!purchasedPlanLower.includes("milestone") && status === "paid")) {
-        previousPaid = 0;
-        currentPayment = projectTotal;
-        totalPaid = projectTotal;
-        balanceRemaining = 0;
-      } else {
-        // Milestone final payment completed
-        previousPaid = Math.round(projectTotal * 0.5);
-        currentPayment = projectTotal - previousPaid;
-        totalPaid = projectTotal;
-        balanceRemaining = 0;
-      }
-    } else if (status === "partially_paid") {
-      previousPaid = 0;
-      currentPayment = Math.round(projectTotal * 0.5);
-      totalPaid = currentPayment;
-      balanceRemaining = projectTotal - totalPaid;
-    } else {
+    if (isWaiver) {
+      discount = listPrice;
+      discountLabel = couponCode ? `100% Coupon Waiver (${couponCode})` : "100% Promotional Waiver";
+      projectTotal = 0;
       previousPaid = 0;
       currentPayment = 0;
       totalPaid = 0;
-      balanceRemaining = projectTotal;
+      balanceRemaining = 0;
+      confirmationMessage = "This official statement confirms that this project was registered and completed under a 100% promotional waiver. Total cash collected is Rs. 0. The project is fully activated.";
+    } else if (isSimulated) {
+      discount = quoteDiscount > 0 ? quoteDiscount : 0;
+      discountLabel = "Simulation Discount";
+      projectTotal = Math.max(0, listPrice - discount);
+      previousPaid = 0;
+      currentPayment = 0;
+      totalPaid = 0;
+      balanceRemaining = 0;
+      confirmationMessage = "This test statement confirms that this transaction was executed in sandbox simulation mode. No real payment was collected.";
+    } else if (isManual) {
+      discount = quoteDiscount > 0 ? quoteDiscount : 0;
+      projectTotal = Math.max(0, listPrice - discount);
+      currentPayment = projectTotal;
+      totalPaid = projectTotal;
+      previousPaid = 0;
+      balanceRemaining = 0;
+      confirmationMessage = `This official receipt confirms that the project total of Rs. ${projectTotal.toLocaleString("en-IN")} was manually settled and reconciled. Remaining balance is Rs. 0.`;
+    } else {
+      // Real payment flow (Razorpay / cash)
+      if (quoteDiscount > 0) {
+        discount = quoteDiscount;
+        discountLabel = couponCode ? `Coupon Discount (${couponCode})` : "Promotional Discount";
+      } else if (purchasedPlanLower.includes("upfront") && (!couponCode || quoteDiscount === 0)) {
+        discount = Math.round(listPrice * 0.1);
+        discountLabel = "10% Upfront Payment Discount";
+      }
+
+      projectTotal = Math.max(0, listPrice - discount);
+
+      if (status === "paid") {
+        if (purchasedPlanLower.includes("milestone") && (purchasedPlanLower.includes("fully paid") || purchasedPlanLower.includes("phase 2") || purchasedPlanLower.includes("final"))) {
+          // Final 50% milestone payment completed
+          previousPaid = Math.round(projectTotal * 0.5);
+          currentPayment = projectTotal - previousPaid;
+          totalPaid = projectTotal;
+          balanceRemaining = 0;
+          statusBadgeText = "PAID IN FULL";
+          confirmationMessage = `This official receipt confirms that the final milestone payment of Rs. ${currentPayment.toLocaleString("en-IN")} was successfully received. Your project contract total of Rs. ${projectTotal.toLocaleString("en-IN")} is now FULLY SETTLED and your remaining balance is Rs. 0.`;
+        } else {
+          // 100% full payment
+          previousPaid = 0;
+          currentPayment = projectTotal;
+          totalPaid = projectTotal;
+          balanceRemaining = 0;
+          statusBadgeText = "PAID IN FULL";
+          confirmationMessage = `This official receipt confirms that the payment of Rs. ${currentPayment.toLocaleString("en-IN")} was successfully received. Your project contract total of Rs. ${projectTotal.toLocaleString("en-IN")} is now FULLY SETTLED and your remaining balance is Rs. 0.`;
+        }
+      } else if (status === "partially_paid") {
+        previousPaid = 0;
+        currentPayment = Math.round(projectTotal * 0.5);
+        totalPaid = currentPayment;
+        balanceRemaining = projectTotal - totalPaid;
+        statusBadgeText = "PARTIALLY PAID";
+        confirmationMessage = `This official receipt confirms that a partial payment of Rs. ${currentPayment.toLocaleString("en-IN")} was successfully received. Total amount paid to date is Rs. ${totalPaid.toLocaleString("en-IN")}. Remaining balance due is Rs. ${balanceRemaining.toLocaleString("en-IN")}.`;
+      } else {
+        previousPaid = 0;
+        currentPayment = 0;
+        totalPaid = 0;
+        balanceRemaining = projectTotal;
+        statusBadgeText = "PAYMENT PENDING";
+        confirmationMessage = `This official statement confirms that payment is currently pending for this project.`;
+      }
     }
 
     // 5. Date Formatting
@@ -3170,6 +3659,11 @@ app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Pay
     // 6. GST / Tax details (do not fabricate GST if missing)
     const gstin = project.onboarding?.gstin || project.gstin || undefined;
 
+    const websiteBuildPrice = extra?.quote?.websitePrice !== undefined ? Number(extra.quote.websitePrice) : undefined;
+    const websiteBuildDiscount = extra?.quote?.websiteDiscount !== undefined ? Number(extra.quote.websiteDiscount) : undefined;
+    const hostingPrice = extra?.quote?.hostingPrice !== undefined ? Number(extra.quote.hostingPrice) : undefined;
+    const hostingDiscount = extra?.quote?.hostingDiscount !== undefined ? Number(extra.quote.hostingDiscount) : undefined;
+
     // 7. Compile Receipt Data
     const receiptData = {
       receiptNumber,
@@ -3184,16 +3678,31 @@ app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Pay
       paymentType,
       paymentStatus: status,
       paymentDate: formattedDate,
-      transactionId: paymentId || (status === "unpaid" ? "PENDING" : "VERIFIED_RECORD"),
+      transactionId: paymentId || (status === "unpaid" ? "PENDING" : isWaiver ? "WAIVER_CONFIRMED" : "VERIFIED_RECORD"),
+      transactionLabel,
       orderId: orderId || "N/A",
+      orderLabel,
       paymentMethod,
       currency: "INR",
+      listPrice,
+      discount,
+      discountLabel,
+      websiteBuildPrice,
+      websiteBuildDiscount,
+      hostingPrice,
+      hostingDiscount,
       projectTotal,
       previousPaid,
       currentPayment,
       totalPaid,
       balanceRemaining,
-      gstin
+      gstin,
+      isWaiver,
+      isSimulated,
+      documentTitle,
+      documentSubtitle,
+      statusBadgeText,
+      confirmationMessage
     };
 
     // Log download event in Audit Trail
@@ -3891,6 +4400,25 @@ app.post("/api/projects/:id/upload", requestTimeout(25000, "Asset Upload"), vali
     }
 
     checkAbort(req);
+
+    if (req.isPreview || isProjectIdPreview(id)) {
+      const assetId = "prev_asset_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+      const assetRecord = {
+        id: assetId,
+        name: sanitizedName,
+        type,
+        size: buffer.length,
+        url: `/api/projects/${id}/assets/${assetId}/preview-download`,
+        timestamp: new Date().toISOString()
+      };
+      savePreviewAsset(id, assetRecord, buffer);
+      const extra = getPreviewExtra(id);
+      return res.json({
+        success: true,
+        data: extra,
+        message: "Asset uploaded successfully (Customer Preview Isolation Mode)."
+      });
+    }
 
     const supabase = getSupabase();
     const bucketName = "codefuser-assets";

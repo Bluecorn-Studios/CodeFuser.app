@@ -14,9 +14,20 @@ export interface PaymentReceiptData {
   paymentStatus: string;
   paymentDate: string;
   transactionId: string;
+  transactionLabel?: string;
   orderId: string;
+  orderLabel?: string;
   paymentMethod: string;
   currency: string;
+  listPrice?: number;
+  discount?: number;
+  discountLabel?: string;
+  websiteBuildPrice?: number;
+  websiteBuildDiscount?: number;
+  websiteBuildDiscountLabel?: string;
+  hostingPrice?: number;
+  hostingDiscount?: number;
+  hostingDiscountLabel?: string;
   projectTotal: number;
   previousPaid: number;
   currentPayment: number;
@@ -24,24 +35,70 @@ export interface PaymentReceiptData {
   balanceRemaining: number;
   gstin?: string;
   projectId?: string;
+  isWaiver?: boolean;
+  isSimulated?: boolean;
+  documentTitle?: string;
+  documentSubtitle?: string;
+  statusBadgeText?: string;
+  confirmationMessage?: string;
 }
 
-export function formatCurrency(amount: number, currency: string = "INR"): string {
+export function formatCurrency(amount: number, _currency: string = "INR"): string {
+  if (isNaN(amount) || amount === null || amount === undefined) {
+    return "Rs. 0";
+  }
   const formatted = Math.round(amount).toLocaleString("en-IN");
   return `Rs. ${formatted}`;
+}
+
+export function cleanPackageDisplayName(rawName: string): string {
+  if (!rawName) return "Fusion Package";
+  let cleaned = String(rawName).trim();
+  cleaned = cleaned.replace(/^&+\s*/, "");
+  const lower = cleaned.toLowerCase();
+  if (lower === "foundation" || lower === "ignite") return "Ignite Package (Foundation)";
+  if (lower === "growth" || lower === "fusion") return "Fusion Package (Growth)";
+  if (lower === "dominance" || lower === "scale" || lower === "catalyst") return "Scale Package (Dominance)";
+  cleaned = cleaned.replace(/\s+Pack\b/i, " Package");
+  return cleaned;
 }
 
 export function generatePaymentReceiptPDF(data: PaymentReceiptData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
+      const isWaiver = Boolean(data.isWaiver);
+      const isSimulated = Boolean(data.isSimulated);
+      const isSettled = data.balanceRemaining === 0;
+      const isPartial = data.paymentStatus === "partially_paid" || (!isSettled && !isWaiver && !isSimulated && data.totalPaid > 0);
+
+      // Determine Document Type & Headers
+      let docTitle = data.documentTitle;
+      let docSubtitle = data.documentSubtitle;
+
+      if (!docTitle) {
+        if (isWaiver) {
+          docTitle = "PROJECT SETTLEMENT STATEMENT";
+          docSubtitle = "100% Promotional Waiver Confirmation";
+        } else if (isSimulated) {
+          docTitle = "PAYMENT SIMULATION STATEMENT";
+          docSubtitle = "Sandbox Test Confirmation";
+        } else if (isPartial) {
+          docTitle = "PAYMENT RECEIPT";
+          docSubtitle = "Milestone Payment Confirmation";
+        } else {
+          docTitle = "PAYMENT RECEIPT";
+          docSubtitle = "Official Payment Confirmation";
+        }
+      }
+
       const doc = new PDFDocument({
         margin: 0,
         size: "A4",
         info: {
-          Title: `CodeFuser Payment Receipt - ${data.receiptNumber}`,
-          Author: "CodeFuser Digital Studio",
-          Subject: "Official Payment Confirmation",
-          Keywords: "CodeFuser, Receipt, Payment, Website, Web Engineering",
+          Title: `CodeFuser ${docTitle} - ${data.receiptNumber}`,
+          Author: "CodeFuser Digital Growth & Web Engineering",
+          Subject: docSubtitle,
+          Keywords: "CodeFuser, Receipt, Payment, Website, Web Engineering, Financial Document",
         },
       });
 
@@ -52,21 +109,23 @@ export function generatePaymentReceiptPDF(data: PaymentReceiptData): Promise<Buf
 
       const width = 595.28;
       const height = 841.89;
-      const margin = 35;
+      const margin = 36;
       const contentWidth = width - margin * 2;
 
-      // Fill Clean White Page Canvas
+      // Fill Clean Pure White Canvas
       doc.rect(0, 0, width, height).fill("#FFFFFF");
 
-      // --- 1. TOP HEADER BANNER (Dark Obsidian #0F172A) ---
-      const headerHeight = 105;
+      // =========================================================================
+      // 1. TOP HEADER BANNER (Obsidian #0F172A)
+      // =========================================================================
+      const headerHeight = 96;
       doc.rect(0, 0, width, headerHeight).fill("#0F172A");
 
-      // Draw Official CodeFuser Logo Vector Mark in Header
+      // Draw CodeFuser Monogram / Vector Mark
       doc.save();
-      doc.translate(margin, 22);
-      doc.scale(0.18);
-      doc.lineWidth(12.5);
+      doc.translate(margin, 20);
+      doc.scale(0.16);
+      doc.lineWidth(12);
       doc.strokeColor("#FFFFFF");
       doc.path("M 75,18 L 47,18 A 32,32 0 0 0 47,82 L 75,82");
       // Amber Accent Brackets { }
@@ -84,251 +143,468 @@ export function generatePaymentReceiptPDF(data: PaymentReceiptData): Promise<Buf
       doc.stroke();
       doc.restore();
 
-      doc.fillColor("#94A3B8").fontSize(8).font("Helvetica-Bold").text("DIGITAL GROWTH & WEB ENGINEERING", margin, 66);
-      doc.fillColor("#64748B").fontSize(7.5).font("Helvetica").text("WWW.CODEFUSER.IN • SUPPORT@CODEFUSER.COM", margin, 78);
+      doc.fillColor("#94A3B8").fontSize(7.5).font("Helvetica-Bold").text("DIGITAL GROWTH & WEB ENGINEERING", margin, 60);
+      doc.fillColor("#64748B").fontSize(7).font("Helvetica").text("support@codefuser.com  •  https://codefuser.in", margin, 72);
 
       // Right Header Block
-      const rightX = 300;
+      const rightX = 260;
       const rightWidth = width - margin - rightX;
-      doc.fillColor("#FFFFFF").fontSize(16).font("Helvetica-Bold").text("PAYMENT RECEIPT", rightX, 22, { width: rightWidth, align: "right" });
-      doc.fillColor("#F59E0B").fontSize(9).font("Helvetica-Bold").text("OFFICIAL PAYMENT CONFIRMATION", rightX, 42, { width: rightWidth, align: "right" });
-      doc.fillColor("#F8FAFC").fontSize(10).font("Helvetica-Bold").text(`Receipt No: #${data.receiptNumber}`, rightX, 58, { width: rightWidth, align: "right" });
-      doc.fillColor("#CBD5E1").fontSize(8.5).font("Helvetica").text(`Issue Date: ${data.receiptDate}`, rightX, 74, { width: rightWidth, align: "right" });
+      doc.fillColor("#FFFFFF").fontSize(13.5).font("Helvetica-Bold").text(docTitle, rightX, 18, { width: rightWidth, align: "right" });
+      doc.fillColor(isWaiver ? "#34D399" : "#F59E0B").fontSize(8).font("Helvetica-Bold").text(docSubtitle || "", rightX, 36, { width: rightWidth, align: "right" });
+      doc.fillColor("#F8FAFC").fontSize(8.5).font("Helvetica-Bold").text(`Receipt No: #${data.receiptNumber}`, rightX, 50, { width: rightWidth, align: "right" });
+      doc.fillColor("#CBD5E1").fontSize(8).font("Helvetica").text(`Issue Date: ${data.receiptDate}`, rightX, 64, { width: rightWidth, align: "right" });
 
-      // Amber Accent Ribbon Bar
-      doc.rect(0, headerHeight, width, 3.5).fill("#F59E0B");
+      // Subtle Accent Line
+      doc.rect(0, headerHeight, width, 2.5).fill(isWaiver ? "#10B981" : "#F59E0B");
 
-      let y = headerHeight + 20;
+      let y = headerHeight + 14;
 
-      // --- 2. FROM / BILL TO SECTION (2 Columns) ---
-      const colWidth = (contentWidth - 20) / 2;
-      const fromX = margin;
-      const billX = margin + colWidth + 20;
+      // =========================================================================
+      // 2. CUSTOMER & PROJECT SPECIFICATIONS (2-Column Structured Card)
+      // =========================================================================
+      const colWidth = (contentWidth - 16) / 2;
+      const col1X = margin;
+      const col2X = margin + colWidth + 16;
+      const specBoxH = 72;
 
-      // Left Column: FROM
-      doc.fillColor("#D97706").fontSize(8).font("Helvetica-Bold").text("FROM / ISSUED BY", fromX, y);
-      doc.fillColor("#0F172A").fontSize(12).font("Helvetica-Bold").text("CodeFuser", fromX, y + 14);
-      doc.fillColor("#334155").fontSize(9).font("Helvetica").text("Digital Growth & Web Engineering", fromX, y + 28);
-      doc.fillColor("#475569").fontSize(8.5).font("Helvetica").text("Email: support@codefuser.com", fromX, y + 41);
-      doc.fillColor("#475569").fontSize(8.5).font("Helvetica").text("Web: https://codefuser.in", fromX, y + 53);
+      // Left Box: CUSTOMER
+      doc.roundedRect(col1X, y, colWidth, specBoxH, 4).fill("#F8FAFC");
+      doc.roundedRect(col1X, y, colWidth, specBoxH, 4).lineWidth(0.5).stroke("#E2E8F0");
 
-      // Right Column: BILL TO
-      doc.fillColor("#D97706").fontSize(8).font("Helvetica-Bold").text("BILLED TO / CUSTOMER", billX, y);
-      doc.fillColor("#0F172A").fontSize(12).font("Helvetica-Bold").text(data.clientName || "Valued Client", billX, y + 14);
-      doc.fillColor("#1E293B").fontSize(9.5).font("Helvetica-Bold").text(data.businessName || "Business Account", billX, y + 28);
+      doc.fillColor("#64748B").fontSize(7.5).font("Helvetica-Bold").text("CUSTOMER / BILLED TO", col1X + 10, y + 8);
+      doc.fillColor("#0F172A").fontSize(10.5).font("Helvetica-Bold").text(data.businessName || "Business Account", col1X + 10, y + 21, { width: colWidth - 20, ellipsis: true });
+      doc.fillColor("#334155").fontSize(8.5).font("Helvetica").text(data.clientName || "Valued Client", col1X + 10, y + 36, { width: colWidth - 20, ellipsis: true });
       if (data.clientEmail) {
-        doc.fillColor("#475569").fontSize(8.5).font("Helvetica").text(`Email: ${data.clientEmail}`, billX, y + 41);
+        doc.fillColor("#64748B").fontSize(7.5).font("Helvetica").text(data.clientEmail, col1X + 10, y + 49, { width: colWidth - 20, ellipsis: true });
       }
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text(`Project ID: ${data.projectId || data.receiptNumber.slice(-8)}`, billX, y + 53);
 
-      y += 75;
+      // Right Box: PROJECT & SERVICE
+      doc.roundedRect(col2X, y, colWidth, specBoxH, 4).fill("#F8FAFC");
+      doc.roundedRect(col2X, y, colWidth, specBoxH, 4).lineWidth(0.5).stroke("#E2E8F0");
 
-      // Divider Line
-      doc.moveTo(margin, y).lineTo(width - margin, y).lineWidth(0.75).stroke("#E2E8F0");
-      y += 14;
+      const cleanPkgName = cleanPackageDisplayName(data.packageName);
+      doc.fillColor("#64748B").fontSize(7.5).font("Helvetica-Bold").text("PROJECT & SERVICE", col2X + 10, y + 8);
+      doc.fillColor("#0F172A").fontSize(10.5).font("Helvetica-Bold").text(data.projectName || `${data.businessName} Platform`, col2X + 10, y + 21, { width: colWidth - 20, ellipsis: true });
+      doc.fillColor("#1E293B").fontSize(8.5).font("Helvetica-Bold").text(`Package: ${cleanPkgName}`, col2X + 10, y + 36, { width: colWidth - 20, ellipsis: true });
+      doc.fillColor("#64748B").fontSize(7.5).font("Helvetica").text(`Plan: ${data.paymentType} • ID: ${data.projectId || data.receiptNumber.slice(-8)}`, col2X + 10, y + 49, { width: colWidth - 20, ellipsis: true });
 
-      // --- 3. PROJECT INFORMATION BLOCK ---
-      const infoBoxHeight = 68;
-      doc.roundedRect(margin, y, contentWidth, infoBoxHeight, 6).fill("#F8FAFC");
-      doc.roundedRect(margin, y, contentWidth, infoBoxHeight, 6).lineWidth(0.75).stroke("#E2E8F0");
+      y += specBoxH + 10;
 
-      let infoY = y + 10;
-      doc.fillColor("#D97706").fontSize(8).font("Helvetica-Bold").text("PROJECT & SERVICE SPECIFICATIONS", margin + 12, infoY);
-      infoY += 15;
-
-      const pCol1 = margin + 12;
-      const pCol2 = margin + contentWidth / 2 + 10;
-
-      // Grid Row 1
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Project Name:", pCol1, infoY);
-      doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.projectName, pCol1 + 75, infoY, { width: 170 });
-
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Selected Package:", pCol2, infoY);
-      doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.packageName, pCol2 + 85, infoY, { width: 170 });
-
-      infoY += 18;
-
-      // Grid Row 2
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Payment Plan:", pCol1, infoY);
-      doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.paymentType, pCol1 + 75, infoY, { width: 170 });
-
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Ownership Terms:", pCol2, infoY);
-      doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.ownershipChoice || "Buyout (Full Code Base & License)", pCol2 + 85, infoY, { width: 170 });
-
-      y += infoBoxHeight + 12;
-
-      // --- 3B. DOMAIN & HOSTING BENEFITS BLOCK ---
+      // =========================================================================
+      // 3. PROMOTIONAL INCLUSIONS & HOSTING SPECIFICATIONS
+      // =========================================================================
       let hostingFreeMonths = 1;
       let monthlyHostingPrice = 499;
-      let domainBenefitText = "Included (CodeFuser Managed)";
+      let domainBenefitText = "1 Year FREE Domain Included";
       try {
         const planCfg = getHostingPlanConfig(data.packageName);
-        hostingFreeMonths = planCfg.freeHostingMonths;
-        monthlyHostingPrice = planCfg.monthlyHostingPrice;
+        hostingFreeMonths = planCfg.freeHostingMonths || 1;
+        monthlyHostingPrice = planCfg.monthlyHostingPrice || 499;
         if (planCfg.domainFreeYears > 0) {
-          domainBenefitText = `${planCfg.domainFreeYears} Year${planCfg.domainFreeYears > 1 ? "s" : ""} FREE Domain`;
+          domainBenefitText = `${planCfg.domainFreeYears} Year${planCfg.domainFreeYears > 1 ? "s" : ""} FREE Domain Included`;
         } else {
-          domainBenefitText = "Google Search Setup / Included";
+          domainBenefitText = "Google Search Setup & Domain Config Included";
         }
       } catch (e) {
-        // Fallback safely if unmapped
         hostingFreeMonths = 1;
         monthlyHostingPrice = 499;
       }
 
-      const benefitBoxH = 60;
-      doc.roundedRect(margin, y, contentWidth, benefitBoxH, 6).fill("#F0FDF4");
-      doc.roundedRect(margin, y, contentWidth, benefitBoxH, 6).lineWidth(0.75).stroke("#86EFAC");
+      // Calculate first billing date estimate (+30 or +60 days)
+      const issueDateObj = new Date(data.receiptDate || Date.now());
+      const nextBillingDateObj = new Date(isNaN(issueDateObj.getTime()) ? Date.now() : issueDateObj.getTime());
+      nextBillingDateObj.setDate(nextBillingDateObj.getDate() + hostingFreeMonths * 30);
+      const formattedNextBilling = nextBillingDateObj.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
 
-      let benY = y + 8;
-      doc.fillColor("#166534").fontSize(8).font("Helvetica-Bold").text("DOMAIN & HOSTING PROMOTIONAL BENEFITS INCLUDED", margin + 12, benY);
-      benY += 14;
+      const promoBoxH = 46;
+      doc.roundedRect(margin, y, contentWidth, promoBoxH, 4).fill("#F0FDF4");
+      doc.roundedRect(margin, y, contentWidth, promoBoxH, 4).lineWidth(0.5).stroke("#86EFAC");
 
-      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Hosting Period:", pCol1, benY);
-      doc.fillColor("#14532D").fontSize(8.5).font("Helvetica-Bold").text(`${hostingFreeMonths} Month${hostingFreeMonths > 1 ? "s" : ""} FREE (Promotional Discount)`, pCol1 + 75, benY);
+      let promoY = y + 7;
+      doc.fillColor("#166534").fontSize(7.5).font("Helvetica-Bold").text("INCLUDED PROMOTIONS & HOSTING SPECIFICATIONS", margin + 10, promoY);
+      promoY += 13;
 
-      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Domain Status:", pCol2, benY);
-      doc.fillColor("#14532D").fontSize(8.5).font("Helvetica-Bold").text(domainBenefitText, pCol2 + 85, benY);
+      const pCol1 = margin + 10;
+      const pCol2 = margin + contentWidth / 2 + 6;
 
-      benY += 16;
+      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Hosting:", pCol1, promoY);
+      doc.fillColor("#14532D").fontSize(8).font("Helvetica-Bold").text(
+        `${hostingFreeMonths} Month${hostingFreeMonths > 1 ? "s" : ""} FREE (Then Rs. ${monthlyHostingPrice.toLocaleString("en-IN")}/mo)`,
+        pCol1 + 45,
+        promoY
+      );
 
-      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Hosting Value:", pCol1, benY);
-      doc.fillColor("#14532D").fontSize(8.5).text(`Rs. ${monthlyHostingPrice.toLocaleString("en-IN")} (Discount: -Rs. ${monthlyHostingPrice.toLocaleString("en-IN")} • Paid: Rs. 0)`, pCol1 + 75, benY);
+      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Domain:", pCol2, promoY);
+      doc.fillColor("#14532D").fontSize(8).font("Helvetica-Bold").text(domainBenefitText, pCol2 + 45, promoY);
 
-      doc.fillColor("#166534").fontSize(8).font("Helvetica").text("Next Billing Rate:", pCol2, benY);
-      doc.fillColor("#14532D").fontSize(8.5).font("Helvetica-Bold").text(`Rs. ${monthlyHostingPrice.toLocaleString("en-IN")}/month (Starts in ${hostingFreeMonths * 30} days)`, pCol2 + 85, benY);
+      promoY += 12;
+      doc.fillColor("#166534").fontSize(7.5).font("Helvetica").text("First Billing:", pCol1, promoY);
+      doc.fillColor("#14532D").fontSize(7.5).font("Helvetica").text(`${formattedNextBilling} (No charges during promotional period)`, pCol1 + 55, promoY);
 
-      y += benefitBoxH + 16;
+      y += promoBoxH + 12;
 
-      // --- 4. FINANCIAL PAYMENT SUMMARY TABLE ---
-      doc.fillColor("#0F172A").fontSize(10).font("Helvetica-Bold").text("FINANCIAL SETTLEMENT SUMMARY", margin, y);
-      y += 16;
+      // =========================================================================
+      // 4. FINANCIAL SETTLEMENT SUMMARY TABLE (The Main Section)
+      // =========================================================================
+      doc.fillColor("#0F172A").fontSize(9.5).font("Helvetica-Bold").text("FINANCIAL SETTLEMENT SUMMARY", margin, y);
+      y += 13;
 
       const tableX = margin;
       const tableWidth = contentWidth;
-      const headerRowH = 22;
+      const headerRowH = 18;
 
       // Header Row
-      doc.roundedRect(tableX, y, tableWidth, headerRowH, 4).fill("#1E293B");
-      doc.fillColor("#FFFFFF").fontSize(8).font("Helvetica-Bold").text("FINANCIAL ITEM DESCRIPTION", tableX + 12, y + 7);
-      doc.fillColor("#F59E0B").fontSize(8).font("Helvetica-Bold").text("AMOUNT (INR)", tableX + tableWidth - 150, y + 7, { width: 138, align: "right" });
+      doc.roundedRect(tableX, y, tableWidth, headerRowH, 3).fill("#1E293B");
+      doc.fillColor("#FFFFFF").fontSize(7.5).font("Helvetica-Bold").text("FINANCIAL ITEM DESCRIPTION", tableX + 10, y + 5);
+      doc.fillColor("#F8FAFC").fontSize(7.5).font("Helvetica-Bold").text("AMOUNT (INR)", tableX + tableWidth - 140, y + 5, { width: 130, align: "right" });
 
       y += headerRowH + 2;
 
-      const rows = [
-        { label: "Website / Package Contract Total", value: formatCurrency(data.projectTotal, data.currency), isBold: false },
-        { label: "Amount Previously Paid", value: formatCurrency(data.previousPaid, data.currency), isBold: false },
-        { label: "Current Payment Received", value: formatCurrency(data.currentPayment, data.currency), isHighlight: true },
-        { label: "Total Amount Paid to Date", value: formatCurrency(data.totalPaid, data.currency), isBold: true },
-        { label: "Remaining Balance Due", value: formatCurrency(data.balanceRemaining, data.currency), isRemaining: true }
-      ];
+      interface TableRow {
+        label: string;
+        value: string;
+        isBold?: boolean;
+        isHighlight?: boolean;
+        isRemaining?: boolean;
+        isDiscount?: boolean;
+        isTotal?: boolean;
+      }
 
+      const rows: TableRow[] = [];
+
+      // Build structured rows accurately reflecting the scenario
+      if (isWaiver) {
+        // 100% FULLWAIVER Scenario
+        const listVal = data.listPrice || data.projectTotal || 19999;
+        rows.push({
+          label: "Original Package List Value",
+          value: formatCurrency(listVal, data.currency),
+          isBold: false
+        });
+        rows.push({
+          label: data.discountLabel || "100% Promotional Waiver (FULLWAIVER)",
+          value: `- ${formatCurrency(listVal, data.currency)}`,
+          isDiscount: true
+        });
+        if (data.hostingPrice && data.hostingPrice > 0 && data.hostingDiscount && data.hostingDiscount > 0) {
+          rows.push({
+            label: "Hosting Promotional Waiver",
+            value: `- ${formatCurrency(data.hostingDiscount, data.currency)}`,
+            isDiscount: true
+          });
+        }
+        rows.push({
+          label: "Net Project Contract Value",
+          value: formatCurrency(0, data.currency),
+          isBold: true
+        });
+        rows.push({
+          label: "Current Cash Payment Received",
+          value: formatCurrency(0, data.currency),
+          isHighlight: true
+        });
+        rows.push({
+          label: "Total Cash Paid to Date",
+          value: formatCurrency(0, data.currency),
+          isBold: true
+        });
+        rows.push({
+          label: "Remaining Balance Due",
+          value: formatCurrency(0, data.currency),
+          isRemaining: true
+        });
+      } else if (data.websiteBuildPrice !== undefined && data.hostingPrice !== undefined) {
+        // Explicit Website Build + Hosting Separate Breakdown Scenario
+        rows.push({
+          label: "Website Build List Value",
+          value: formatCurrency(data.websiteBuildPrice, data.currency)
+        });
+        if (data.websiteBuildDiscount && data.websiteBuildDiscount > 0) {
+          rows.push({
+            label: data.websiteBuildDiscountLabel || "Website Build Promotional Waiver",
+            value: `- ${formatCurrency(data.websiteBuildDiscount, data.currency)}`,
+            isDiscount: true
+          });
+        }
+        const netWebsite = Math.max(0, data.websiteBuildPrice - (data.websiteBuildDiscount || 0));
+        rows.push({
+          label: "Website Net Value",
+          value: formatCurrency(netWebsite, data.currency)
+        });
+        rows.push({
+          label: "Managed Cloud Hosting Fee",
+          value: formatCurrency(data.hostingPrice, data.currency)
+        });
+        if (data.hostingDiscount && data.hostingDiscount > 0) {
+          rows.push({
+            label: data.hostingDiscountLabel || "Hosting Promotional Waiver",
+            value: `- ${formatCurrency(data.hostingDiscount, data.currency)}`,
+            isDiscount: true
+          });
+        }
+        rows.push({
+          label: "Net Contract Value Payable",
+          value: formatCurrency(data.projectTotal, data.currency),
+          isTotal: true
+        });
+        rows.push({
+          label: "Current Payment Received",
+          value: formatCurrency(data.currentPayment, data.currency),
+          isHighlight: true
+        });
+        rows.push({
+          label: "Total Amount Paid to Date",
+          value: formatCurrency(data.totalPaid, data.currency),
+          isBold: true
+        });
+        rows.push({
+          label: "Remaining Balance Due",
+          value: formatCurrency(data.balanceRemaining, data.currency),
+          isRemaining: true
+        });
+      } else if (data.listPrice !== undefined && data.discount !== undefined && data.discount > 0) {
+        // Coupon or Upfront Discount + Real Payment Scenario
+        rows.push({
+          label: "Original Package List Value",
+          value: formatCurrency(data.listPrice, data.currency),
+          isBold: false
+        });
+        rows.push({
+          label: data.discountLabel || "Promotional Discount / Coupon",
+          value: `- ${formatCurrency(data.discount, data.currency)}`,
+          isDiscount: true
+        });
+        rows.push({
+          label: "Net Contract Value Payable",
+          value: formatCurrency(data.projectTotal, data.currency),
+          isTotal: true
+        });
+        if (data.previousPaid > 0) {
+          rows.push({
+            label: "Amount Previously Paid (Phase 1)",
+            value: formatCurrency(data.previousPaid, data.currency)
+          });
+        }
+        rows.push({
+          label: "Current Payment Received",
+          value: formatCurrency(data.currentPayment, data.currency),
+          isHighlight: true
+        });
+        rows.push({
+          label: "Total Amount Paid to Date",
+          value: formatCurrency(data.totalPaid, data.currency),
+          isBold: true
+        });
+        rows.push({
+          label: "Remaining Balance Due",
+          value: formatCurrency(data.balanceRemaining, data.currency),
+          isRemaining: true
+        });
+      } else {
+        // Standard Contract / Milestone Settlement Scenario
+        rows.push({
+          label: "Website & Platform Contract Total",
+          value: formatCurrency(data.projectTotal, data.currency),
+          isBold: false
+        });
+        if (data.previousPaid > 0) {
+          rows.push({
+            label: "Amount Previously Paid (Phase 1)",
+            value: formatCurrency(data.previousPaid, data.currency)
+          });
+        }
+        rows.push({
+          label: "Current Payment Received",
+          value: formatCurrency(data.currentPayment, data.currency),
+          isHighlight: true
+        });
+        rows.push({
+          label: "Total Amount Paid to Date",
+          value: formatCurrency(data.totalPaid, data.currency),
+          isBold: true
+        });
+        rows.push({
+          label: "Remaining Balance Due",
+          value: formatCurrency(data.balanceRemaining, data.currency),
+          isRemaining: true
+        });
+      }
+
+      // Render table rows
       rows.forEach((row, idx) => {
-        const rowH = 22;
+        const rowH = 18;
         const rowBg = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
 
-        if (row.isHighlight) {
-          doc.roundedRect(tableX, y, tableWidth, rowH, 3).fill("#FEF3C7");
-          doc.roundedRect(tableX, y, tableWidth, rowH, 3).lineWidth(0.75).stroke("#F59E0B");
-          doc.fillColor("#92400E").fontSize(8.5).font("Helvetica-Bold").text(row.label, tableX + 12, y + 6);
-          doc.fillColor("#B45309").fontSize(8.5).font("Helvetica-Bold").text(row.value, tableX + tableWidth - 150, y + 6, { width: 138, align: "right" });
+        if (row.isDiscount) {
+          doc.roundedRect(tableX, y, tableWidth, rowH, 2).fill("#F0FDF4");
+          doc.roundedRect(tableX, y, tableWidth, rowH, 2).lineWidth(0.5).stroke("#86EFAC");
+          doc.fillColor("#166534").fontSize(8).font("Helvetica-Bold").text(row.label, tableX + 10, y + 4.5);
+          doc.fillColor("#166534").fontSize(8).font("Helvetica-Bold").text(row.value, tableX + tableWidth - 140, y + 4.5, { width: 130, align: "right" });
+        } else if (row.isHighlight) {
+          doc.roundedRect(tableX, y, tableWidth, rowH, 2).fill("#FEF3C7");
+          doc.roundedRect(tableX, y, tableWidth, rowH, 2).lineWidth(0.5).stroke("#F59E0B");
+          doc.fillColor("#92400E").fontSize(8).font("Helvetica-Bold").text(row.label, tableX + 10, y + 4.5);
+          doc.fillColor("#B45309").fontSize(8).font("Helvetica-Bold").text(row.value, tableX + tableWidth - 140, y + 4.5, { width: 130, align: "right" });
         } else if (row.isRemaining) {
           const isZero = data.balanceRemaining === 0;
           const remBg = isZero ? "#F0FDF4" : "#FEF2F2";
           const remBorder = isZero ? "#86EFAC" : "#FCA5A5";
           const remFg = isZero ? "#166534" : "#991B1B";
 
-          doc.roundedRect(tableX, y, tableWidth, rowH, 3).fill(remBg);
-          doc.roundedRect(tableX, y, tableWidth, rowH, 3).lineWidth(0.75).stroke(remBorder);
-          doc.fillColor(remFg).fontSize(8.5).font("Helvetica-Bold").text(row.label, tableX + 12, y + 6);
-          doc.fillColor(remFg).fontSize(8.5).font("Helvetica-Bold").text(row.value, tableX + tableWidth - 150, y + 6, { width: 138, align: "right" });
+          doc.roundedRect(tableX, y, tableWidth, rowH, 2).fill(remBg);
+          doc.roundedRect(tableX, y, tableWidth, rowH, 2).lineWidth(0.5).stroke(remBorder);
+          doc.fillColor(remFg).fontSize(8).font("Helvetica-Bold").text(row.label, tableX + 10, y + 4.5);
+          doc.fillColor(remFg).fontSize(8).font("Helvetica-Bold").text(row.value, tableX + tableWidth - 140, y + 4.5, { width: 130, align: "right" });
+        } else if (row.isTotal) {
+          doc.roundedRect(tableX, y, tableWidth, rowH, 2).fill("#F1F5F9");
+          doc.roundedRect(tableX, y, tableWidth, rowH, 2).lineWidth(0.5).stroke("#CBD5E1");
+          doc.fillColor("#0F172A").fontSize(8).font("Helvetica-Bold").text(row.label, tableX + 10, y + 4.5);
+          doc.fillColor("#0F172A").fontSize(8).font("Helvetica-Bold").text(row.value, tableX + tableWidth - 140, y + 4.5, { width: 130, align: "right" });
         } else {
           doc.roundedRect(tableX, y, tableWidth, rowH, 2).fill(rowBg);
           doc.roundedRect(tableX, y, tableWidth, rowH, 2).lineWidth(0.5).stroke("#E2E8F0");
-          doc.fillColor(row.isBold ? "#0F172A" : "#334155").fontSize(8.5).font(row.isBold ? "Helvetica-Bold" : "Helvetica").text(row.label, tableX + 12, y + 6);
-          doc.fillColor(row.isBold ? "#0F172A" : "#1E293B").fontSize(8.5).font(row.isBold ? "Helvetica-Bold" : "Helvetica").text(row.value, tableX + tableWidth - 150, y + 6, { width: 138, align: "right" });
+          doc.fillColor(row.isBold ? "#0F172A" : "#334155").fontSize(8).font(row.isBold ? "Helvetica-Bold" : "Helvetica").text(row.label, tableX + 10, y + 4.5);
+          doc.fillColor(row.isBold ? "#0F172A" : "#1E293B").fontSize(8).font(row.isBold ? "Helvetica-Bold" : "Helvetica").text(row.value, tableX + tableWidth - 140, y + 4.5, { width: 130, align: "right" });
         }
 
-        y += rowH + 3;
+        y += rowH + 2;
       });
 
-      y += 14;
+      y += 8;
 
-      // --- 5. PROMINENT PAYMENT CONFIRMATION SECTION ---
-      const confirmBoxH = 68;
-      const isSettled = data.balanceRemaining === 0;
-      const confirmBg = isSettled ? "#F0FDF4" : "#EFF6FF";
-      const confirmBorder = isSettled ? "#86EFAC" : "#BFDBFE";
-      const confirmTextFg = isSettled ? "#166534" : "#1E40AF";
-      const confirmBadgeBg = isSettled ? "#15803D" : "#1D4ED8";
+      // =========================================================================
+      // 5. PROMINENT STATUS & CONFIRMATION BOX
+      // =========================================================================
+      const confirmBoxH = 58;
 
-      doc.roundedRect(margin, y, contentWidth, confirmBoxH, 6).fill(confirmBg);
-      doc.roundedRect(margin, y, contentWidth, confirmBoxH, 6).lineWidth(1).stroke(confirmBorder);
+      let confirmBg = "#F0FDF4";
+      let confirmBorder = "#86EFAC";
+      let confirmTextFg = "#166534";
+      let confirmBadgeBg = "#15803D";
+      let sectionTitle = "✓ OFFICIAL PAYMENT CONFIRMATION";
+      let statusPillText = data.statusBadgeText || (isSettled ? "PAID IN FULL" : "PARTIALLY PAID");
 
-      let confY = y + 10;
-      doc.fillColor(confirmTextFg).fontSize(9).font("Helvetica-Bold").text("✓ OFFICIAL PAYMENT CONFIRMATION", margin + 14, confY);
-      
-      // Status Pill
-      const statusPillText = isSettled ? "PAID IN FULL" : data.paymentStatus === "partially_paid" ? "PARTIALLY PAID" : "PAYMENT RECEIVED";
-      const statusPillW = 95;
-      doc.roundedRect(width - margin - statusPillW - 14, confY - 2, statusPillW, 16, 4).fill(confirmBadgeBg);
-      doc.fillColor("#FFFFFF").fontSize(7.5).font("Helvetica-Bold").text(statusPillText, width - margin - statusPillW - 14, confY + 2, { width: statusPillW, align: "center" });
-
-      confY += 16;
-      doc.fillColor(confirmTextFg).fontSize(16).font("Helvetica-Bold").text(formatCurrency(data.currentPayment, data.currency), margin + 14, confY);
-
-      confY += 20;
-      const noteMessage = isSettled
-        ? `This official receipt confirms that the payment of ${formatCurrency(data.currentPayment, data.currency)} was successfully received. Your project contract total of ${formatCurrency(data.projectTotal, data.currency)} is now FULLY SETTLED and your remaining balance is Rs. 0.`
-        : `This official receipt confirms that a partial payment of ${formatCurrency(data.currentPayment, data.currency)} was successfully received. Total amount paid to date is ${formatCurrency(data.totalPaid, data.currency)}. Remaining balance due is ${formatCurrency(data.balanceRemaining, data.currency)}.`;
-
-      doc.fillColor(confirmTextFg).fontSize(7.5).font("Helvetica").text(noteMessage, margin + 14, confY, { width: contentWidth - 28 });
-
-      y += confirmBoxH + 16;
-
-      // --- 6. TRANSACTION & AUDIT REFERENCE ---
-      doc.fillColor("#0F172A").fontSize(10).font("Helvetica-Bold").text("TRANSACTION & AUDIT REFERENCE", margin, y);
-      y += 14;
-
-      const txBoxH = data.gstin ? 70 : 56;
-      doc.roundedRect(margin, y, contentWidth, txBoxH, 6).fill("#F8FAFC");
-      doc.roundedRect(margin, y, contentWidth, txBoxH, 6).lineWidth(0.75).stroke("#E2E8F0");
-
-      let tY = y + 10;
-      const tCol1 = margin + 12;
-      const tCol2 = margin + contentWidth / 2 + 10;
-
-      // Row 1
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Payment Method:", tCol1, tY);
-      doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.paymentMethod, tCol1 + 85, tY);
-
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Transaction Date:", tCol2, tY);
-      doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.paymentDate, tCol2 + 85, tY);
-
-      tY += 18;
-
-      // Row 2
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Transaction ID:", tCol1, tY);
-      doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.transactionId || "VERIFIED_RECORD", tCol1 + 85, tY);
-
-      doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("Order Reference:", tCol2, tY);
-      doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.orderId || "N/A", tCol2 + 85, tY);
-
-      if (data.gstin) {
-        tY += 18;
-        doc.fillColor("#64748B").fontSize(8).font("Helvetica").text("GSTIN / Tax ID:", tCol1, tY);
-        doc.fillColor("#0F172A").fontSize(8.5).font("Helvetica-Bold").text(data.gstin, tCol1 + 85, tY);
+      if (isWaiver) {
+        confirmBg = "#F0FDF4";
+        confirmBorder = "#86EFAC";
+        confirmTextFg = "#166534";
+        confirmBadgeBg = "#15803D";
+        sectionTitle = "✓ PROMOTIONAL SETTLEMENT CONFIRMATION";
+        statusPillText = data.statusBadgeText || "FULLY WAIVED (100% PROMO)";
+      } else if (isSimulated) {
+        confirmBg = "#F8FAFC";
+        confirmBorder = "#CBD5E1";
+        confirmTextFg = "#334155";
+        confirmBadgeBg = "#475569";
+        sectionTitle = "✓ SANDBOX TEST CONFIRMATION";
+        statusPillText = data.statusBadgeText || "TEST / SIMULATION";
+      } else if (data.paymentMethod?.toLowerCase().includes("manual")) {
+        confirmBg = "#F0FDF4";
+        confirmBorder = "#86EFAC";
+        confirmTextFg = "#166534";
+        confirmBadgeBg = "#15803D";
+        sectionTitle = "✓ MANUAL RECONCILIATION CONFIRMATION";
+        statusPillText = data.statusBadgeText || "MANUALLY SETTLED";
+      } else if (!isSettled) {
+        confirmBg = "#EFF6FF";
+        confirmBorder = "#BFDBFE";
+        confirmTextFg = "#1E40AF";
+        confirmBadgeBg = "#1D4ED8";
+        sectionTitle = "✓ PARTIAL PAYMENT CONFIRMATION";
+        statusPillText = data.statusBadgeText || "PARTIALLY PAID";
       }
 
-      // --- 7. FOOTER SECTION ---
-      const footerY = height - 48;
-      doc.moveTo(margin, footerY - 10).lineTo(width - margin, footerY - 10).lineWidth(0.75).stroke("#E2E8F0");
+      doc.roundedRect(margin, y, contentWidth, confirmBoxH, 4).fill(confirmBg);
+      doc.roundedRect(margin, y, contentWidth, confirmBoxH, 4).lineWidth(0.75).stroke(confirmBorder);
 
-      // Draw small monochrome CodeFuser logo in footer
+      let confY = y + 7;
+      doc.fillColor(confirmTextFg).fontSize(8.5).font("Helvetica-Bold").text(sectionTitle, margin + 12, confY);
+
+      // Status Badge Pill
+      const pillWidth = 140;
+      doc.roundedRect(width - margin - pillWidth - 12, confY - 2, pillWidth, 15, 3).fill(confirmBadgeBg);
+      doc.fillColor("#FFFFFF").fontSize(7).font("Helvetica-Bold").text(statusPillText, width - margin - pillWidth - 12, confY + 2, { width: pillWidth, align: "center" });
+
+      confY += 13;
+      const displayAmountText = isWaiver
+        ? "Rs. 0 (100% Waived)"
+        : isSimulated
+        ? "Rs. 0 (Simulation)"
+        : formatCurrency(data.currentPayment, data.currency);
+      doc.fillColor(confirmTextFg).fontSize(13).font("Helvetica-Bold").text(displayAmountText, margin + 12, confY);
+
+      confY += 16;
+      let noteMessage = data.confirmationMessage;
+      if (!noteMessage) {
+        if (isWaiver) {
+          noteMessage = "This project was completed under a 100% promotional waiver. Total cash collected: Rs. 0. Project is fully active.";
+        } else if (isSimulated) {
+          noteMessage = "This test statement confirms that this transaction was executed in sandbox simulation mode. No real payment was collected.";
+        } else if (isSettled) {
+          noteMessage = `Payment of ${formatCurrency(data.currentPayment, data.currency)} was successfully received. Remaining balance: Rs. 0. Project contract is fully settled.`;
+        } else {
+          noteMessage = `Payment of ${formatCurrency(data.currentPayment, data.currency)} was successfully received. Total amount paid to date: ${formatCurrency(data.totalPaid, data.currency)}. Remaining balance: ${formatCurrency(data.balanceRemaining, data.currency)}.`;
+        }
+      }
+
+      doc.fillColor(confirmTextFg).fontSize(7).font("Helvetica").text(noteMessage, margin + 12, confY, { width: contentWidth - 24 });
+
+      y += confirmBoxH + 10;
+
+      // =========================================================================
+      // 6. TRANSACTION & AUDIT REFERENCE (Secondary Information)
+      // =========================================================================
+      doc.fillColor("#0F172A").fontSize(9.5).font("Helvetica-Bold").text("TRANSACTION & AUDIT REFERENCE", margin, y);
+      y += 11;
+
+      const txBoxH = data.gstin ? 56 : 44;
+      doc.roundedRect(margin, y, contentWidth, txBoxH, 4).fill("#F8FAFC");
+      doc.roundedRect(margin, y, contentWidth, txBoxH, 4).lineWidth(0.5).stroke("#E2E8F0");
+
+      let tY = y + 7;
+      const tCol1 = margin + 10;
+      const tCol2 = margin + contentWidth / 2 + 8;
+
+      const txLabel = data.transactionLabel || (isWaiver ? "Waiver Reference:" : isSimulated ? "Simulation Reference:" : "Transaction ID:");
+      const ordLabel = data.orderLabel || (isWaiver ? "Waiver Order Ref:" : isSimulated ? "Simulation Order Ref:" : "Order Reference:");
+
+      // Row 1
+      doc.fillColor("#64748B").fontSize(7.5).font("Helvetica").text("Payment Method:", tCol1, tY);
+      doc.fillColor("#0F172A").fontSize(8).font("Helvetica-Bold").text(data.paymentMethod, tCol1 + 85, tY);
+
+      doc.fillColor("#64748B").fontSize(7.5).font("Helvetica").text("Transaction Date:", tCol2, tY);
+      doc.fillColor("#0F172A").fontSize(8).font("Helvetica-Bold").text(data.paymentDate, tCol2 + 85, tY);
+
+      tY += 15;
+
+      // Row 2
+      doc.fillColor("#64748B").fontSize(7.5).font("Helvetica").text(txLabel, tCol1, tY);
+      doc.fillColor("#0F172A").fontSize(8).font("Helvetica-Bold").text(data.transactionId || "VERIFIED_RECORD", tCol1 + 85, tY);
+
+      doc.fillColor("#64748B").fontSize(7.5).font("Helvetica").text(ordLabel, tCol2, tY);
+      doc.fillColor("#0F172A").fontSize(8).font("Helvetica-Bold").text(data.orderId || "N/A", tCol2 + 85, tY);
+
+      if (data.gstin) {
+        tY += 15;
+        doc.fillColor("#64748B").fontSize(7.5).font("Helvetica").text("GSTIN / Tax ID:", tCol1, tY);
+        doc.fillColor("#0F172A").fontSize(8).font("Helvetica-Bold").text(data.gstin, tCol1 + 85, tY);
+      }
+
+      // =========================================================================
+      // 7. FOOTER SECTION
+      // =========================================================================
+      const footerY = height - 42;
+      doc.moveTo(margin, footerY - 6).lineTo(width - margin, footerY - 6).lineWidth(0.5).stroke("#E2E8F0");
+
+      // Footer brand mark
       doc.save();
-      doc.translate(margin, footerY - 2);
-      doc.scale(0.08);
-      doc.lineWidth(12.5);
+      doc.translate(margin, footerY);
+      doc.scale(0.075);
+      doc.lineWidth(12);
       doc.strokeColor("#475569");
       doc.path("M 75,18 L 47,18 A 32,32 0 0 0 47,82 L 75,82");
       doc.path("M 126,16.4 C 107,16.4 104,29 104,40.5 C 104,46.8 99,50 88,50 C 99,50 104,53.2 104,59.5 C 104,71 107,83.6 126,83.6");
@@ -343,18 +619,18 @@ export function generatePaymentReceiptPDF(data: PaymentReceiptData): Promise<Buf
       doc.stroke();
       doc.restore();
 
-      doc.fillColor("#475569").fontSize(7.5).font("Helvetica-Bold").text(
-        "CodeFuser Digital Growth & Web Engineering • codefuser.in • support@codefuser.com",
-        margin + 65,
-        footerY,
-        { width: contentWidth - 65, align: "right" }
+      doc.fillColor("#475569").fontSize(7).font("Helvetica-Bold").text(
+        "CodeFuser Digital Growth & Web Engineering • support@codefuser.com • https://codefuser.in",
+        margin + 60,
+        footerY + 1,
+        { width: contentWidth - 60, align: "right" }
       );
 
-      doc.fillColor("#94A3B8").fontSize(7).font("Helvetica").text(
-        "Official Payment Receipt • System Generated • This receipt confirms the payment recorded against the above project.",
-        margin + 65,
+      doc.fillColor("#94A3B8").fontSize(6.5).font("Helvetica").text(
+        `Official ${docTitle} • System Generated • Retain this document for your business & accounting records.`,
+        margin + 60,
         footerY + 11,
-        { width: contentWidth - 65, align: "right" }
+        { width: contentWidth - 60, align: "right" }
       );
 
       doc.end();
