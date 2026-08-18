@@ -210,7 +210,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const isAssetProvided = (val?: string) => {
     if (!val) return false;
     const v = val.toLowerCase().trim();
-    return v !== "pending" && v !== "yes" && v !== "no" && v !== "help" && v !== "no_help" && v !== "";
+    // It should be ticked ONLY if it starts with "provided: " or is "confirmed: help"
+    return v.startsWith("provided:") || v === "confirmed: help";
   };
 
   const checklistItems = [

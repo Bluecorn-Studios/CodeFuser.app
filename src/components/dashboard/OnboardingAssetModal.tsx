@@ -177,35 +177,28 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
   const isAssetProvided = (val?: string) => {
     if (!val) return false;
     const v = val.toLowerCase().trim();
-    return v !== "pending" && v !== "yes" && v !== "no" && v !== "help" && v !== "no_help" && v !== "";
+    // It should be ticked ONLY if it starts with "provided: " or is "confirmed: help"
+    return v.startsWith("provided:") || v === "confirmed: help";
   };
 
   const getStepStatus = (step: AssetStepKey) => {
     if (!project) return "needed";
     if (step === "1") {
-      return (businessName || project.businessName) && (clientName || project.clientName) && (phone || project.whatsapp) && (email || project.email)
+      return project.businessName && project.clientName && project.whatsapp && project.email
         ? "done"
         : "needed";
     }
     if (step === "2") {
-      return logoMode === "help" || logoFilePreview || logoLink.trim() || isAssetProvided(project.hasLogo)
-        ? "done"
-        : "needed";
+      return isAssetProvided(project.hasLogo) ? "done" : "needed";
     }
     if (step === "3") {
-      return galleryMode === "help" || galleryFilesPreviews.length > 0 || galleryLink.trim() || isAssetProvided(project.galleryReady)
-        ? "done"
-        : "needed";
+      return isAssetProvided(project.galleryReady) ? "done" : "needed";
     }
     if (step === "4") {
-      return servicesMode === "help" || servicesText.trim() || servicesDocName || isAssetProvided(project.contentReady)
-        ? "done"
-        : "needed";
+      return isAssetProvided(project.contentReady) ? "done" : "needed";
     }
     if (step === "5") {
-      return domainMode === "buy_for_me" || domainMode === "subdomain" || domainName.trim() || isAssetProvided(project.hasDomain)
-        ? "done"
-        : "needed";
+      return isAssetProvided(project.hasDomain) ? "done" : "needed";
     }
     return "needed";
   };
@@ -236,9 +229,9 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       } else if (logoMode === "link" && logoLink.trim()) {
         payload.hasLogo = logoLink.startsWith("Provided:") ? logoLink : `Provided: ${logoLink}`;
       } else if (logoMode === "upload" && logoFilePreview) {
-        payload.hasLogo = logoFilePreview;
+        payload.hasLogo = `Provided: uploaded`;
       } else if (logoMode === "none") {
-        payload.hasLogo = "not_required";
+        payload.hasLogo = "Provided: not_required";
       } else if (logoLink.trim()) {
         payload.hasLogo = `Provided: ${logoLink}`;
       } else if (project?.hasLogo) {
@@ -253,10 +246,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         payload.galleryReady = galleryLink.startsWith("Provided:") ? galleryLink : `Provided: ${galleryLink}`;
       } else if (galleryMode === "upload") {
         payload.galleryReady = galleryFilesPreviews.length > 0
-          ? `Uploaded ${galleryFilesPreviews.length} photo${galleryFilesPreviews.length > 1 ? "s" : ""}`
-          : (project?.galleryReady || "Uploaded photos");
+          ? `Provided: Uploaded ${galleryFilesPreviews.length} photo${galleryFilesPreviews.length > 1 ? "s" : ""}`
+          : (project?.galleryReady || "Provided: Uploaded photos");
       } else if (galleryMode === "none") {
-        payload.galleryReady = "not_required";
+        payload.galleryReady = "Provided: not_required";
       } else if (galleryLink.trim()) {
         payload.galleryReady = `Provided: ${galleryLink}`;
       } else if (project?.galleryReady) {
@@ -274,7 +267,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         }
         payload.contentReady = contentStr ? `Provided: ${contentStr}` : "Confirmed: help";
       } else if (servicesMode === "none") {
-        payload.contentReady = "not_required";
+        payload.contentReady = "Provided: not_required";
       } else if (servicesText.trim()) {
         payload.contentReady = `Provided: ${servicesText.trim()}`;
       } else if (project?.contentReady) {
@@ -284,9 +277,9 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       }
     } else if (activeStep === "5") {
       if (domainMode === "buy_for_me") {
-        payload.hasDomain = domainName.trim() ? `Help buy: ${domainName.trim()}` : "Confirmed: help";
+        payload.hasDomain = domainName.trim() ? `Provided: Help buy ${domainName.trim()}` : "Confirmed: help";
       } else if (domainMode === "subdomain") {
-        payload.hasDomain = "not_required";
+        payload.hasDomain = "Provided: not_required";
       } else if (domainMode === "own" && domainName.trim()) {
         payload.hasDomain = domainName.startsWith("Provided:") ? domainName : `Provided: ${domainName}`;
       } else if (domainName.trim()) {
