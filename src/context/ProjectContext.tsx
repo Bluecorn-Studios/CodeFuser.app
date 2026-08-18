@@ -80,10 +80,18 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     setError(null);
 
+    const timeoutId = setTimeout(() => {
+      if (!isBackground) {
+        console.warn("[ProjectProvider] fetchProject timed out after 4000ms, forcing isLoading = false");
+        updateIsLoading(false, "fetchProject timeout");
+      }
+    }, 4000);
+
     try {
       // Direct fetch to log response status and raw body
       const startTime = performance.now();
       const res = await apiClient<{ success: boolean; projects?: ProjectData[]; data?: ProjectData[] }>(url);
+      clearTimeout(timeoutId);
       const endTime = performance.now();
 
       console.log("response status", 200);
@@ -100,6 +108,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setProject(null);
       }
     } catch (err: any) {
+      clearTimeout(timeoutId);
       console.log("response status", err.status || "ERROR");
       console.log("response body", err.message || err);
       console.warn("[ProjectProvider] Failed to fetch project:", err);
@@ -109,6 +118,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setProjects([]);
       }
     } finally {
+      clearTimeout(timeoutId);
       if (!isBackground) {
         updateIsLoading(false, "fetchProject finally");
       }

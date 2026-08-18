@@ -76,8 +76,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async function initAuth() {
       const startTime = performance.now();
       console.log(`[TRACING] initAuth entered | timestamp: ${new Date().toISOString()} | loadingBefore: true`);
+
+      const timeoutId = setTimeout(() => {
+        if (mounted) {
+          console.warn("[AuthProvider] initAuth timed out after 3500ms, forcing isLoading = false");
+          setIsLoading(false);
+        }
+      }, 3500);
+
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        clearTimeout(timeoutId);
         const endTime = performance.now();
         console.log(`[TRACING] initAuth getSession resolved | elapsed: ${(endTime - startTime).toFixed(2)}ms | session: ${initialSession ? initialSession.user.email : 'null'}`);
         if (error) console.error("[TRACING] getSession error:", error);
@@ -85,12 +94,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           updateAuthState(initialSession);
         }
       } catch (err) {
+        clearTimeout(timeoutId);
         const endTime = performance.now();
         console.error(`[TRACING] initAuth threw error | elapsed: ${(endTime - startTime).toFixed(2)}ms:`, err);
         if (mounted) {
           updateAuthState(null);
         }
       } finally {
+        clearTimeout(timeoutId);
         if (mounted) {
           setIsLoading(false);
           console.log(`[TRACING] initAuth exited | timestamp: ${new Date().toISOString()} | loadingAfter: false`);
