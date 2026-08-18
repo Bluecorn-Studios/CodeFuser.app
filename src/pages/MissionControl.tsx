@@ -649,23 +649,6 @@ export const MissionControl: React.FC = () => {
           </div>
           <div className="flex flex-wrap gap-2.5 items-center">
             <Button
-              variant={isEmergencyMode ? "important" : "secondary"}
-              size="sm"
-              onClick={() => {
-                const nextState = !isEmergencyMode;
-                setIsEmergencyMode(nextState);
-                safeLocalStorage.setItem("fuser_emergency_mode", String(nextState));
-                alert(nextState 
-                  ? "⚡ EMERGENCY FOUNDER MODE ACTIVATED: All automated client notifications, payment reminders, and renewal alerts have been safely paused." 
-                  : "✅ Emergency Mode Deactivated: Normal operations restored."
-                );
-              }}
-              className={isEmergencyMode ? "animate-pulse" : ""}
-            >
-              🚨 {isEmergencyMode ? "EMERGENCY MODE ACTIVE" : "EMERGENCY MODE"}
-            </Button>
-
-            <Button
               variant="secondary"
               size="sm"
               onClick={fetchProjects}
@@ -832,74 +815,6 @@ export const MissionControl: React.FC = () => {
           >
             System
           </Button>
-        </div>
-
-        {/* EMERGENCY MODE BANNER */}
-        {isEmergencyMode && (
-          <div className="mb-6 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-sans leading-relaxed flex items-start gap-3 relative overflow-hidden">
-            <span className="text-amber-400 font-black text-lg select-none">🚨</span>
-            <div className="space-y-1">
-              <strong className="text-amber-300 uppercase tracking-wider font-mono font-extrabold block">
-                EMERGENCY FOUNDER MODE IS CURRENTLY ACTIVE
-              </strong>
-              <p className="text-neutral-200">
-                All automated client notifications, scheduled emails, Razorpay payment reminders, and hosting renewal alerts are paused. Your business will fail gracefully with zero client disruption while you are away.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* DEVELOPER SETTINGS PAYMENT MODE CONTROLLER */}
-        <div className="mb-6">
-          <PaymentSimulationPanel
-            projectId={projects.length > 0 ? projects[0].id : ""}
-            getAuthToken={getAuthToken}
-            onSuccess={() => fetchProjects()}
-          />
-        </div>
-
-        {/* FOUNDER-ONLY COST & PROFIT VISIBILITY CARD */}
-        <div className="mb-8 bg-[#050505] border border-amber-500/20 rounded-2xl p-5 relative overflow-hidden font-sans space-y-3">
-          <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-amber-400 font-black text-sm">🔒</span>
-              <span className="text-xs font-mono font-bold uppercase tracking-widest text-amber-400">
-                FOUNDER-ONLY FINANCIAL & PROFIT VISIBILITY
-              </span>
-            </div>
-            <span className="text-[9px] font-mono text-neutral-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">
-              Strictly Hidden From Clients
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-            <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-850">
-              <div className="text-[10px] font-mono text-neutral-400 uppercase">Gross Revenue</div>
-              <div className="text-base font-extrabold text-emerald-400 font-mono mt-1">
-                ₹{projects.reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 9999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 0), 0).toLocaleString("en-IN")}
-              </div>
-            </div>
-            <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-850">
-              <div className="text-[10px] font-mono text-neutral-400 uppercase">Est. Infrastructure (Est.)</div>
-              <div className="text-base font-extrabold text-amber-400 font-mono mt-1">
-                ₹{(projects.length * 1200).toLocaleString("en-IN")}
-              </div>
-              <div className="text-[8.5px] font-mono text-neutral-500 mt-0.5">Domain + Hosting overhead</div>
-            </div>
-            <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-850">
-              <div className="text-[10px] font-mono text-neutral-400 uppercase">Estimated Net Profit</div>
-              <div className="text-base font-extrabold text-white font-mono mt-1">
-                ₹{Math.max(0, projects.reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 9999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 0), 0) - (projects.length * 1200)).toLocaleString("en-IN")}
-              </div>
-            </div>
-            <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-850">
-              <div className="text-[10px] font-mono text-neutral-400 uppercase">Net Margin</div>
-              <div className="text-base font-extrabold text-emerald-400 font-mono mt-1">
-                {projects.length > 0 ? "~88%" : "100%"}
-              </div>
-              <div className="text-[8.5px] font-mono text-neutral-500 mt-0.5">High-margin software agency</div>
-            </div>
-          </div>
         </div>
 
         {activeTab === "overview" && (
@@ -3006,52 +2921,58 @@ export const MissionControl: React.FC = () => {
                           </div>
 
                           {/* Technical Core Action block */}
-                          <div className="mt-5 pt-4 border-t border-neutral-900 flex justify-between items-center bg-card/60 rounded-xl p-3.5 border border-border/40">
-                            <div>
-                              <p className="text-[10px] font-mono text-muted-foreground/75 uppercase tracking-wide">
-                                Compiled under Track ID CodeFuser Core:
-                              </p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="font-mono text-zinc-300 font-semibold text-[11px]">
-                                  {proj.id ? proj.id.toUpperCase() : ""}
-                                </span>
-                                <button
-                                  onClick={() => handleFetchAuditTrail(proj.id)}
-                                  className="text-[9px] font-mono font-bold uppercase tracking-wider text-amber-500 hover:text-white bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded-md cursor-pointer transition-colors"
+                          <details className="mt-5 pt-4 border-t border-neutral-900 group">
+                            <summary className="text-[11px] font-mono font-bold text-neutral-400 hover:text-white cursor-pointer uppercase tracking-wider py-1 select-none flex items-center gap-2">
+                              <span>🔍 Inspect Technical Metadata / Track ID</span>
+                              <span className="text-[9px] text-neutral-500 font-normal">(Click to expand)</span>
+                            </summary>
+                            <div className="mt-3 flex justify-between items-center bg-card/60 rounded-xl p-3.5 border border-border/40">
+                              <div>
+                                <p className="text-[10px] font-mono text-muted-foreground/75 uppercase tracking-wide">
+                                  Compiled under Track ID CodeFuser Core:
+                                </p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="font-mono text-zinc-300 font-semibold text-[11px]">
+                                    {proj.id ? proj.id.toUpperCase() : ""}
+                                  </span>
+                                  <button
+                                    onClick={() => handleFetchAuditTrail(proj.id)}
+                                    className="text-[9px] font-mono font-bold uppercase tracking-wider text-amber-500 hover:text-white bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded-md cursor-pointer transition-colors"
+                                  >
+                                    🔍 View Audit Trail
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2.5">
+                                {/* Real-time Status Dropdown */}
+                                <select
+                                  value={proj.status}
+                                  onChange={(e) => handleUpdateStatus(proj.id, e.target.value)}
+                                  className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase text-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500/30 cursor-pointer h-8"
                                 >
-                                  🔍 View Audit Trail
+                                  <option value="Project Filed">1. Payment Received</option>
+                                  <option value="Specs Audited">2. Project Created</option>
+                                  <option value="Assets Pending">3. Asset Collection</option>
+                                  <option value="Designing">4. Design Started</option>
+                                  <option value="Development">5. Development</option>
+                                  <option value="Client Review">6. Client Review</option>
+                                  <option value="Revisions">7. Revisions</option>
+                                  <option value="Testing">8. Testing</option>
+                                  <option value="Launched">9. Launch</option>
+                                  <option value="Delivered">10. Delivery</option>
+                                </select>
+
+                                <button
+                                  onClick={() => {
+                                    alert(`Successfully initiated development compiler for project ${proj.id}. CodeFuser systems are mapping the custom database schema layouts...`);
+                                  }}
+                                  className="px-3.5 py-1.5 bg-neutral-900 border border-neutral-800 text-[10px] font-mono font-bold uppercase rounded-lg text-amber-500 hover:bg-neutral-800 tracking-wider transition-all h-8 flex items-center"
+                                >
+                                  🚀 Start Compiler
                                 </button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2.5">
-                              {/* Real-time Status Dropdown */}
-                              <select
-                                value={proj.status}
-                                onChange={(e) => handleUpdateStatus(proj.id, e.target.value)}
-                                className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase text-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500/30 cursor-pointer h-8"
-                              >
-                                <option value="Project Filed">1. Payment Received</option>
-                                <option value="Specs Audited">2. Project Created</option>
-                                <option value="Assets Pending">3. Asset Collection</option>
-                                <option value="Designing">4. Design Started</option>
-                                <option value="Development">5. Development</option>
-                                <option value="Client Review">6. Client Review</option>
-                                <option value="Revisions">7. Revisions</option>
-                                <option value="Testing">8. Testing</option>
-                                <option value="Launched">9. Launch</option>
-                                <option value="Delivered">10. Delivery</option>
-                              </select>
-
-                              <button
-                                onClick={() => {
-                                  alert(`Successfully initiated development compiler for project ${proj.id}. CodeFuser systems are mapping the custom database schema layouts...`);
-                                }}
-                                className="px-3.5 py-1.5 bg-neutral-900 border border-neutral-800 text-[10px] font-mono font-bold uppercase rounded-lg text-amber-500 hover:bg-neutral-800 tracking-wider transition-all h-8 flex items-center"
-                              >
-                                🚀 Start Compiler
-                              </button>
-                            </div>
-                          </div>
+                          </details>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -3067,6 +2988,53 @@ export const MissionControl: React.FC = () => {
 
         {activeTab === "users" && (
           <div className="space-y-6">
+            {/* SYSTEM CONTROLS & ADVANCED SANDBOX */}
+            <div className="bg-card border border-border/80 rounded-2xl p-6 space-y-6">
+              <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
+                <div>
+                  <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider">System & Emergency Controls</h3>
+                  <p className="text-xs text-neutral-400 mt-1">Manage global emergency state and execute test payment simulations.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${isEmergencyMode ? "bg-amber-500/10 border-amber-500/30 text-amber-400 animate-pulse" : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"}`}>
+                    {isEmergencyMode ? "🚨 Emergency Mode Active" : "✓ System Normal"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-black/40 rounded-xl border border-neutral-900">
+                <div>
+                  <span className="text-xs font-bold text-white block">Emergency Founder Mode</span>
+                  <span className="text-[11px] text-neutral-400 block mt-0.5">Pauses all automated emails, payment reminders, and renewal alerts.</span>
+                </div>
+                <Button
+                  variant={isEmergencyMode ? "important" : "secondary"}
+                  size="sm"
+                  onClick={() => {
+                    const nextState = !isEmergencyMode;
+                    setIsEmergencyMode(nextState);
+                    safeLocalStorage.setItem("fuser_emergency_mode", String(nextState));
+                    alert(nextState 
+                      ? "⚡ EMERGENCY FOUNDER MODE ACTIVATED: All automated client notifications, payment reminders, and renewal alerts have been safely paused." 
+                      : "✅ Emergency Mode Deactivated: Normal operations restored."
+                    );
+                  }}
+                  className={isEmergencyMode ? "animate-pulse" : ""}
+                >
+                  🚨 {isEmergencyMode ? "DISABLE EMERGENCY MODE" : "ACTIVATE EMERGENCY MODE"}
+                </Button>
+              </div>
+
+              {/* Advanced Payment Sandbox */}
+              <div className="pt-2">
+                <PaymentSimulationPanel
+                  projectId={projects.length > 0 ? projects[0].id : ""}
+                  getAuthToken={getAuthToken}
+                  onSuccess={() => fetchProjects()}
+                />
+              </div>
+            </div>
+
             {/* Search/Filter for Users */}
             <div className="bg-card border border-border/80 rounded-2xl p-4 sm:p-5 mb-8 flex flex-col sm:flex-row gap-4 items-center">
               <div className="relative w-full flex-1">
