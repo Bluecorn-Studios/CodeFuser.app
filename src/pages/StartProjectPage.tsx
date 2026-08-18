@@ -4226,14 +4226,87 @@ That's enough. We'll help with the rest.`}
                   <p className="text-xs text-red-400 font-medium">{couponError}</p>
                 )}
                 {appliedCoupon && (
-                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
-                    <p className="font-bold flex items-center gap-1.5">
-                      <ShieldCheck size={14} /> {appliedCoupon.name} Applied Successfully!
-                    </p>
-                    <p className="text-[11px] opacity-90">{appliedCoupon.description}</p>
-                    {appliedCoupon.hostingWaived && (
-                      <p className="text-[11px] font-bold text-emerald-400">✓ Monthly Hosting Fee Fully Waived (₹1,000 → ₹0)</p>
-                    )}
+                  <div className="p-4 rounded-2xl bg-zinc-950/90 border border-white/20 text-xs text-white space-y-3.5 shadow-lg">
+                    {/* Header: Coupon status & clear discount rule */}
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-white text-black font-mono font-bold text-[10px] tracking-wider uppercase">
+                          Coupon Applied
+                        </span>
+                        <span className="font-mono font-bold text-white tracking-wide">
+                          {appliedCoupon.code || appliedCoupon.name}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        {appliedCoupon.discountType === 'free_build' || finalWebsitePrice === 0 ? (
+                          <span className="text-xs font-bold text-emerald-400">
+                            {appliedCoupon.hostingWaived ? "100% off website build + hosting" : "100% off website build"}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold text-emerald-400">
+                            {appliedCoupon.discountType === 'percentage' 
+                              ? `${appliedCoupon.discountValue}% off website build` 
+                              : `₹${Number(appliedCoupon.discountValue || 0).toLocaleString('en-IN')} off website build`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Accurate itemized breakdown: What is free vs what is still charged */}
+                    <div className="space-y-2 font-mono text-xs">
+                      <div className="flex justify-between items-center text-zinc-300">
+                        <span className="font-sans text-xs">Website build</span>
+                        <div className="flex items-center gap-2">
+                          {websiteDiscount > 0 ? (
+                            <>
+                              <span className="line-through text-zinc-500 font-sans text-xs">₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
+                              <span className="font-bold text-white">₹{finalWebsitePrice.toLocaleString('en-IN')}</span>
+                            </>
+                          ) : (
+                            <span className="font-bold text-white">₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center text-zinc-300">
+                        <span className="font-sans text-xs">Hosting</span>
+                        <div className="flex items-center gap-2">
+                          {hostingWaived ? (
+                            <>
+                              <span className="line-through text-zinc-500 font-sans text-xs">₹1,000</span>
+                              <span className="font-bold text-emerald-400">₹0 <span className="text-[10px] font-normal text-zinc-400">/month</span></span>
+                            </>
+                          ) : (
+                            <span className="font-bold text-white">₹1,000 <span className="text-[10px] font-normal text-zinc-400">/month</span></span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-white/10 pt-2 flex justify-between items-center">
+                        <span className="font-bold uppercase tracking-wider text-white text-xs font-sans">Total today</span>
+                        <span className="text-base font-extrabold text-white">
+                          ₹{finalTotal.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Plain-English customer summary badge */}
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1">
+                      {finalTotal === 0 ? (
+                        <p className="font-medium text-emerald-400">
+                          ✓ 100% off website build + hosting — You pay ₹0.
+                        </p>
+                      ) : finalWebsitePrice === 0 ? (
+                        <p className="font-medium text-zinc-300">
+                          <span className="text-emerald-400 font-semibold">✓ 100% off website build.</span> Hosting is charged normally: ₹1,000/month.
+                        </p>
+                      ) : (
+                        <p className="font-medium text-zinc-300">
+                          <span className="text-emerald-400 font-semibold">✓ You save ₹{websiteDiscount.toLocaleString('en-IN')}.</span>
+                          {!hostingWaived && <span className="text-zinc-400"> Hosting: ₹1,000/month.</span>}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -4277,7 +4350,15 @@ That's enough. We'll help with the rest.`}
                         </div>
                         <div className="flex items-start gap-2">
                           <Check size={14} className={`${selectedPaymentTerm === 'milestone' ? "text-purple-200" : "text-emerald-400"} shrink-0 mt-0.5`} />
-                          <span className="font-medium">Pay the balance after you approve your website</span>
+                          <span className="font-medium">
+                            {finalTotal === 0 ? (
+                              "Full cost covered by coupon"
+                            ) : finalWebsitePrice === 0 ? (
+                              "Website build is ₹0. Only monthly hosting is due today."
+                            ) : (
+                              `Pay balance (₹${(finalWebsitePrice - Math.round(finalWebsitePrice * 0.5)).toLocaleString('en-IN')}) after you approve your website`
+                            )}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -4298,7 +4379,7 @@ That's enough. We'll help with the rest.`}
                           <div className="flex items-center gap-2">
                             <span className="text-base font-bold text-white block">Full Payment</span>
                             <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              Save 10%
+                              {appliedCoupon ? (finalTotal === 0 ? "100% Off" : finalWebsitePrice === 0 ? "Build Waived" : `Save ₹${websiteDiscount.toLocaleString('en-IN')}`) : "Save 10%"}
                             </span>
                           </div>
                           <p className="text-2xl sm:text-3xl font-extrabold mt-1 font-display text-amber-400 tracking-tight">
@@ -4321,7 +4402,17 @@ That's enough. We'll help with the rest.`}
                         </div>
                         <div className="flex items-center gap-2">
                           <Check size={14} className={selectedPaymentTerm === 'upfront' ? "text-purple-200" : "text-emerald-400"} />
-                          <span className="font-medium">Extra savings (Save ₹{discountVal.toLocaleString('en-IN')})</span>
+                          <span className="font-medium">
+                            {appliedCoupon ? (
+                              finalTotal === 0 
+                                ? "Full cost covered by coupon" 
+                                : finalWebsitePrice === 0 
+                                  ? "Website build is ₹0. Monthly hosting is ₹1,000."
+                                  : `Coupon savings applied (Save ₹${websiteDiscount.toLocaleString('en-IN')})`
+                            ) : (
+                              `Extra savings (Save ₹${discountVal.toLocaleString('en-IN')})`
+                            )}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -4570,15 +4661,15 @@ That's enough. We'll help with the rest.`}
                     <div className="p-4 rounded-2xl bg-zinc-900/80 border border-white/10 space-y-2.5 text-xs">
                       <div className="flex justify-between items-center text-zinc-300">
                         <span>Website:</span>
-                        <span className="font-mono text-white">₹0</span>
+                        <span className="font-mono text-white">₹{finalWebsitePrice.toLocaleString('en-IN')}</span>
                       </div>
                       <div className="flex justify-between items-center text-zinc-300">
                         <span>Hosting:</span>
-                        <span className="font-mono text-white">₹0</span>
+                        <span className="font-mono text-white">₹{finalHostingPrice.toLocaleString('en-IN')}</span>
                       </div>
                       <div className="pt-2 border-t border-white/10 flex justify-between items-center font-bold text-white">
                         <span>Total:</span>
-                        <span className="font-mono text-emerald-400 text-sm">₹0</span>
+                        <span className="font-mono text-emerald-400 text-sm">₹{finalTotal.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
 
