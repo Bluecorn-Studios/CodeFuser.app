@@ -83,18 +83,18 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
       return (
         <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 font-sans">
-          <div className="max-w-md w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+          <div className="max-w-md w-full bg-[#0A0A0A] border border-white/20 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
             <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto ${
-              isChunk ? "bg-purple-500/10 border border-purple-500/20 text-purple-400" : "bg-red-500/10 border border-red-500/20 text-red-400"
+              isChunk ? "bg-white/10 border border-white/20 text-white" : "bg-red-500/10 border border-red-500/20 text-red-400"
             }`}>
               {isChunk ? <Sparkles className="w-7 h-7" /> : <AlertTriangle className="w-7 h-7" />}
             </div>
             
             <div className="space-y-2">
-              <h2 className="text-xl font-bold tracking-tight text-white">
+              <h2 className="text-xl font-bold tracking-tight text-white font-display">
                 {isChunk ? "Application Updated" : "System Notice"}
               </h2>
-              <p className="text-sm text-zinc-400">
+              <p className="text-xs text-neutral-400 leading-relaxed">
                 {isChunk 
                   ? "A new version of the dashboard is available. Click below to load the latest features." 
                   : "An unexpected interface issue occurred. Please reload to resume your session."}
@@ -102,8 +102,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
             </div>
 
             {this.state.error && !isChunk && (
-              <div className="bg-zinc-900 border border-zinc-800/80 rounded-lg p-3 text-left overflow-x-auto">
-                <code className="text-xs font-mono text-zinc-400 block whitespace-pre-wrap">
+              <div className="bg-[#050505] border border-white/10 rounded-xl p-3 text-left overflow-x-auto">
+                <code className="text-xs font-mono text-neutral-400 block whitespace-pre-wrap">
                   {this.state.error.message}
                 </code>
               </div>
@@ -111,10 +111,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
             <button
               onClick={this.handleReload}
-              className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-semibold text-sm rounded-xl transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full h-11 bg-white text-black hover:bg-neutral-200 font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 font-mono"
             >
               <RefreshCw className="w-4 h-4" />
-              {isChunk ? "Load Latest Version" : "Reload Client Portal"}
+              {isChunk ? "Load Latest Version" : "Reload Workspace"}
             </button>
           </div>
         </div>

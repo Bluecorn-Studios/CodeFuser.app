@@ -240,10 +240,7 @@ export const MissionControl: React.FC = () => {
     setUsersLoading(true);
     try {
       const response = await fetch("/api/admin/users", {
-        headers: {
-          "Authorization": `Bearer ${getAuthToken()}`,
-          "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-        }
+        headers: getAdminHeaders()
       });
       if (response.ok) {
         const data = await response.json();
@@ -268,11 +265,7 @@ export const MissionControl: React.FC = () => {
     try {
       const response = await fetch(`/api/admin/users/${userId}/role`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAuthToken()}`,
-          "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-        },
+        headers: getAdminHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ role: newRole })
       });
       const data = await response.json();
@@ -467,10 +460,7 @@ export const MissionControl: React.FC = () => {
     try {
       const response = await fetch(`/api/projects/${id}`, {
         method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-        },
+        headers: getAdminHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: newStatus })
       });
       if (response.ok) {
@@ -783,6 +773,19 @@ export const MissionControl: React.FC = () => {
               onClick={() => navigate("/start-project")}
             >
               Submit Test <ArrowRight size={12} />
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                sessionStorage.removeItem("fuser_admin_authed");
+                sessionStorage.removeItem("fuser_admin_password");
+                setIsAuthenticated(false);
+              }}
+              title="Lock Mission Control and return to password gate"
+            >
+              🔒 Lock Admin
             </Button>
           </div>
         </div>
@@ -1654,10 +1657,7 @@ export const MissionControl: React.FC = () => {
                                     try {
                                       const response = await fetch(`/api/projects/${proj.id}/quote`, {
                                         method: "POST",
-                                        headers: { 
-                                          "Content-Type": "application/json",
-                                          "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                        },
+                                        headers: getAdminHeaders({ "Content-Type": "application/json" }),
                                         body: JSON.stringify({
                                           packageName: pkg,
                                           price: pPrice,
@@ -1766,9 +1766,7 @@ export const MissionControl: React.FC = () => {
                                           try {
                                             const res = await fetch(`/api/projects/${proj.id}/quote/reset`, { 
                                               method: "POST",
-                                              headers: {
-                                                "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                              }
+                                              headers: getAdminHeaders()
                                             });
                                             if (res.ok) {
                                               const body = await res.json();
@@ -1863,10 +1861,7 @@ export const MissionControl: React.FC = () => {
                                         try {
                                           const res = await fetch(`/api/projects/${proj.id}/proposal/generate`, {
                                             method: "POST",
-                                            headers: {
-                                              "Authorization": `Bearer ${getAuthToken()}`,
-                                              "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                            }
+                                            headers: getAdminHeaders()
                                           });
                                           const body = await res.json();
                                           if (body.success) {
@@ -1927,11 +1922,7 @@ export const MissionControl: React.FC = () => {
                                           try {
                                             const res = await fetch(`/api/projects/${proj.id}/proposal/save`, {
                                               method: "POST",
-                                              headers: {
-                                                "Content-Type": "application/json",
-                                                "Authorization": `Bearer ${getAuthToken()}`,
-                                                "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                              },
+                                              headers: getAdminHeaders({ "Content-Type": "application/json" }),
                                               body: JSON.stringify({ content: textToSave })
                                             });
                                             const body = await res.json();
@@ -1960,10 +1951,7 @@ export const MissionControl: React.FC = () => {
                                           try {
                                             const res = await fetch(`/api/projects/${proj.id}/proposal/generate?force=true`, {
                                               method: "POST",
-                                              headers: {
-                                                "Authorization": `Bearer ${getAuthToken()}`,
-                                                "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                              }
+                                              headers: getAdminHeaders()
                                             });
                                             const body = await res.json();
                                             if (body.success) {
@@ -1988,10 +1976,7 @@ export const MissionControl: React.FC = () => {
                                             try {
                                               const res = await fetch(`/api/projects/${proj.id}/proposal/approve`, {
                                                 method: "POST",
-                                                headers: {
-                                                  "Authorization": `Bearer ${getAuthToken()}`,
-                                                  "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                                }
+                                                headers: getAdminHeaders()
                                               });
                                               const body = await res.json();
                                               if (body.success) {
@@ -2014,10 +1999,7 @@ export const MissionControl: React.FC = () => {
                                             try {
                                               const res = await fetch(`/api/projects/${proj.id}/proposal/send`, {
                                                 method: "POST",
-                                                headers: {
-                                                  "Authorization": `Bearer ${getAuthToken()}`,
-                                                  "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                                }
+                                                headers: getAdminHeaders()
                                               });
                                               const body = await res.json();
                                               if (body.success) {
@@ -2156,11 +2138,7 @@ export const MissionControl: React.FC = () => {
                                     try {
                                       const res = await fetch(`/api/projects/${proj.id}/checklist/save`, {
                                         method: "POST",
-                                        headers: {
-                                          "Content-Type": "application/json",
-                                          "Authorization": `Bearer ${getAuthToken()}`,
-                                          "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                        },
+                                        headers: getAdminHeaders({ "Content-Type": "application/json" }),
                                         body: JSON.stringify({ checklist: listToSave })
                                       });
                                       const body = await res.json();
@@ -2349,11 +2327,7 @@ export const MissionControl: React.FC = () => {
                                     try {
                                       const res = await fetch(`/api/projects/${proj.id}/deliverables/save`, {
                                         method: "POST",
-                                        headers: {
-                                          "Content-Type": "application/json",
-                                          "Authorization": `Bearer ${getAuthToken()}`,
-                                          "x-admin-password": sessionStorage.getItem("fuser_admin_password") || ""
-                                        },
+                                        headers: getAdminHeaders({ "Content-Type": "application/json" }),
                                         body: JSON.stringify({ deliverables: listToSave })
                                       });
                                       const body = await res.json();
@@ -3058,6 +3032,7 @@ export const MissionControl: React.FC = () => {
                 <PaymentSimulationPanel
                   projectId={projects.length > 0 ? projects[0].id : ""}
                   getAuthToken={getAuthToken}
+                  getAdminHeaders={getAdminHeaders}
                   onSuccess={() => fetchProjects()}
                 />
               </div>

@@ -4,7 +4,8 @@ import { CheckCircle, XCircle, AlertTriangle, Clock, Loader2, ShieldAlert, Setti
 interface PaymentSimulationPanelProps {
   projectId: string;
   term?: string;
-  getAuthToken: () => string | null;
+  getAuthToken?: () => string | null;
+  getAdminHeaders?: (extra?: Record<string, string>) => Record<string, string>;
   onSuccess: (project: any) => void;
   onStatusChange?: (status: string, message: string) => void;
   className?: string;
@@ -14,6 +15,7 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
   projectId,
   term = "upfront",
   getAuthToken,
+  getAdminHeaders,
   onSuccess,
   onStatusChange,
   className = ""
@@ -61,12 +63,26 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
     setMessage(null);
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+
+      if (getAdminHeaders) {
+        Object.assign(headers, getAdminHeaders());
+      } else {
+        const token = getAuthToken ? getAuthToken() : null;
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        const adminPass = sessionStorage.getItem("fuser_admin_password");
+        if (adminPass) {
+          headers["x-admin-password"] = adminPass;
+        }
+      }
+
       const res = await fetch(`/api/projects/${projectId}/simulate-payment`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAuthToken() || ""}`
-        },
+        headers,
         body: JSON.stringify({ term, action })
       });
 

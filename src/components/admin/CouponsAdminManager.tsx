@@ -478,166 +478,248 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
 
       {/* Create / Edit Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl max-w-lg w-full p-6 space-y-6 relative max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-900">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0A0A0A] border border-white/20 rounded-2xl max-w-xl w-full p-6 space-y-6 relative max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2 font-display">
                 <Tag className="text-white" size={18} />
-                {editingCoupon ? "Edit Offer" : "Create New Marketing Offer"}
+                {editingCoupon ? "Edit Marketing Offer" : "Create New Marketing Offer"}
               </h3>
               <button
+                type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="text-zinc-500 hover:text-white p-1 rounded-lg"
+                className="text-neutral-400 hover:text-white p-1.5 rounded-lg border border-transparent hover:border-white/20 hover:bg-neutral-900 transition-all cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCoupon} className="space-y-4">
-              <div>
-                <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-1">Offer Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setName(val);
-                    setCode(val.replace(/[^a-zA-Z0-9]/g, "").toUpperCase());
-                  }}
-                  placeholder="e.g. Founding 50"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-1">Coupon Code</label>
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. FOUNDING50"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white uppercase focus:outline-none focus:border-neutral-700"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-1">Discount Type</label>
-                  <select
-                    value={discountType}
-                    onChange={(e) => setDiscountType(e.target.value as any)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
-                  >
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount (₹)</option>
-                    <option value="free_build">Free Website Build (100%)</option>
-                  </select>
-                </div>
-
-                {discountType !== "free_build" && (
-                  <div>
-                    <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-1">
-                      {discountType === "percentage" ? "Percentage Value" : "Amount (₹)"}
-                    </label>
+            <form onSubmit={handleSaveCoupon} className="space-y-6">
+              
+              {/* SECTION 1: OFFER IDENTITY */}
+              <div className="space-y-3 bg-[#050505] border border-white/10 p-4 rounded-xl">
+                <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-neutral-400 block">
+                  1. Offer Identity
+                </span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">Offer Name</label>
                     <input
-                      type="number"
-                      value={discountValue}
-                      onChange={(e) => setDiscountValue(Number(e.target.value))}
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-neutral-700"
+                      type="text"
+                      value={name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setName(val);
+                        if (!editingCoupon) {
+                          setCode(val.replace(/[^a-zA-Z0-9]/g, "").toUpperCase());
+                        }
+                      }}
+                      placeholder="e.g. Founding Partner 50"
+                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-neutral-600 focus:outline-none transition-all"
                       required
                     />
                   </div>
-                )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">Coupon Code</label>
+                    <input
+                      type="text"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.toUpperCase())}
+                      placeholder="e.g. FOUNDING50"
+                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white uppercase placeholder:text-neutral-600 focus:outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-2">Applies to Plans</label>
-                <div className="flex gap-4">
-                  {["ignite", "fusion", "catalyst"].map((p) => {
-                    const isSelected = eligiblePlans.includes(p);
-                    const label = p === "ignite" ? "Ignite" : p === "fusion" ? "Fusion" : "Catalyst";
+              {/* SECTION 2: DISCOUNT RULE */}
+              <div className="space-y-3 bg-[#050505] border border-white/10 p-4 rounded-xl">
+                <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-neutral-400 block">
+                  2. Discount Rule
+                </span>
+
+                <div className="space-y-3">
+                  <label className="text-xs font-mono font-medium text-neutral-300 block">Discount Type</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType("percentage")}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer text-center flex flex-col items-center justify-center gap-1 ${
+                        discountType === "percentage"
+                          ? "bg-white text-black border-white shadow-lg ring-2 ring-white/20"
+                          : "bg-[#0A0A0A] border-white/10 text-neutral-400 hover:border-white/30 hover:text-white"
+                      }`}
+                    >
+                      <span>Percentage</span>
+                      <span className="text-[10px] opacity-80">% Off</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType("fixed")}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer text-center flex flex-col items-center justify-center gap-1 ${
+                        discountType === "fixed"
+                          ? "bg-white text-black border-white shadow-lg ring-2 ring-white/20"
+                          : "bg-[#0A0A0A] border-white/10 text-neutral-400 hover:border-white/30 hover:text-white"
+                      }`}
+                    >
+                      <span>Fixed Amount</span>
+                      <span className="text-[10px] opacity-80">₹ INR Off</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType("free_build")}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer text-center flex flex-col items-center justify-center gap-1 ${
+                        discountType === "free_build"
+                          ? "bg-white text-black border-white shadow-lg ring-2 ring-white/20"
+                          : "bg-[#0A0A0A] border-white/10 text-neutral-400 hover:border-white/30 hover:text-white"
+                      }`}
+                    >
+                      <span>Free Build</span>
+                      <span className="text-[10px] opacity-80">100% Waived</span>
+                    </button>
+                  </div>
+
+                  {discountType !== "free_build" && (
+                    <div className="space-y-1.5 pt-2">
+                      <label className="text-xs font-mono font-medium text-neutral-300 block">
+                        {discountType === "percentage" ? "Discount Percentage (%)" : "Fixed Discount Amount (₹ INR)"}
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max={discountType === "percentage" ? "100" : "100000"}
+                        value={discountValue}
+                        onChange={(e) => setDiscountValue(Number(e.target.value))}
+                        className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none transition-all"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* SECTION 3: APPLIES TO PLANS */}
+              <div className="space-y-3 bg-[#050505] border border-white/10 p-4 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-neutral-400 block">
+                    3. Applicable Website Plans
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-500">
+                    {eligiblePlans.length} of 3 Selected
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { id: "ignite", name: "Ignite", price: "₹9,999" },
+                    { id: "fusion", name: "Fusion", price: "₹19,999" },
+                    { id: "catalyst", name: "Catalyst", price: "₹39,999" }
+                  ].map((p) => {
+                    const isSelected = eligiblePlans.includes(p.id);
                     return (
                       <button
-                        key={p}
+                        key={p.id}
                         type="button"
-                        onClick={() => togglePlanSelection(p)}
-                        className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                        onClick={() => togglePlanSelection(p.id)}
+                        className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer min-h-[75px] ${
                           isSelected
-                            ? "bg-neutral-900 text-white border-neutral-700"
-                            : "bg-neutral-900 text-zinc-500 border-neutral-800 hover:text-white"
+                            ? "bg-neutral-900 border-2 border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.12)]"
+                            : "bg-[#0A0A0A] border-white/10 text-neutral-500 hover:border-white/25 hover:text-neutral-300"
                         }`}
                       >
-                        {label}
+                        <div className="flex items-center justify-between w-full">
+                          <span className={`text-xs font-bold uppercase tracking-wider ${isSelected ? "text-white" : "text-neutral-400"}`}>
+                            {p.name}
+                          </span>
+                          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                            isSelected ? "bg-white text-black" : "bg-neutral-900 text-neutral-600 border border-white/5"
+                          }`}>
+                            {isSelected ? "✓ ON" : "OFF"}
+                          </span>
+                        </div>
+                        <span className={`text-[10px] font-mono mt-2 ${isSelected ? "text-neutral-300 font-semibold" : "text-neutral-600"}`}>
+                          {p.price}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-1">Hosting Rule</label>
-                  <select
-                    value={hostingRule}
-                    onChange={(e) => setHostingRule(e.target.value as any)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
-                  >
-                    <option value="charge_normally">Charge normally</option>
-                    <option value="waive_hosting">Waive hosting</option>
-                  </select>
-                </div>
+              {/* SECTION 4: HOSTING & LIMITS */}
+              <div className="space-y-4 bg-[#050505] border border-white/10 p-4 rounded-xl">
+                <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-neutral-400 block">
+                  4. Hosting Rules &amp; Limits
+                </span>
 
-                <div>
-                  <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-1">Free Hosting Promo</label>
-                  <select
-                    value={freeHostingPromoRule}
-                    onChange={(e) => setFreeHostingPromoRule(e.target.value as any)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
-                  >
-                    <option value="apply">Apply normal promotion</option>
-                    <option value="do_not_apply">Do not apply (Charge immediately)</option>
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">Hosting Billing Rule</label>
+                    <select
+                      value={hostingRule}
+                      onChange={(e) => setHostingRule(e.target.value as any)}
+                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-sans"
+                    >
+                      <option value="charge_normally">Charge Normally (Monthly/Annual)</option>
+                      <option value="waive_hosting">Waive Hosting Completely</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">Free Hosting Promotion</label>
+                    <select
+                      value={freeHostingPromoRule}
+                      onChange={(e) => setFreeHostingPromoRule(e.target.value as any)}
+                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-sans"
+                    >
+                      <option value="apply">Apply Standard Promo (1st Mo Free)</option>
+                      <option value="do_not_apply">Do Not Apply (Charge Immediately)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">Redemption Limit</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={redemptionLimit}
+                      onChange={(e) => setRedemptionLimit(Number(e.target.value))}
+                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none transition-all"
+                    />
+                    <span className="text-[10px] text-neutral-500 mt-0.5 block font-mono">0 = Unlimited redemptions</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">Customer Eligibility</label>
+                    <select
+                      value={customerEligibility}
+                      onChange={(e) => setCustomerEligibility(e.target.value as any)}
+                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-sans"
+                    >
+                      <option value="new_only">New Customers Only</option>
+                      <option value="all">All Customers</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-1">Redemption Limit</label>
-                  <input
-                    type="number"
-                    value={redemptionLimit}
-                    onChange={(e) => setRedemptionLimit(Number(e.target.value))}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-neutral-700"
-                  />
-                  <span className="text-[10px] text-zinc-500 mt-0.5 block">0 for unlimited</span>
-                </div>
-
-                <div>
-                  <label className="text-xs font-mono text-zinc-400 uppercase tracking-wider block mb-1">Customer Eligibility</label>
-                  <select
-                    value={customerEligibility}
-                    onChange={(e) => setCustomerEligibility(e.target.value as any)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-700"
-                  >
-                    <option value="new_only">New customers only</option>
-                    <option value="all">All customers</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-neutral-900">
+              {/* Action Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white uppercase tracking-wider cursor-pointer"
+                  className="px-4 py-2.5 text-xs font-mono font-bold text-neutral-400 hover:text-white uppercase tracking-wider cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-white hover:bg-neutral-200 text-zinc-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                  className="px-6 py-2.5 bg-white hover:bg-neutral-200 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg active:scale-95 font-mono"
                 >
                   {editingCoupon ? "Save Changes" : "Create Offer"}
                 </button>
