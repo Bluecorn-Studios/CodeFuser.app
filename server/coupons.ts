@@ -153,19 +153,34 @@ export function getCouponByCode(code: string): CouponRecord | null {
   return store.coupons.find(c => c.code.toUpperCase() === normalized) || null;
 }
 
-export function createCoupon(data: Omit<CouponRecord, "id" | "currentRedemptions" | "createdAt" | "updatedAt">): CouponRecord {
-  const store = getCouponsStore();
-  const newCoupon: CouponRecord = {
-    ...data,
-    code: data.code.trim().toUpperCase(),
-    id: `coupon_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    currentRedemptions: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  store.coupons.push(newCoupon);
-  saveCouponsStore(store);
-  return newCoupon;
+export function createCoupon(data: Omit<CouponRecord, "id" | "currentRedemptions" | "createdAt" | "updatedAt">): CouponRecord | null {
+  try {
+    const store = getCouponsStore();
+    const normalizedCode = data.code.trim().toUpperCase();
+    if (store.coupons.some(c => c.code.toUpperCase() === normalizedCode)) {
+      return null;
+    }
+    const newCoupon: CouponRecord = {
+      ...data,
+      code: normalizedCode,
+      id: `coupon_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      currentRedemptions: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    store.coupons.push(newCoupon);
+    saveCouponsStore(store);
+
+    const verified = getCouponByCode(normalizedCode);
+    if (!verified) {
+      throw new Error("Persistence verification failed for new coupon.");
+    }
+
+    return newCoupon;
+  } catch (err) {
+    console.error("[Coupons Store] Error creating coupon:", err);
+    return null;
+  }
 }
 
 export function updateCoupon(id: string, data: Partial<CouponRecord>): CouponRecord | null {

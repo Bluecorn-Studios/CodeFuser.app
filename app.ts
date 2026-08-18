@@ -286,7 +286,7 @@ function requireRole(allowedRoles: ("super_admin" | "admin" | "client")[]) {
       return res.status(401).json({ success: false, error: "Authentication required." });
     }
 
-    if (!allowedRoles.includes(user.role)) {
+    if (!allowedRoles.includes(user.role) && !req.isAdmin) {
       return res.status(403).json({ 
         success: false, 
         error: `Access denied: Required role not met (required: ${allowedRoles.join(" or ")}, present: ${user.role}).` 
@@ -3656,6 +3656,10 @@ app.post("/api/admin/coupons", requireAuth, requireRole(["super_admin", "admin"]
       status: status || "ACTIVE",
       afterLimitBehavior: afterLimitBehavior || "stop"
     });
+
+    if (!coupon) {
+      return res.status(500).json({ success: false, error: "We couldn't save this offer." });
+    }
 
     return res.json({ success: true, coupon });
   } catch (err: any) {
