@@ -40,6 +40,12 @@ import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { CouponsAdminManager } from "../components/admin/CouponsAdminManager";
 import { getCanonicalStageIndex, CANONICAL_MILESTONES, getCanonicalStatusLabel } from "../utils/milestones";
+import { 
+  getProjectCashCollected, 
+  getProjectWaivedValue, 
+  isProjectCashPaying, 
+  isProjectCovered 
+} from "../utils/moneyMetrics";
 
 export const MissionControl: React.FC = () => {
   const { navigate } = useAppRouter();
@@ -1006,18 +1012,22 @@ export const MissionControl: React.FC = () => {
                   </div>
                   <div className="font-mono">
                     <div className="text-3xl font-extrabold text-white tracking-tight">
-                      ₹{projects.filter(p => p.paymentStatus === "paid").reduce((acc, p) => acc + (p.selectedPackage === "foundation" ? 9999 : p.selectedPackage === "growth" ? 19999 : p.selectedPackage === "dominance" ? 39999 : 20000), 0).toLocaleString("en-IN")}
+                      ₹{projects.reduce((acc, p) => acc + getProjectCashCollected(p), 0).toLocaleString("en-IN")}
                     </div>
-                    <div className="text-xs text-neutral-400 mt-1">Total Confirmed Revenue</div>
+                    <div className="text-xs text-neutral-400 mt-1">Cash Collected</div>
                   </div>
                   <div className="mt-6 space-y-2 text-xs font-mono border-t border-white/5 pt-4">
                     <div className="flex justify-between">
-                      <span className="text-neutral-400">Paid Projects:</span>
-                      <span className="text-white font-bold">{projects.filter(p => p.paymentStatus === "paid").length}</span>
+                      <span className="text-neutral-400">Projects Covered:</span>
+                      <span className="text-white font-bold">{projects.filter(isProjectCovered).length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-neutral-400">Pending Checkout:</span>
-                      <span className="text-amber-400 font-bold">{projects.filter(p => p.paymentStatus !== "paid").length}</span>
+                      <span className="text-neutral-400">Cash Paying:</span>
+                      <span className="text-emerald-400 font-bold">{projects.filter(isProjectCashPaying).length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Waived Value:</span>
+                      <span className="text-neutral-300 font-bold">₹{projects.reduce((acc, p) => acc + getProjectWaivedValue(p), 0).toLocaleString("en-IN")}</span>
                     </div>
                   </div>
                 </div>

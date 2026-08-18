@@ -28,6 +28,7 @@ import {
   BookOpen,
   History
 } from "lucide-react";
+import { getProjectCashCollected } from "../utils/moneyMetrics";
 
 interface ProjectRecord {
   id: string;
@@ -234,35 +235,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
   const conversionRate = totalLeads > 0 ? (totalConverted / totalLeads) * 100 : 0;
 
   // Calculate actual earned revenue (cash received)
-  const earnedRevenue = paidProjects.reduce((acc, p) => {
-    // If quote is locked, use quote price
-    if (p.quote && p.quote.price) {
-      const basePrice = p.quote.price;
-      const discount = p.quote.discount || 0;
-      const discountedPrice = basePrice - discount;
-
-      const planLower = String(p.purchasedPlan || "").toLowerCase();
-      if (planLower.includes("upfront")) {
-        return acc + Math.round(discountedPrice * 0.9); // 10% discount for upfront payments
-      } else if (planLower.includes("milestone")) {
-        return acc + Math.round(discountedPrice * 0.5); // 50% milestone
-      }
-      return acc + discountedPrice;
-    }
-
-    // Default package price fallbacks if no quote is set
-    let basePkgPrice = 19999; // growth/Fusion default
-    if (p.selectedPackage === "foundation") basePkgPrice = 9999;
-    if (p.selectedPackage === "dominance") basePkgPrice = 39999;
-
-    const planLowerDefault = String(p.purchasedPlan || "").toLowerCase();
-    if (planLowerDefault.includes("upfront")) {
-      return acc + Math.round(basePkgPrice * 0.9);
-    } else if (planLowerDefault.includes("milestone")) {
-      return acc + Math.round(basePkgPrice * 0.5);
-    }
-    return acc + basePkgPrice;
-  }, 0);
+  const earnedRevenue = projects.reduce((acc, p) => acc + getProjectCashCollected(p as any), 0);
 
   // Calculate total active pipeline value (unearned potential)
   const activePipelineValue = projects.reduce((acc, p) => {
