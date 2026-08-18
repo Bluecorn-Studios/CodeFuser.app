@@ -1,5 +1,6 @@
 import { getProjectById } from "./db.js";
 import { getHostingSubscription, updateHostingSubscription, HostingSubscriptionRecord, HostingInvoiceRecord } from "./hosting_model.js";
+import { addFounderNotification } from "./founder_notifications_store.js";
 import {
   sendEmailAsync,
   getHostingAutopayActivatedTemplate,
@@ -227,6 +228,20 @@ export async function sendHostingLifecycleNotification(
     sendHostingWhatsAppNotification(eventType as WhatsAppLifecycleEvent, projectId, payload).catch((waErr) => {
       console.warn(`[Hosting WhatsApp Dispatch Warning] Project ${projectId} WhatsApp processing note:`, waErr?.message || waErr);
     });
+
+    if (eventType === "PAYMENT_FAILED" || eventType === "GRACE_PERIOD_STARTED" || eventType === "HOSTING_SUSPENDED") {
+      addFounderNotification({
+        type: "hosting_problem",
+        projectId,
+        projectName: project.businessName || project.clientName || "Client",
+        title: "Hosting issue",
+        message: eventType === "HOSTING_SUSPENDED"
+          ? `Hosting suspended for ${project.businessName || "Client"} due to unpaid renewal.`
+          : `Hosting renewal payment overdue for ${project.businessName || "Client"}.`,
+        actionLabel: "View hosting",
+        severity: "action_needed"
+      });
+    }
 
     return { sent: true, notificationKey };
   } catch (err: any) {

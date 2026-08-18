@@ -751,8 +751,15 @@ export const MissionControl: React.FC = () => {
                               onClick={() => {
                                 handleMarkNotificationRead(n.id);
                                 setShowFounderNotifications(false);
-                                setActiveTab("projects");
-                                setSearchQuery(n.projectName);
+                                if (n.type === "hosting_problem") {
+                                  setActiveTab("hosting");
+                                } else {
+                                  setActiveTab("projects");
+                                  if (n.projectId) {
+                                    setActiveProjectId(n.projectId);
+                                  }
+                                }
+                                setSearchQuery(n.projectName || "");
                               }}
                               className="px-2.5 py-1 bg-white text-black font-bold text-[10px] font-mono rounded hover:bg-neutral-200 transition-colors cursor-pointer"
                             >

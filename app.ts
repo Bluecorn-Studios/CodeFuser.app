@@ -1076,6 +1076,16 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
 
       const savedProject = await updateProject(existingProject.id, updates, req.reqId);
 
+      addFounderNotification({
+        type: "new_project",
+        projectId: savedProject.id,
+        projectName: savedProject.businessName || savedProject.clientName || "New Client",
+        title: "New project",
+        message: `${savedProject.businessName || savedProject.clientName || "New Client"} submitted a project.`,
+        actionLabel: "Review project",
+        severity: "important"
+      });
+
       await logAuditEvent({
         projectId: savedProject.id,
         eventType: "Project Submitted",
@@ -1084,6 +1094,33 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
         status: "Success",
         notes: `Project draft updated and submitted for ${savedProject.businessName} (package: ${savedProject.selectedPackage})`
       });
+
+      // Dispatch Internal Admin Alert
+      triggerAdminNotification(
+        "New Project Filed",
+        `A new system project spec has been registered for ${savedProject.businessName} by ${savedProject.clientName}.`,
+        {
+          "Project ID": savedProject.id,
+          "Client Name": savedProject.clientName,
+          "Business Name": savedProject.businessName,
+          "Selected Tier": savedProject.selectedPackage,
+          "Industry": savedProject.industry || "Not Specified",
+          "Email": savedProject.email,
+          "WhatsApp": savedProject.whatsapp
+        },
+        req.reqId
+      );
+
+      // Send Project Created Email Notification asynchronously
+      const devUrl = process.env.DEV_APP_URL || "http://localhost:3000";
+      const portalUrl = `${devUrl}/login`;
+      const emailHtml = getProjectCreatedTemplate(
+        savedProject.clientName,
+        savedProject.businessName,
+        savedProject.selectedPackage,
+        portalUrl
+      );
+      sendEmailAsync(savedProject.email, `Welcome to CodeFuser - ${savedProject.businessName} Project Filed`, emailHtml);
 
       return res.json({ success: true, message: "Project submitted successfully", data: savedProject });
     }
@@ -3904,6 +3941,18 @@ app.post("/api/projects/:id/upload", requestTimeout(25000, "Asset Upload"), vali
       },
       req.reqId
     );
+
+    if (!req.isAdmin) {
+      addFounderNotification({
+        type: "asset_uploaded",
+        projectId: id,
+        projectName: uploadProject?.businessName || uploadProject?.clientName || "Client",
+        title: "Files uploaded",
+        message: `${uploadProject?.businessName || uploadProject?.clientName || "Client"} uploaded ${sanitizedName}.`,
+        actionLabel: "View files",
+        severity: "action_needed"
+      });
+    }
 
     if (res.headersSent || req.timedOut) return;
 
