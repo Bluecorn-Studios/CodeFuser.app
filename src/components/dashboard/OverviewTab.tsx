@@ -212,7 +212,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "1" as AssetStepKey,
       icon: Phone,
       title: "1. Business Name & Contact Details",
-      status: project.businessName && (project.whatsapp || project.email) ? "provided" : "needed",
+      status: (project.businessName && project.clientName && project.whatsapp && project.email) ? "provided" : "needed",
       detail: project.businessName
         ? `${project.businessName} • ${project.whatsapp || project.email || "Contact active"}`
         : "Official shop name, phone number, email and address.",
@@ -221,10 +221,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "2" as AssetStepKey,
       icon: Sparkles,
       title: "2. Business Logo & Branding",
-      status: project.hasLogo && project.hasLogo !== "pending" ? "provided" : "needed",
+      status: (project.hasLogo && project.hasLogo !== "pending" && project.hasLogo !== "") ? "provided" : "needed",
       detail: project.hasLogo === "help"
         ? "Custom CodeFuser brand design active."
-        : project.hasLogo && project.hasLogo !== "pending"
+        : project.hasLogo && project.hasLogo !== "pending" && project.hasLogo !== ""
         ? "Official logo branding active."
         : "Upload your logo or shop signboard image.",
     },
@@ -232,10 +232,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "3" as AssetStepKey,
       icon: ImageIcon,
       title: "3. Photos of Your Work & Shop",
-      status: project.galleryReady && project.galleryReady !== "pending" ? "provided" : "needed",
+      status: (project.galleryReady && project.galleryReady !== "pending" && project.galleryReady !== "") ? "provided" : "needed",
       detail: project.galleryReady === "help"
         ? "Curated high-resolution stock photo gallery."
-        : project.galleryReady && project.galleryReady !== "pending"
+        : project.galleryReady && project.galleryReady !== "pending" && project.galleryReady !== ""
         ? "Store & work photo gallery active."
         : "Store photos, shop gallery, or stock images.",
     },
@@ -243,10 +243,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "4" as AssetStepKey,
       icon: FileText,
       title: "4. Services, Products & Price List",
-      status: project.contentReady && project.contentReady !== "pending" ? "provided" : "needed",
+      status: (project.contentReady && project.contentReady !== "pending" && project.contentReady !== "") ? "provided" : "needed",
       detail: project.contentReady === "help"
         ? "Professional copywriting & service menu active."
-        : project.contentReady && project.contentReady !== "pending"
+        : project.contentReady && project.contentReady !== "pending" && project.contentReady !== ""
         ? "Custom services and pricing catalog active."
         : "Services list, product offerings, and prices.",
     },
@@ -254,8 +254,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "5" as AssetStepKey,
       icon: Globe,
       title: "5. Official Website Address (Domain)",
-      status: project.hasDomain && project.hasDomain !== "pending" ? "provided" : "needed",
-      detail: project.hasDomain && project.hasDomain !== "pending"
+      status: (project.hasDomain && project.hasDomain !== "pending" && project.hasDomain !== "") ? "provided" : "needed",
+      detail: project.hasDomain && project.hasDomain !== "pending" && project.hasDomain !== ""
         ? displayUrl
         : "Custom domain address connected to live servers.",
     },
