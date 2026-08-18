@@ -38,13 +38,19 @@ export interface CouponsStore {
 
 const COUPONS_FILE = path.join(process.cwd(), "server", "fuser_coupons.json");
 
+let memoryStore: CouponsStore | null = null;
+
 export function getCouponsStore(): CouponsStore {
+  if (memoryStore) {
+    return memoryStore;
+  }
   try {
     if (fs.existsSync(COUPONS_FILE)) {
       const raw = fs.readFileSync(COUPONS_FILE, "utf-8");
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.coupons)) {
-        return parsed;
+        memoryStore = parsed;
+        return memoryStore!;
       }
     }
   } catch (err) {
@@ -94,11 +100,13 @@ export function getCouponsStore(): CouponsStore {
     redemptions: []
   };
 
+  memoryStore = defaultStore;
   saveCouponsStore(defaultStore);
-  return defaultStore;
+  return memoryStore;
 }
 
 export function saveCouponsStore(store: CouponsStore) {
+  memoryStore = store;
   try {
     const dir = path.dirname(COUPONS_FILE);
     if (!fs.existsSync(dir)) {
@@ -106,7 +114,7 @@ export function saveCouponsStore(store: CouponsStore) {
     }
     fs.writeFileSync(COUPONS_FILE, JSON.stringify(store, null, 2), "utf-8");
   } catch (err) {
-    console.error("[Coupons Store] Error writing coupons store:", err);
+    console.error("[Coupons Store] Error writing coupons store (using in-memory store):", err);
   }
 }
 
