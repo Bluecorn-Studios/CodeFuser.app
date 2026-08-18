@@ -2497,12 +2497,6 @@ app.get("/api/config/dev-simulation", (req, res) => {
 // API: Create Razorpay Order
 app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razorpay Order"), validateProjectIdParam, requireAuth, verifyProjectOwnership, projectsRateLimiter, validateBody(createOrderSchema), async (req: any, res) => {
   try {
-    if (process.env.RAZORPAY_VERIFICATION !== "true") {
-      return res.status(400).json({
-        success: false,
-        error: "Razorpay order creation is disabled when RAZORPAY_VERIFICATION is not 'true'."
-      });
-    }
     const { id } = req.params;
     const { term } = req.body; // 'milestone' | 'upfront'
 
@@ -2558,16 +2552,7 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
       }
     }
 
-    // Ignite plan order amount calculation
-    const isIgnitePlan = 
-      project.selectedPackage === "foundation" ||
-      (project.selectedPackage && project.selectedPackage.toLowerCase().includes("ignite")) ||
-      (planName && planName.toLowerCase().includes("ignite")) ||
-      (extra?.quote?.packageName && extra.quote.packageName.toLowerCase().includes("ignite"));
-
-    const amountInPaise = amountInRupees * 100;
-
-    // If final amount is ₹0 (e.g. Full Waiver), complete order successfully without hitting Razorpay
+    // If final amount is ₹0 (e.g. Full Waiver), complete order successfully without requiring RAZORPAY_VERIFICATION
     if (amountInRupees === 0) {
       const waiverOrderId = "waiver_order_" + Date.now();
       const waiverPaymentId = "waiver_pay_" + Date.now();
@@ -2591,6 +2576,22 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
         project: updatedProject
       });
     }
+
+    if (process.env.RAZORPAY_VERIFICATION !== "true") {
+      return res.status(400).json({
+        success: false,
+        error: "Razorpay order creation is disabled when RAZORPAY_VERIFICATION is not 'true'."
+      });
+    }
+
+    // Ignite plan order amount calculation
+    const isIgnitePlan = 
+      project.selectedPackage === "foundation" ||
+      (project.selectedPackage && project.selectedPackage.toLowerCase().includes("ignite")) ||
+      (planName && planName.toLowerCase().includes("ignite")) ||
+      (extra?.quote?.packageName && extra.quote.packageName.toLowerCase().includes("ignite"));
+
+    const amountInPaise = amountInRupees * 100;
 
     // Initialize lazy client and generate order
     const rzp = getRazorpayInstance();
