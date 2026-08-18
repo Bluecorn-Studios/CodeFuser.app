@@ -207,6 +207,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   };
 
   // 5 Website Content items
+  const isAssetProvided = (val?: string) => {
+    if (!val) return false;
+    const v = val.toLowerCase().trim();
+    return v !== "pending" && v !== "yes" && v !== "no" && v !== "help" && v !== "no_help" && v !== "";
+  };
+
   const checklistItems = [
     {
       stepKey: "1" as AssetStepKey,
@@ -221,10 +227,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "2" as AssetStepKey,
       icon: Sparkles,
       title: "2. Business Logo & Branding",
-      status: (project.hasLogo && project.hasLogo !== "pending" && project.hasLogo !== "") ? "provided" : "needed",
-      detail: project.hasLogo === "help"
+      status: isAssetProvided(project.hasLogo) ? "provided" : "needed",
+      detail: project.hasLogo === "Confirmed: help"
         ? "Custom CodeFuser brand design active."
-        : project.hasLogo && project.hasLogo !== "pending" && project.hasLogo !== ""
+        : isAssetProvided(project.hasLogo)
         ? "Official logo branding active."
         : "Upload your logo or shop signboard image.",
     },
@@ -232,10 +238,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "3" as AssetStepKey,
       icon: ImageIcon,
       title: "3. Photos of Your Work & Shop",
-      status: (project.galleryReady && project.galleryReady !== "pending" && project.galleryReady !== "") ? "provided" : "needed",
-      detail: project.galleryReady === "help"
+      status: isAssetProvided(project.galleryReady) ? "provided" : "needed",
+      detail: project.galleryReady === "Confirmed: help"
         ? "Curated high-resolution stock photo gallery."
-        : project.galleryReady && project.galleryReady !== "pending" && project.galleryReady !== ""
+        : isAssetProvided(project.galleryReady)
         ? "Store & work photo gallery active."
         : "Store photos, shop gallery, or stock images.",
     },
@@ -243,10 +249,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "4" as AssetStepKey,
       icon: FileText,
       title: "4. Services, Products & Price List",
-      status: (project.contentReady && project.contentReady !== "pending" && project.contentReady !== "") ? "provided" : "needed",
-      detail: project.contentReady === "help"
+      status: isAssetProvided(project.contentReady) ? "provided" : "needed",
+      detail: project.contentReady === "Confirmed: help"
         ? "Professional copywriting & service menu active."
-        : project.contentReady && project.contentReady !== "pending" && project.contentReady !== ""
+        : isAssetProvided(project.contentReady)
         ? "Custom services and pricing catalog active."
         : "Services list, product offerings, and prices.",
     },
@@ -254,8 +260,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "5" as AssetStepKey,
       icon: Globe,
       title: "5. Official Website Address (Domain)",
-      status: (project.hasDomain && project.hasDomain !== "pending" && project.hasDomain !== "") ? "provided" : "needed",
-      detail: project.hasDomain && project.hasDomain !== "pending" && project.hasDomain !== ""
+      status: isAssetProvided(project.hasDomain) ? "provided" : "needed",
+      detail: isAssetProvided(project.hasDomain)
         ? displayUrl
         : "Custom domain address connected to live servers.",
     },

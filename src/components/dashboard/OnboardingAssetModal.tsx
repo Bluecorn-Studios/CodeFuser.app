@@ -85,7 +85,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
 
       // Logo parser
       const rawLogo = project.hasLogo || "";
-      if (rawLogo === "help" || rawLogo.includes("CodeFuser help") || rawLogo.includes("design logo")) {
+      if (rawLogo === "help" || rawLogo === "Confirmed: help" || rawLogo.includes("CodeFuser help") || rawLogo.includes("design logo")) {
         setLogoMode("help");
       } else if (rawLogo.includes("http://") || rawLogo.includes("https://") || rawLogo.startsWith("Provided:")) {
         setLogoMode("link");
@@ -97,7 +97,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
 
       // Gallery parser
       const rawGallery = project.galleryReady || "";
-      if (rawGallery === "help" || rawGallery.toLowerCase().includes("stock")) {
+      if (rawGallery === "help" || rawGallery === "Confirmed: help" || rawGallery.toLowerCase().includes("stock")) {
         setGalleryMode("help");
       } else if (rawGallery.includes("http://") || rawGallery.includes("https://") || rawGallery.startsWith("Provided:")) {
         setGalleryMode("link");
@@ -108,7 +108,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
 
       // Services parser
       const rawCopy = project.contentReady || "";
-      if (rawCopy === "help" || rawCopy.includes("CodeFuser write") || rawCopy === "no_help") {
+      if (rawCopy === "help" || rawCopy === "Confirmed: help" || rawCopy.includes("CodeFuser write") || rawCopy === "no_help") {
         setServicesMode("help");
       } else if (rawCopy.startsWith("Provided:") || rawCopy.length > 0) {
         setServicesMode("text");
@@ -117,7 +117,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
 
       // Domain parser
       const rawDomain = project.hasDomain || "";
-      if (rawDomain === "help" || rawDomain.includes("Register domain")) {
+      if (rawDomain === "help" || rawDomain === "Confirmed: help" || rawDomain.includes("Register domain")) {
         setDomainMode("buy_for_me");
       } else if (rawDomain === "not_required" || rawDomain.includes("subdomain")) {
         setDomainMode("subdomain");
@@ -174,30 +174,36 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
   };
 
   // Status indicators for the step tabs
+  const isAssetProvided = (val?: string) => {
+    if (!val) return false;
+    const v = val.toLowerCase().trim();
+    return v !== "pending" && v !== "yes" && v !== "no" && v !== "help" && v !== "no_help" && v !== "";
+  };
+
   const getStepStatus = (step: AssetStepKey) => {
     if (!project) return "needed";
     if (step === "1") {
-      return (businessName || project.businessName) && (phone || project.whatsapp || email || project.email)
+      return (businessName || project.businessName) && (clientName || project.clientName) && (phone || project.whatsapp) && (email || project.email)
         ? "done"
         : "needed";
     }
     if (step === "2") {
-      return logoMode === "help" || logoFilePreview || logoLink.trim() || Boolean(project.hasLogo && project.hasLogo !== "pending" && project.hasLogo !== "")
+      return logoMode === "help" || logoFilePreview || logoLink.trim() || isAssetProvided(project.hasLogo)
         ? "done"
         : "needed";
     }
     if (step === "3") {
-      return galleryMode === "help" || galleryFilesPreviews.length > 0 || galleryLink.trim() || Boolean(project.galleryReady && project.galleryReady !== "pending" && project.galleryReady !== "")
+      return galleryMode === "help" || galleryFilesPreviews.length > 0 || galleryLink.trim() || isAssetProvided(project.galleryReady)
         ? "done"
         : "needed";
     }
     if (step === "4") {
-      return servicesMode === "help" || servicesText.trim() || servicesDocName || Boolean(project.contentReady && project.contentReady !== "pending" && project.contentReady !== "")
+      return servicesMode === "help" || servicesText.trim() || servicesDocName || isAssetProvided(project.contentReady)
         ? "done"
         : "needed";
     }
     if (step === "5") {
-      return domainMode === "buy_for_me" || domainMode === "subdomain" || domainName.trim() || Boolean(project.hasDomain && project.hasDomain !== "pending" && project.hasDomain !== "")
+      return domainMode === "buy_for_me" || domainMode === "subdomain" || domainName.trim() || isAssetProvided(project.hasDomain)
         ? "done"
         : "needed";
     }
@@ -226,7 +232,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       payload.businessDetails = `Provided: ${bName} | Contact: ${cName} | Phone: ${wPhone} | Email: ${uEmail} | Address: ${bAddress}`;
     } else if (activeStep === "2") {
       if (logoMode === "help") {
-        payload.hasLogo = "help";
+        payload.hasLogo = "Confirmed: help";
       } else if (logoMode === "link" && logoLink.trim()) {
         payload.hasLogo = logoLink.startsWith("Provided:") ? logoLink : `Provided: ${logoLink}`;
       } else if (logoMode === "upload" && logoFilePreview) {
@@ -238,11 +244,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       } else if (project?.hasLogo) {
         payload.hasLogo = project.hasLogo;
       } else {
-        payload.hasLogo = "help";
+        payload.hasLogo = "Confirmed: help";
       }
     } else if (activeStep === "3") {
       if (galleryMode === "help") {
-        payload.galleryReady = "help";
+        payload.galleryReady = "Confirmed: help";
       } else if (galleryMode === "link" && galleryLink.trim()) {
         payload.galleryReady = galleryLink.startsWith("Provided:") ? galleryLink : `Provided: ${galleryLink}`;
       } else if (galleryMode === "upload") {
@@ -256,17 +262,17 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       } else if (project?.galleryReady) {
         payload.galleryReady = project.galleryReady;
       } else {
-        payload.galleryReady = "help";
+        payload.galleryReady = "Confirmed: help";
       }
     } else if (activeStep === "4") {
       if (servicesMode === "help") {
-        payload.contentReady = "help";
+        payload.contentReady = "Confirmed: help";
       } else if (servicesMode === "text") {
         let contentStr = servicesText.trim();
         if (servicesDocName) {
           contentStr += ` (Doc attached: ${servicesDocName})`;
         }
-        payload.contentReady = contentStr ? `Provided: ${contentStr}` : "help";
+        payload.contentReady = contentStr ? `Provided: ${contentStr}` : "Confirmed: help";
       } else if (servicesMode === "none") {
         payload.contentReady = "not_required";
       } else if (servicesText.trim()) {
@@ -274,11 +280,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       } else if (project?.contentReady) {
         payload.contentReady = project.contentReady;
       } else {
-        payload.contentReady = "help";
+        payload.contentReady = "Confirmed: help";
       }
     } else if (activeStep === "5") {
       if (domainMode === "buy_for_me") {
-        payload.hasDomain = domainName.trim() ? `Help buy: ${domainName.trim()}` : "help";
+        payload.hasDomain = domainName.trim() ? `Help buy: ${domainName.trim()}` : "Confirmed: help";
       } else if (domainMode === "subdomain") {
         payload.hasDomain = "not_required";
       } else if (domainMode === "own" && domainName.trim()) {
@@ -288,7 +294,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       } else if (project?.hasDomain) {
         payload.hasDomain = project.hasDomain;
       } else {
-        payload.hasDomain = "not_required";
+        payload.hasDomain = "Confirmed: help";
       }
     }
 
