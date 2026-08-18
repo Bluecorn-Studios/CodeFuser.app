@@ -73,10 +73,9 @@ export const MoneyRevenueLedger: React.FC<MoneyRevenueLedgerProps> = ({
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
-          <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest block">Authoritative Financial Ledger</span>
-          <h2 className="text-xl font-bold font-display text-white mt-1">Money &amp; Revenue Accounting</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold font-founder text-white tracking-wide">Money</h2>
           <p className="text-xs text-neutral-400 mt-1">
-            Real cash received, promotional coupon waivers, and financial settlement status.
+            Money received and waived.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -126,28 +125,10 @@ export const MoneyRevenueLedger: React.FC<MoneyRevenueLedgerProps> = ({
           </div>
         </div>
 
-        {/* Card 3: Waived Value */}
+        {/* Card 3: Paying Clients */}
         <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Waived Value</span>
-            <div className="p-2 rounded-xl bg-neutral-900 border border-white/10 text-neutral-300">
-              <Tag size={16} />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
-              {formatINR(totalWaivedValue)}
-            </h3>
-            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
-              Across {waiverCount} coupon waivers
-            </p>
-          </div>
-        </div>
-
-        {/* Card 4: Cash Paying */}
-        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Cash Paying Accounts</span>
+            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Paying Clients</span>
             <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
               <CreditCard size={16} />
             </div>
@@ -158,6 +139,24 @@ export const MoneyRevenueLedger: React.FC<MoneyRevenueLedgerProps> = ({
             </h3>
             <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
               Verified Razorpay transactions
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Waived */}
+        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Waived</span>
+            <div className="p-2 rounded-xl bg-neutral-900 border border-white/10 text-neutral-300">
+              <Tag size={16} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
+              {formatINR(totalWaivedValue)}
+            </h3>
+            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+              Across {waiverCount} coupon waivers
             </p>
           </div>
         </div>

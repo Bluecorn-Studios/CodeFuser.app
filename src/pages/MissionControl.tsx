@@ -649,11 +649,11 @@ export const MissionControl: React.FC = () => {
                 <span>{dbSource}</span>
               </div>
             </div>
-            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-snug mt-2">
+            <h1 className="font-founder text-4xl sm:text-5xl font-bold tracking-wide text-white leading-tight mt-1">
               Mission Control
             </h1>
-            <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-xl">
-              Real-time synchronization grid monitoring incoming business diagnostic packets and starting CodeFuser Core client compilers.
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xl">
+              Your business at a glance.
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5 items-center">
@@ -852,7 +852,7 @@ export const MissionControl: React.FC = () => {
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>SYSTEM OPERATIONAL • {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>
                   </div>
-                  <h2 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  <h2 className="font-founder text-3xl sm:text-4xl font-bold text-white tracking-wide">
                     {(() => {
                       const hour = new Date().getHours();
                       if (hour < 12) return "Good morning.";
@@ -862,7 +862,7 @@ export const MissionControl: React.FC = () => {
                   </h2>
                   <p className="text-sm text-neutral-400 mt-2 max-w-lg leading-relaxed">
                     {projects.filter(p => p.paymentStatus !== "paid" || p.healthStatus === "degraded" || p.launchStatus === "VERIFICATION_FAILED").length > 0
-                      ? `${projects.filter(p => p.paymentStatus !== "paid" || p.healthStatus === "degraded" || p.launchStatus === "VERIFICATION_FAILED").length} items currently require your operational attention.`
+                      ? `${projects.filter(p => p.paymentStatus !== "paid" || p.healthStatus === "degraded" || p.launchStatus === "VERIFICATION_FAILED").length} items currently require your attention.`
                       : "All systems and active client projects are operating normally."}
                   </p>
                 </div>
@@ -871,13 +871,13 @@ export const MissionControl: React.FC = () => {
                     onClick={() => setActiveTab("projects")}
                     className="px-4 py-2 bg-white text-black text-xs font-bold font-mono rounded-xl hover:bg-neutral-200 transition-colors cursor-pointer flex items-center gap-2"
                   >
-                    Open Projects Hub <ArrowRight size={13} />
+                    Open Projects <ArrowRight size={13} />
                   </button>
                   <button
-                    onClick={() => setActiveTab("crm")}
+                    onClick={() => setActiveTab("money")}
                     className="px-4 py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222222] transition-colors cursor-pointer"
                   >
-                    View Money & Revenue
+                    View Money
                   </button>
                 </div>
               </div>
@@ -891,7 +891,7 @@ export const MissionControl: React.FC = () => {
                   </div>
                   <div className="space-y-4 font-mono">
                     <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                      <span className="text-xs text-neutral-400">New Projects Today</span>
+                      <span className="text-xs text-neutral-400">New Projects</span>
                       <span className="text-sm font-bold text-white">
                         {projects.filter(p => new Date(p.timestamp).toDateString() === new Date().toDateString()).length}
                       </span>
@@ -903,7 +903,7 @@ export const MissionControl: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-neutral-400">Active Unread Alerts</span>
+                      <span className="text-xs text-neutral-400">Alerts</span>
                       <span className="text-sm font-bold text-amber-400">
                         {founderNotifications.filter(n => !n.readAt).length}
                       </span>
@@ -924,7 +924,7 @@ export const MissionControl: React.FC = () => {
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-amber-400" />
-                      <h3 className="text-xs font-mono uppercase tracking-widest text-white font-bold">Needs Attention</h3>
+                      <h3 className="text-2xl font-founder font-bold text-white tracking-wide">Needs Attention</h3>
                     </div>
                     <span className="text-[11px] font-mono bg-white/5 border border-white/10 text-neutral-300 px-2.5 py-1 rounded-full">
                       {founderNotifications.filter(n => !n.readAt && n.severity === "action_needed").length} action items
@@ -990,7 +990,7 @@ export const MissionControl: React.FC = () => {
               {/* CLIENT ACTIVITY (1 Col) */}
               <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
                 <div>
-                  <div className="text-xs font-mono uppercase tracking-widest text-white font-bold mb-4 flex items-center justify-between">
+                  <div className="text-2xl font-founder font-bold text-white tracking-wide mb-4 flex items-center justify-between">
                     <span>Client Activity</span>
                     <span className="text-[10px] font-mono text-neutral-400">Live Stream</span>
                   </div>
@@ -1023,8 +1023,8 @@ export const MissionControl: React.FC = () => {
               {/* MONEY CARD */}
               <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
                 <div>
-                  <div className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-4 flex items-center justify-between">
-                    <span>Money & Revenue</span>
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-2xl font-founder font-bold text-white tracking-wide">Money</span>
                     <span className="text-[10px] text-emerald-400 font-mono">Verified</span>
                   </div>
                   <div className="font-mono">
@@ -1039,7 +1039,7 @@ export const MissionControl: React.FC = () => {
                       <span className="text-white font-bold">{projects.filter(isProjectCovered).length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-neutral-400">Cash Paying:</span>
+                      <span className="text-neutral-400">Paying Clients:</span>
                       <span className="text-emerald-400 font-bold">{projects.filter(isProjectCashPaying).length}</span>
                     </div>
                     <div className="flex justify-between">
@@ -1053,7 +1053,7 @@ export const MissionControl: React.FC = () => {
                     onClick={() => setActiveTab("money")}
                     className="w-full py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222] transition-colors cursor-pointer"
                   >
-                    Open Revenue Ledger →
+                    View Money →
                   </button>
                 </div>
               </div>
@@ -1061,13 +1061,13 @@ export const MissionControl: React.FC = () => {
               {/* WEBSITES CARD */}
               <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
                 <div>
-                  <div className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-4 flex items-center justify-between">
-                    <span>Websites</span>
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-2xl font-founder font-bold text-white tracking-wide">Websites</span>
                     <span className="text-[10px] text-emerald-400 font-mono">Live Sync</span>
                   </div>
                   <div className="font-mono space-y-3">
                     <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                      <span className="text-xs text-neutral-400">Live & Online</span>
+                      <span className="text-xs text-neutral-400">Live &amp; Online</span>
                       <span className="text-sm font-bold text-emerald-400">
                         {projects.filter(p => p.launchStatus === "LAUNCHED" || p.websiteStatus === "ONLINE").length}
                       </span>
@@ -1079,7 +1079,7 @@ export const MissionControl: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-neutral-400">Verification Issues</span>
+                      <span className="text-xs text-neutral-400">Website Problems</span>
                       <span className="text-sm font-bold text-amber-400">
                         {projects.filter(p => p.launchStatus === "VERIFICATION_FAILED" || p.healthStatus === "degraded").length}
                       </span>
@@ -1091,7 +1091,7 @@ export const MissionControl: React.FC = () => {
                     onClick={() => setActiveTab("projects")}
                     className="w-full py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222] transition-colors cursor-pointer"
                   >
-                    Inspect All Websites →
+                    Check Websites →
                   </button>
                 </div>
               </div>
@@ -1099,8 +1099,8 @@ export const MissionControl: React.FC = () => {
               {/* HOSTING & SYSTEM CARD */}
               <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
                 <div>
-                  <div className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-4 flex items-center justify-between">
-                    <span>Hosting & System</span>
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-2xl font-founder font-bold text-white tracking-wide">Hosting &amp; System</span>
                     <span className="text-[10px] text-emerald-400 font-mono">Operational</span>
                   </div>
                   <div className="font-mono space-y-3">
@@ -1123,7 +1123,7 @@ export const MissionControl: React.FC = () => {
                     onClick={() => setActiveTab("hosting")}
                     className="w-full py-2 bg-[#151515] border border-white/10 text-white text-xs font-mono rounded-xl hover:bg-[#222] transition-colors cursor-pointer"
                   >
-                    Manage Hosting Hub →
+                    Open Hosting →
                   </button>
                 </div>
               </div>

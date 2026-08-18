@@ -157,10 +157,9 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
       {/* Top Header & Sub-Tab Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
-          <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest block">Business Intelligence</span>
-          <h2 className="text-xl font-bold font-display text-white mt-1">Marketing &amp; Sales Pipeline</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold font-founder text-white tracking-wide">Marketing &amp; CRM</h2>
           <p className="text-xs text-neutral-400 mt-1">
-            Conversion metrics, prospective pipeline valuation, and market demand intelligence.
+            Pipeline valuation, conversion rates, and plan demand.
           </p>
         </div>
 
@@ -203,7 +202,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
             {/* KPI 1: Pipeline Valuation */}
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Pipeline Valuation</span>
+                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Pipeline</span>
                 <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
                   <TrendingUp size={16} />
                 </div>
@@ -213,7 +212,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
                   {formatINR(activePipelineValue)}
                 </h3>
                 <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
-                  {totalLeads - totalConverted} active prospects in queue
+                  Potential Value
                 </p>
               </div>
             </div>
@@ -239,7 +238,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
             {/* KPI 3: Lead-to-Sale Conversion */}
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Lead-To-Sale Conversion</span>
+                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Conversion</span>
                 <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
                   <Percent size={16} />
                 </div>
@@ -249,7 +248,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
                   {conversionRate.toFixed(1)}%
                 </h3>
                 <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
-                  Conversion across all submissions
+                  Across all leads
                 </p>
               </div>
             </div>
@@ -257,7 +256,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
             {/* KPI 4: Average Contract Size (ACV) */}
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Avg Contract Value</span>
+                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Average Contract</span>
                 <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
                   <DollarSign size={16} />
                 </div>
@@ -267,7 +266,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
                   {formatINR(averageCustomerValue)}
                 </h3>
                 <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
-                  Real revenue per paying client
+                  Real revenue per client
                 </p>
               </div>
             </div>
@@ -277,7 +276,7 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
           {/* LEAD PIPELINE MATRIX */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-mono font-bold uppercase text-white tracking-widest">
+              <h3 className="text-xl font-founder font-bold text-white tracking-wide">
                 Lead Pipeline Matrix
               </h3>
               <span className="text-[10px] font-mono text-neutral-500">
@@ -353,9 +352,9 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
             {/* Conversion Funnel */}
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="text-xs font-mono font-bold uppercase text-white tracking-wider">
-                  Conversion Funnel
-                </span>
+                <h3 className="text-xl font-founder font-bold text-white tracking-wide">
+                  Sales Funnel
+                </h3>
                 <span className="text-[10px] font-mono text-neutral-500">Pipeline Flow</span>
               </div>
 
@@ -404,9 +403,9 @@ export const BusinessIntelligenceCRM: React.FC<BusinessIntelligenceCRMProps> = (
             {/* Package Interest Spread */}
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="text-xs font-mono font-bold uppercase text-white tracking-wider">
-                  Package Demand Spread
-                </span>
+                <h3 className="text-xl font-founder font-bold text-white tracking-wide">
+                  Popular Plans
+                </h3>
                 <span className="text-[10px] font-mono text-neutral-500">Tier Distribution</span>
               </div>
 

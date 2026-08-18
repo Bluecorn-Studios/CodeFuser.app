@@ -51,6 +51,7 @@
 @theme {
   --font-sans: "Satoshi", "Inter", system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
+  --font-founder: "Caveat", cursive, sans-serif;
   
   --color-background: #000000;
   --color-foreground: #F2E7FF;
@@ -60,6 +61,14 @@
   
   --shadow-glow: 0 0 18px rgba(242, 231, 255, 0.22), 0 0 8px rgba(139, 92, 246, 0.08);
   --shadow-glow-soft: 0 0 12px rgba(242, 231, 255, 0.12);
+}
+
+@utility font-founder {
+  font-family: 'Caveat', cursive, sans-serif;
+}
+
+@utility font-handwriting {
+  font-family: 'Caveat', cursive, sans-serif;
 }
 
 @utility text-glow {
