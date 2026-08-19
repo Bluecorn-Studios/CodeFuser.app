@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { ProjectRecord, PlanInfo, ChangeRequestItem } from "./dashboardTypes";
 import { TabType } from "./ClientHeader";
-import { AssetStepKey } from "./OnboardingAssetModal";
+import { getOnboardingStepStatus, OnboardingStepStatus, AssetStepKey } from "../../lib/onboardingStatus";
 import { getAuthToken } from "../../utils/auth";
 import { getPreviewToken } from "../../utils/previewApi";
 
@@ -227,19 +227,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   };
 
   // 5 Website Content items
-  const isAssetProvided = (val?: string) => {
-    if (!val) return false;
-    const v = val.toLowerCase().trim();
-    // It should be ticked ONLY if it starts with "provided: " or is "confirmed: help"
-    return v.startsWith("provided:") || v === "confirmed: help";
-  };
-
   const checklistItems = [
     {
       stepKey: "1" as AssetStepKey,
       icon: Phone,
       title: "1. Business Name & Contact Details",
-      status: (project.businessName && project.clientName && project.whatsapp && project.email) ? "provided" : "needed",
+      itemStatus: getOnboardingStepStatus("1", project),
       detail: project.businessName
         ? `${project.businessName} • ${project.whatsapp || project.email || "Contact active"}`
         : "Official shop name, phone number, email and address.",
@@ -248,47 +241,47 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       stepKey: "2" as AssetStepKey,
       icon: Sparkles,
       title: "2. Business Logo & Branding",
-      status: isAssetProvided(project.hasLogo) ? "provided" : "needed",
+      itemStatus: getOnboardingStepStatus("2", project),
       detail: project.hasLogo === "Confirmed: help"
         ? "Custom CodeFuser brand design active."
-        : isAssetProvided(project.hasLogo)
-        ? "Official logo branding active."
+        : getOnboardingStepStatus("2", project) === "Needs Review"
+        ? "Official logo branding uploaded & active."
         : "Upload your logo or shop signboard image.",
     },
     {
       stepKey: "3" as AssetStepKey,
       icon: ImageIcon,
       title: "3. Photos of Your Work & Shop",
-      status: isAssetProvided(project.galleryReady) ? "provided" : "needed",
+      itemStatus: getOnboardingStepStatus("3", project),
       detail: project.galleryReady === "Confirmed: help"
         ? "Curated high-resolution stock photo gallery."
-        : isAssetProvided(project.galleryReady)
-        ? "Store & work photo gallery active."
+        : getOnboardingStepStatus("3", project) === "Needs Review"
+        ? "Store & work photo gallery uploaded & active."
         : "Store photos, shop gallery, or stock images.",
     },
     {
       stepKey: "4" as AssetStepKey,
       icon: FileText,
       title: "4. Services, Products & Price List",
-      status: isAssetProvided(project.contentReady) ? "provided" : "needed",
+      itemStatus: getOnboardingStepStatus("4", project),
       detail: project.contentReady === "Confirmed: help"
         ? "Professional copywriting & service menu active."
-        : isAssetProvided(project.contentReady)
-        ? "Custom services and pricing catalog active."
+        : getOnboardingStepStatus("4", project) === "Needs Review"
+        ? "Custom services and pricing catalog submitted."
         : "Services list, product offerings, and prices.",
     },
     {
       stepKey: "5" as AssetStepKey,
       icon: Globe,
       title: "5. Official Website Address (Domain)",
-      status: isAssetProvided(project.hasDomain) ? "provided" : "needed",
-      detail: isAssetProvided(project.hasDomain)
+      itemStatus: getOnboardingStepStatus("5", project),
+      detail: getOnboardingStepStatus("5", project) !== "Waiting for Customer"
         ? displayUrl
         : "Custom domain address connected to live servers.",
     },
   ];
 
-  const completedCount = checklistItems.filter((i) => i.status === "provided").length;
+  const completedCount = checklistItems.filter((i) => i.itemStatus === "Complete" || i.itemStatus === "Needs Review").length;
 
   // Dynamic progress percentage calculation for build state
   let computedPercent = 20;
@@ -1484,7 +1477,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <div className="space-y-1.5">
                 <div className="flex justify-between text-[11px] font-bold text-zinc-400">
                   <span>Onboarding Progress</span>
-                  <span className="text-white font-mono">{Math.round((completedCount / 5) * 100)}%</span>
+                  <span className="text-white font-mono">{completedCount} / 5 complete</span>
                 </div>
                 <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-white/5">
                   <div
@@ -1497,7 +1490,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               {/* List of 5 items */}
               <div className="space-y-2.5 pt-1">
                 {checklistItems.map((item, idx) => {
-                  const isProvided = item.status === "provided";
+                  const isComplete = item.itemStatus === "Complete";
+                  const isNeedsReview = item.itemStatus === "Needs Review";
+                  const isProvidedOrReview = isComplete || isNeedsReview;
                   const ItemIcon = item.icon;
 
                   return (
@@ -1508,21 +1503,25 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border ${
-                          isProvided ? "bg-white text-black border-white" : "bg-zinc-900 text-zinc-400 border-zinc-800"
+                          isProvidedOrReview ? "bg-white text-black border-white" : "bg-zinc-900 text-zinc-400 border-zinc-800"
                         }`}>
-                          {isProvided ? <Check size={16} strokeWidth={3} /> : <ItemIcon size={16} />}
+                          {isProvidedOrReview ? <Check size={16} strokeWidth={3} /> : <ItemIcon size={16} />}
                         </div>
 
                         <div className="space-y-0.5 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-xs sm:text-sm font-bold text-white truncate">{item.title}</span>
-                            {isProvided ? (
+                            {isComplete ? (
                               <span className="px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-white text-[10px] font-bold">
-                                ✓ Done
+                                ✓ Complete
+                              </span>
+                            ) : isNeedsReview ? (
+                              <span className="px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] font-bold">
+                                Needs Review
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] font-bold">
-                                Action Needed
+                              <span className="px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-bold">
+                                Waiting for Customer
                               </span>
                             )}
                           </div>
@@ -1536,12 +1535,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleOpenStep(item.stepKey)}
                           className={`px-3.5 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                            isProvided 
+                            isProvidedOrReview 
                               ? "bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700" 
                               : "bg-white text-black hover:bg-zinc-200 border-white shadow-[0_0_15px_rgba(255,255,255,0.15)]"
                           }`}
                         >
-                          <span>{isProvided ? "Edit Details" : "Send Details"}</span>
+                          <span>{isProvidedOrReview ? "Edit Details" : "Send Details"}</span>
                           <ChevronRight size={14} />
                         </motion.button>
 

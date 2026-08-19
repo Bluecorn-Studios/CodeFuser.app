@@ -44,6 +44,7 @@ import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { CouponsAdminManager } from "../components/admin/CouponsAdminManager";
 import { getCanonicalStageIndex, CANONICAL_MILESTONES, getCanonicalStatusLabel } from "../utils/milestones";
+import { getOnboardingStepStatus, getOnboardingSummary } from "../lib/onboardingStatus";
 import { 
   getProjectCashCollected, 
   getProjectWaivedValue, 
@@ -1367,7 +1368,8 @@ export const MissionControl: React.FC = () => {
 
                             {/* Current Stage */}
                             {(() => {
-                              const stageIdx = getCanonicalStageIndex(proj.status, proj.contentReady !== "yes");
+                              const hasEmptyOnboardingAssets = !getOnboardingSummary(proj).isAllComplete;
+                              const stageIdx = getCanonicalStageIndex(proj.status, hasEmptyOnboardingAssets);
                               const milestoneLabel = getCanonicalStatusLabel(stageIdx);
                               const isActuallyLive = proj.status === "Live" || proj.status === "Launched" || proj.launchStatus === "LAUNCHED" || proj.status === "delivered" || proj.status === "completed";
                               

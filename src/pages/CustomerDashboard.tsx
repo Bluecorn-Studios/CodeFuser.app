@@ -41,6 +41,7 @@ import { PaymentsTab } from "../components/dashboard/PaymentsTab";
 import { HostingTab } from "../components/dashboard/HostingTab";
 import { NeedHelpTab } from "../components/dashboard/NeedHelpTab";
 import { OnboardingAssetModal, AssetStepKey } from "../components/dashboard/OnboardingAssetModal";
+import { getOnboardingStepStatus, getOnboardingSummary } from "../lib/onboardingStatus";
 import { HostingSetupModal } from "../components/dashboard/HostingSetupModal";
 import { AccessDenied } from "../components/auth/AccessDenied";
 import { Button } from "../components/ui/Button";
@@ -977,11 +978,11 @@ export default function CustomerDashboard() {
   const paidFunds = isFullySettled ? finalPrice : (isPartiallyPaid ? Math.round(finalPrice * 0.5) : 0);
   const unpaidFunds = isFullySettled ? 0 : Math.max(0, finalPrice - paidFunds);
 
-  const isDomainComplete = getAssetCategory(activeProject.hasDomain) !== "pending";
-  const isLogoComplete = getAssetCategory(activeProject.hasLogo) !== "pending";
-  const isCopyComplete = getAssetCategory(activeProject.contentReady) !== "pending";
-  const isGalleryComplete = Boolean(activeProject.galleryReady && activeProject.galleryReady !== "pending" && activeProject.galleryReady !== "");
-  const isBusinessComplete = Boolean(activeProject.businessName && (activeProject.whatsapp || activeProject.email));
+  const isDomainComplete = getOnboardingStepStatus("5", activeProject) !== "Waiting for Customer";
+  const isLogoComplete = getOnboardingStepStatus("2", activeProject) !== "Waiting for Customer";
+  const isCopyComplete = getOnboardingStepStatus("4", activeProject) !== "Waiting for Customer";
+  const isGalleryComplete = getOnboardingStepStatus("3", activeProject) !== "Waiting for Customer";
+  const isBusinessComplete = getOnboardingStepStatus("1", activeProject) !== "Waiting for Customer";
 
   const domainState = getAssetCategory(activeProject.hasDomain);
   const logoState = getAssetCategory(activeProject.hasLogo);

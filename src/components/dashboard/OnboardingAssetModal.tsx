@@ -22,7 +22,8 @@ import {
 } from "lucide-react";
 import { ProjectRecord } from "./dashboardTypes";
 
-export type AssetStepKey = "1" | "2" | "3" | "4" | "5";
+import { getOnboardingStepStatus, OnboardingStepStatus, AssetStepKey } from "../../lib/onboardingStatus";
+export type { AssetStepKey };
 
 interface OnboardingAssetModalProps {
   isOpen: boolean;
@@ -174,33 +175,8 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
   };
 
   // Status indicators for the step tabs
-  const isAssetProvided = (val?: string) => {
-    if (!val) return false;
-    const v = val.toLowerCase().trim();
-    // It should be ticked ONLY if it starts with "provided: " or is "confirmed: help"
-    return v.startsWith("provided:") || v === "confirmed: help";
-  };
-
-  const getStepStatus = (step: AssetStepKey) => {
-    if (!project) return "needed";
-    if (step === "1") {
-      return project.businessName && project.clientName && project.whatsapp && project.email
-        ? "done"
-        : "needed";
-    }
-    if (step === "2") {
-      return isAssetProvided(project.hasLogo) ? "done" : "needed";
-    }
-    if (step === "3") {
-      return isAssetProvided(project.galleryReady) ? "done" : "needed";
-    }
-    if (step === "4") {
-      return isAssetProvided(project.contentReady) ? "done" : "needed";
-    }
-    if (step === "5") {
-      return isAssetProvided(project.hasDomain) ? "done" : "needed";
-    }
-    return "needed";
+  const getStepStatus = (step: AssetStepKey): OnboardingStepStatus => {
+    return getOnboardingStepStatus(step, project);
   };
 
   // Form save logic
@@ -226,36 +202,28 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
     } else if (activeStep === "2") {
       if (logoMode === "help") {
         payload.hasLogo = "Confirmed: help";
-      } else if (logoMode === "link" && logoLink.trim()) {
-        payload.hasLogo = logoLink.startsWith("Provided:") ? logoLink : `Provided: ${logoLink}`;
-      } else if (logoMode === "upload" && logoFilePreview) {
-        payload.hasLogo = `Provided: uploaded`;
+      } else if (logoMode === "link") {
+        payload.hasLogo = logoLink.trim() ? (logoLink.startsWith("Provided:") ? logoLink : `Provided: ${logoLink.trim()}`) : "link_pending";
+      } else if (logoMode === "upload") {
+        payload.hasLogo = logoFilePreview ? (logoFilePreview.startsWith("data:") ? logoFilePreview : "Provided: uploaded") : "upload_pending";
       } else if (logoMode === "none") {
         payload.hasLogo = "Provided: not_required";
-      } else if (logoLink.trim()) {
-        payload.hasLogo = `Provided: ${logoLink}`;
-      } else if (project?.hasLogo) {
-        payload.hasLogo = project.hasLogo;
       } else {
-        payload.hasLogo = "Confirmed: help";
+        payload.hasLogo = project?.hasLogo || "upload_pending";
       }
     } else if (activeStep === "3") {
       if (galleryMode === "help") {
         payload.galleryReady = "Confirmed: help";
-      } else if (galleryMode === "link" && galleryLink.trim()) {
-        payload.galleryReady = galleryLink.startsWith("Provided:") ? galleryLink : `Provided: ${galleryLink}`;
+      } else if (galleryMode === "link") {
+        payload.galleryReady = galleryLink.trim() ? (galleryLink.startsWith("Provided:") ? galleryLink : `Provided: ${galleryLink.trim()}`) : "link_pending";
       } else if (galleryMode === "upload") {
         payload.galleryReady = galleryFilesPreviews.length > 0
           ? `Provided: Uploaded ${galleryFilesPreviews.length} photo${galleryFilesPreviews.length > 1 ? "s" : ""}`
-          : (project?.galleryReady || "Provided: Uploaded photos");
+          : "upload_pending";
       } else if (galleryMode === "none") {
         payload.galleryReady = "Provided: not_required";
-      } else if (galleryLink.trim()) {
-        payload.galleryReady = `Provided: ${galleryLink}`;
-      } else if (project?.galleryReady) {
-        payload.galleryReady = project.galleryReady;
       } else {
-        payload.galleryReady = "Confirmed: help";
+        payload.galleryReady = project?.galleryReady || "upload_pending";
       }
     } else if (activeStep === "4") {
       if (servicesMode === "help") {
@@ -263,31 +231,23 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       } else if (servicesMode === "text") {
         let contentStr = servicesText.trim();
         if (servicesDocName) {
-          contentStr += ` (Doc attached: ${servicesDocName})`;
+          contentStr += ` (Doc: ${servicesDocName})`;
         }
-        payload.contentReady = contentStr ? `Provided: ${contentStr}` : "Confirmed: help";
+        payload.contentReady = contentStr ? `Provided: ${contentStr}` : "text_pending";
       } else if (servicesMode === "none") {
         payload.contentReady = "Provided: not_required";
-      } else if (servicesText.trim()) {
-        payload.contentReady = `Provided: ${servicesText.trim()}`;
-      } else if (project?.contentReady) {
-        payload.contentReady = project.contentReady;
       } else {
-        payload.contentReady = "Confirmed: help";
+        payload.contentReady = project?.contentReady || "text_pending";
       }
     } else if (activeStep === "5") {
       if (domainMode === "buy_for_me") {
         payload.hasDomain = domainName.trim() ? `Provided: Help buy ${domainName.trim()}` : "Confirmed: help";
       } else if (domainMode === "subdomain") {
         payload.hasDomain = "Provided: not_required";
-      } else if (domainMode === "own" && domainName.trim()) {
-        payload.hasDomain = domainName.startsWith("Provided:") ? domainName : `Provided: ${domainName}`;
-      } else if (domainName.trim()) {
-        payload.hasDomain = `Provided: ${domainName.trim()}`;
-      } else if (project?.hasDomain) {
-        payload.hasDomain = project.hasDomain;
+      } else if (domainMode === "own") {
+        payload.hasDomain = domainName.trim() ? (domainName.startsWith("Provided:") ? domainName : `Provided: ${domainName.trim()}`) : "domain_pending";
       } else {
-        payload.hasDomain = "Confirmed: help";
+        payload.hasDomain = project?.hasDomain || "domain_pending";
       }
     }
 
@@ -367,18 +327,24 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
               <button
                 key={s.key}
                 onClick={() => setActiveStep(s.key)}
-                className={`px-3.5 py-2 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 shrink-0 cursor-pointer border ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer border ${
                   isActive
-                    ? "bg-white text-black border-white shadow-lg shadow-white/10 scale-[1.02]"
-                    : status === "done"
-                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
-                    : "bg-neutral-900/90 text-neutral-400 border-neutral-800 hover:text-neutral-200"
+                    ? "bg-white text-black border-white shadow-lg shadow-white/10"
+                    : status === "Complete"
+                    ? "bg-zinc-900 text-white border-white/20 hover:bg-zinc-850"
+                    : status === "Needs Review"
+                    ? "bg-zinc-900 text-zinc-300 border-zinc-700 hover:bg-zinc-850"
+                    : "bg-neutral-950 text-neutral-400 border-neutral-900 hover:text-neutral-200"
                 }`}
               >
-                <Icon size={14} className={isActive ? "text-black" : status === "done" ? "text-emerald-400" : "text-neutral-400"} />
+                <Icon size={13} className={isActive ? "text-black" : status === "Complete" ? "text-white" : "text-neutral-400"} />
                 <span>{s.title}</span>
-                {status === "done" && (
-                  <CheckCircle2 size={13} className={isActive ? "text-black" : "text-emerald-400"} />
+                {status === "Complete" ? (
+                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold ${isActive ? "bg-black/10 text-black" : "bg-white/10 text-white border border-white/20"}`}>✓</span>
+                ) : status === "Needs Review" ? (
+                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold ${isActive ? "bg-black/10 text-black" : "bg-zinc-800 text-zinc-300 border border-zinc-700"}`}>Review</span>
+                ) : (
+                  <span className="text-[9px] font-mono text-zinc-500">•</span>
                 )}
               </button>
             );
