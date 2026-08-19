@@ -10,7 +10,12 @@ export interface OfficialQuoteRecord {
   websitePrice?: number;
   websiteDiscount?: number;
   hostingPrice?: number;
+  finalHostingPrice?: number;
   hostingDiscount?: number;
+  hostingWaived?: boolean;
+  hostingPromoRule?: string;
+  freeHostingMonths?: number;
+  firstMonthHostingCharged?: boolean;
   timestamp: string; // ISO string
   expiryDate: string; // ISO string (7 days later)
   status: "active" | "expiring" | "expired";

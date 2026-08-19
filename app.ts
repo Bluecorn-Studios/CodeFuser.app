@@ -1927,22 +1927,24 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
       let finalPrice = Number(price);
       let finalDiscount = Number(discount || 0);
       let verifiedCouponCode = couponCode ? couponCode.trim().toUpperCase() : undefined;
+      let quoteValidation: any = null;
+      let effectiveHostingPrice = 999;
+      try {
+        effectiveHostingPrice = getHostingPlanConfig(packageName).monthlyHostingPrice;
+      } catch {
+        effectiveHostingPrice = 999;
+      }
+
       if (verifiedCouponCode) {
         const basePrice = finalDiscount > 0 ? finalPrice + finalDiscount : finalPrice;
         const isExisting = await isCustomerExisting("", req.user?.id, id, true, req.reqId);
-        let effectiveHostingPrice: number;
-        try {
-          effectiveHostingPrice = getHostingPlanConfig(packageName).monthlyHostingPrice;
-        } catch {
-          effectiveHostingPrice = 999;
-        }
-        const validation = validateAndCalculateCoupon(verifiedCouponCode, packageName, "", basePrice, effectiveHostingPrice, {
+        quoteValidation = validateAndCalculateCoupon(verifiedCouponCode, packageName, "", basePrice, effectiveHostingPrice, {
           isExistingCustomer: isExisting,
           currentProjectId: id
         });
-        if (validation.valid) {
-          finalDiscount = validation.discountAmount !== undefined ? validation.discountAmount : finalDiscount;
-          finalPrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : finalPrice;
+        if (quoteValidation.valid) {
+          finalDiscount = quoteValidation.discountAmount !== undefined ? quoteValidation.discountAmount : finalDiscount;
+          finalPrice = quoteValidation.finalWebsitePrice !== undefined ? quoteValidation.finalWebsitePrice : finalPrice;
         }
       }
       const quoteRecord = {
@@ -1952,6 +1954,12 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
         features: features || [],
         summary: summary || "",
         couponCode: verifiedCouponCode || undefined,
+        hostingPrice: effectiveHostingPrice,
+        finalHostingPrice: quoteValidation?.finalHostingPrice ?? (verifiedCouponCode === "FUSIONFREE" ? effectiveHostingPrice : 0),
+        hostingWaived: quoteValidation?.coupon?.hostingRule === "waive_100_percent",
+        hostingPromoRule: quoteValidation?.coupon?.freeHostingPromoRule || "apply",
+        freeHostingMonths: quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply" ? 0 : undefined,
+        firstMonthHostingCharged: quoteValidation?.coupon?.hostingRule === "charge_normally" && quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply",
         timestamp: new Date().toISOString(),
         expiryDate: new Date(Date.now() + 7 * 86400000).toISOString(),
         status: "active" as const
@@ -1967,26 +1975,27 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
     let finalPrice = Number(price);
     let finalDiscount = Number(discount || 0);
     let verifiedCouponCode = couponCode ? couponCode.trim().toUpperCase() : undefined;
+    let quoteValidation: any = null;
+    let effectiveHostingPrice = 999;
+    try {
+      effectiveHostingPrice = getHostingPlanConfig(packageName).monthlyHostingPrice;
+    } catch {
+      effectiveHostingPrice = 999;
+    }
 
     if (verifiedCouponCode) {
       const project = req.project;
       const basePrice = finalDiscount > 0 ? finalPrice + finalDiscount : finalPrice;
       const isExisting = await isCustomerExisting(project?.email, project?.userId, id, false, req.reqId);
-      let effectiveHostingPrice: number;
-      try {
-        effectiveHostingPrice = getHostingPlanConfig(packageName).monthlyHostingPrice;
-      } catch {
-        effectiveHostingPrice = 999;
-      }
-      const validation = validateAndCalculateCoupon(verifiedCouponCode, packageName, project?.email || "", basePrice, effectiveHostingPrice, {
+      quoteValidation = validateAndCalculateCoupon(verifiedCouponCode, packageName, project?.email || "", basePrice, effectiveHostingPrice, {
         isExistingCustomer: isExisting,
         currentProjectId: id
       });
-      if (validation.valid && validation.coupon) {
-        finalDiscount = validation.discountAmount !== undefined ? validation.discountAmount : finalDiscount;
-        finalPrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : finalPrice;
+      if (quoteValidation.valid && quoteValidation.coupon) {
+        finalDiscount = quoteValidation.discountAmount !== undefined ? quoteValidation.discountAmount : finalDiscount;
+        finalPrice = quoteValidation.finalWebsitePrice !== undefined ? quoteValidation.finalWebsitePrice : finalPrice;
       } else {
-        return res.status(400).json({ success: false, error: validation.error || "Invalid coupon code." });
+        return res.status(400).json({ success: false, error: quoteValidation.error || "Invalid coupon code." });
       }
     }
 
@@ -1996,7 +2005,13 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
       discount: finalDiscount,
       features: features || [],
       summary: summary || "",
-      couponCode: verifiedCouponCode || undefined
+      couponCode: verifiedCouponCode || undefined,
+      hostingPrice: effectiveHostingPrice,
+      finalHostingPrice: quoteValidation?.finalHostingPrice ?? (verifiedCouponCode === "FUSIONFREE" ? effectiveHostingPrice : 0),
+      hostingWaived: quoteValidation?.coupon?.hostingRule === "waive_100_percent",
+      hostingPromoRule: quoteValidation?.coupon?.freeHostingPromoRule || "apply",
+      freeHostingMonths: quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply" ? 0 : undefined,
+      firstMonthHostingCharged: quoteValidation?.coupon?.hostingRule === "charge_normally" && quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply"
     });
 
     // Log quote generation event
@@ -3228,14 +3243,20 @@ async function processPaymentSuccessCore({
   const devUrl = process.env.DEV_APP_URL || "http://localhost:3000";
   const portalUrl = `${devUrl}/login`;
   const calcReceiptAmount = (extraData: any, pTerm: string) => {
-    if (extraData?.quote?.price) {
-      const qPrice = extraData.quote.price;
-      const qDiscount = Number(extraData.quote.discount || 0);
+    if (extraData?.quote) {
+      const q = extraData.quote;
+      const qPrice = Number(q.price ?? 0);
+      const qDiscount = Number(q.discount || 0);
+      const hostPrice = Number(q.finalHostingPrice ?? (q.firstMonthHostingCharged ? (q.hostingPrice || 999) : 0));
+      if (q.couponCode === "FULLWAIVER" || (qPrice === 0 && hostPrice === 0)) {
+        return "Rs. 0 (100% Promotional Waiver)";
+      }
       if (pTerm === "upfront") {
-        return "Rs. " + (qDiscount > 0 ? qPrice : Math.round(qPrice * 0.9));
+        const netSite = (qDiscount > 0 || q.couponCode) ? qPrice : Math.round(qPrice * 0.9);
+        return "Rs. " + (netSite + hostPrice).toLocaleString("en-IN");
       } else {
-        const baseP = qDiscount > 0 ? (qPrice + qDiscount) : qPrice;
-        return "Rs. " + Math.round(baseP * 0.5);
+        const baseP = (qDiscount > 0 || q.couponCode) ? qPrice : (qPrice + qDiscount);
+        return "Rs. " + (Math.round(baseP * 0.5) + hostPrice).toLocaleString("en-IN");
       }
     }
     return pTerm === "upfront" ? "Rs. 13,499" : "Rs. 7,499";
@@ -3668,6 +3689,7 @@ app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Pay
       confirmationMessage = `This official receipt confirms that the project total of Rs. ${projectTotal.toLocaleString("en-IN")} was manually settled and reconciled. Remaining balance is Rs. 0.`;
     } else {
       // Real payment flow (Razorpay / cash)
+      const hostFee = Number(extra?.quote?.finalHostingPrice ?? (extra?.quote?.firstMonthHostingCharged ? (extra?.quote?.hostingPrice || 999) : 0));
       if (quoteDiscount > 0) {
         discount = quoteDiscount;
         discountLabel = couponCode ? `Coupon Discount (${couponCode})` : "Promotional Discount";
@@ -3676,7 +3698,7 @@ app.get("/api/projects/:id/payment-receipt", requestTimeout(20000, "Generate Pay
         discountLabel = "10% Upfront Payment Discount";
       }
 
-      projectTotal = Math.max(0, listPrice - discount);
+      projectTotal = Math.max(0, listPrice - discount) + hostFee;
 
       if (status === "paid") {
         if (purchasedPlanLower.includes("milestone") && (purchasedPlanLower.includes("fully paid") || purchasedPlanLower.includes("phase 2") || purchasedPlanLower.includes("final"))) {

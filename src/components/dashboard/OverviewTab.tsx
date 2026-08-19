@@ -182,16 +182,32 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     return new Date().toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" });
   };
 
-  // Real free hosting end date (1 year / 12 months free with CodeFuser packages)
-  const getFreeHostingEndDate = (): string => {
+  // Real hosting renewal and free period calculation
+  const pkgName = String(project.selectedPackage || "").toLowerCase();
+  const isDominance = pkgName.includes("dominance") || pkgName.includes("catalyst");
+  const isGrowth = pkgName.includes("growth") || pkgName.includes("fusion");
+  const defaultFreeMonths = isDominance ? 3 : isGrowth ? 2 : 1;
+  const quoteData = project.quote || {};
+  const isHostingPaidToday = quoteData.firstMonthHostingCharged === true || (quoteData.couponCode === "FUSIONFREE" || (quoteData.hostingPromoRule === "do_not_apply" && !quoteData.hostingWaived));
+  const effectiveFreeMonths = isHostingPaidToday ? 0 : (quoteData.freeHostingMonths !== undefined ? quoteData.freeHostingMonths : defaultFreeMonths);
+
+  const getHostingBillingDate = (): string => {
     const rawDate = project.purchaseDate || project.timestamp || new Date().toISOString();
     try {
       const d = new Date(rawDate);
-      d.setFullYear(d.getFullYear() + 1);
+      if (effectiveFreeMonths > 0) {
+        d.setMonth(d.getMonth() + effectiveFreeMonths);
+      } else {
+        d.setMonth(d.getMonth() + 1);
+      }
       return d.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" });
     } catch {
-      return "1 Year from Launch";
+      return "Next Month";
     }
+  };
+
+  const getFreeHostingEndDate = (): string => {
+    return getHostingBillingDate();
   };
 
   const handleCopyLiveUrl = () => {
@@ -1029,14 +1045,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-1">
                   <span className="text-zinc-400 block text-[11px] font-mono uppercase">Current Paid</span>
                   <span className="text-lg font-black text-white block pt-1">
-                    ₹0 (Included)
+                    {effectiveFreeMonths > 0 ? "₹0 (Included)" : `₹${quoteData.finalHostingPrice || quoteData.hostingPrice || 999} (Paid)`}
                   </span>
                 </div>
 
                 <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-1">
-                  <span className="text-zinc-400 block text-[11px] font-mono uppercase">Free Hosting Until</span>
+                  <span className="text-zinc-400 block text-[11px] font-mono uppercase">
+                    {effectiveFreeMonths > 0 ? "Free Hosting Until" : "Next Renewal Date"}
+                  </span>
                   <span className="text-lg font-black text-white block pt-1">
-                    {getFreeHostingEndDate()}
+                    {getHostingBillingDate()}
                   </span>
                 </div>
               </div>

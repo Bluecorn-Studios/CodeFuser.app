@@ -121,10 +121,10 @@ export async function initCouponsStore(): Promise<CouponsStore> {
     try {
       const supabase = getSupabase();
 
-      // 1. Check if dedicated public.coupons table exists and has records
+      // 1. Check if dedicated public.coupons table exists
       try {
         const { data: tableData, error: tableErr } = await supabase.from("coupons").select("*");
-        if (!tableErr && Array.isArray(tableData) && tableData.length > 0) {
+        if (!tableErr && Array.isArray(tableData)) {
           const coupons: CouponRecord[] = tableData.map((row: any) => ({
             id: row.id,
             name: row.name,
@@ -165,6 +165,7 @@ export async function initCouponsStore(): Promise<CouponsStore> {
             seedInitialized: true,
             seededAt: new Date().toISOString()
           };
+          saveCouponsStore(memoryStore);
           console.log(`[Coupons Store] Loaded ${coupons.length} coupons from Supabase public.coupons table.`);
           return memoryStore;
         }
@@ -272,6 +273,7 @@ export async function saveCouponsToSupabase(store: CouponsStore): Promise<void> 
     seedInitialized: true,
     seededAt: store.seededAt || new Date().toISOString()
   };
+  saveCouponsStore(memoryStore);
 
   try {
     const supabase = getSupabase();

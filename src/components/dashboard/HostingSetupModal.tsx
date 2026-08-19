@@ -22,11 +22,19 @@ export const HostingSetupModal: React.FC<HostingSetupModalProps> = ({
   const isDominance = pkg.includes("dominance") || pkg.includes("catalyst");
   const isGrowth = pkg.includes("growth") || pkg.includes("fusion");
   const monthlyPrice = isDominance ? 1999 : isGrowth ? 999 : 499;
-  const freeMonths = isDominance ? 3 : isGrowth ? 2 : 1;
   const planTitle = isDominance ? "Catalyst" : isGrowth ? "Fusion" : "Ignite";
 
-  const nextDate = new Date();
-  nextDate.setMonth(nextDate.getMonth() + freeMonths);
+  const quote = project?.quote || {};
+  const isHostingPaidToday = quote.firstMonthHostingCharged === true || (quote.couponCode === "FUSIONFREE" || (quote.hostingPromoRule === "do_not_apply" && !quote.hostingWaived));
+  const freeMonths = isHostingPaidToday ? 0 : (quote.freeHostingMonths !== undefined ? quote.freeHostingMonths : (isDominance ? 3 : isGrowth ? 2 : 1));
+
+  const baseDate = new Date(project?.purchaseDate || project?.timestamp || Date.now());
+  const nextDate = new Date(baseDate);
+  if (freeMonths > 0) {
+    nextDate.setMonth(nextDate.getMonth() + freeMonths);
+  } else {
+    nextDate.setMonth(nextDate.getMonth() + 1);
+  }
   const formattedBillingDate = nextDate.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -60,13 +68,15 @@ export const HostingSetupModal: React.FC<HostingSetupModalProps> = ({
           {/* Header */}
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[11px] font-mono font-bold uppercase tracking-wider">
-              <span>HOSTING INCLUDED</span>
+              <span>{freeMonths > 0 ? "HOSTING INCLUDED" : "HOSTING ACTIVE"}</span>
             </div>
             <h2 className="text-2xl font-bold text-white tracking-tight font-display">
-              Your hosting is ready
+              {freeMonths > 0 ? "Your hosting is ready" : "Your hosting is active"}
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-              Your {planTitle} plan includes {freeMonths} month{freeMonths > 1 ? "s" : ""} of free hosting.
+              {freeMonths > 0 
+                ? `Your ${planTitle} plan includes ${freeMonths} month${freeMonths > 1 ? "s" : ""} of free hosting.`
+                : `Your ${planTitle} website hosting is active and fully configured.`}
             </p>
           </div>
 
@@ -75,26 +85,28 @@ export const HostingSetupModal: React.FC<HostingSetupModalProps> = ({
             <div className="flex items-start justify-between gap-3 border-b border-white/10 pb-4">
               <div>
                 <span className="text-lg sm:text-xl font-extrabold text-emerald-400 font-display tracking-tight block">
-                  {freeMonths} MONTHS FREE
+                  {freeMonths > 0 ? `${freeMonths} MONTHS FREE` : `₹${monthlyPrice.toLocaleString("en-IN")} / month`}
                 </span>
                 <span className="text-xs text-zinc-400 mt-0.5 block">
-                  ₹{monthlyPrice.toLocaleString("en-IN")} / month after that
+                  {freeMonths > 0 ? `₹${monthlyPrice.toLocaleString("en-IN")} / month after that` : "First month paid at checkout"}
                 </span>
               </div>
               <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono font-bold rounded-full shrink-0">
-                ₹0 today
+                {freeMonths > 0 ? "₹0 today" : "1st Month Paid"}
               </span>
             </div>
 
             <div>
               <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block">
-                FIRST BILLING
+                {freeMonths > 0 ? "FIRST BILLING" : "NEXT RENEWAL"}
               </span>
               <span className="text-sm font-bold text-white font-mono block mt-0.5">
                 {formattedBillingDate}
               </span>
               <p className="text-[11px] text-zinc-400 mt-1 leading-normal">
-                Your first hosting payment will be due on this date.
+                {freeMonths > 0 
+                  ? "Your first hosting payment will be due on this date."
+                  : "Your next monthly hosting renewal is scheduled on this date."}
               </p>
             </div>
           </div>

@@ -266,14 +266,14 @@ export function markWebhookProcessed(eventId: string) {
 /**
  * Get or Create Hosting Subscription for a Project
  */
-export async function getHostingSubscription(projectId: string): Promise<HostingSubscriptionRecord> {
+export async function getHostingSubscription(projectId: string, existingProject?: any): Promise<HostingSubscriptionRecord> {
   const localStore = getLocalHostingStore();
 
   // If existing subscription exists, return snapshot unchanged
   if (localStore.subscriptions[projectId]) {
     const existingSub = localStore.subscriptions[projectId];
     try {
-      const project = await getProjectById(projectId);
+      const project = existingProject || await getProjectById(projectId);
       if (project?.selectedPackage) {
         const expectedConfig = getHostingPlanConfig(project.selectedPackage);
         if (
@@ -291,7 +291,7 @@ export async function getHostingSubscription(projectId: string): Promise<Hosting
     return existingSub;
   }
 
-  const project = await getProjectById(projectId);
+  const project = existingProject || await getProjectById(projectId);
 
   if (!project) {
     throw new Error(`[Hosting Error] Cannot create subscription. Project with ID "${projectId}" not found.`);
@@ -310,9 +310,17 @@ export async function getHostingSubscription(projectId: string): Promise<Hosting
   // Resolve authoritative plan config from project.selectedPackage
   const planConfig = getHostingPlanConfig(project.selectedPackage);
 
-  const createdAt = new Date();
-  const freeEnd = new Date(createdAt);
-  freeEnd.setMonth(freeEnd.getMonth() + planConfig.freeHostingMonths);
+  const createdAt = new Date(project.purchaseDate || project.timestamp || Date.now());
+  const quote = project.quote || {};
+  const isHostingPaidToday = quote.firstMonthHostingCharged === true || (quote.couponCode === "FUSIONFREE" || (quote.hostingPromoRule === "do_not_apply" && !quote.hostingWaived));
+  const freeHostingMonths = isHostingPaidToday ? 0 : (quote.freeHostingMonths !== undefined ? quote.freeHostingMonths : planConfig.freeHostingMonths);
+
+  const nextBilling = new Date(createdAt);
+  if (freeHostingMonths > 0) {
+    nextBilling.setMonth(nextBilling.getMonth() + freeHostingMonths);
+  } else {
+    nextBilling.setMonth(nextBilling.getMonth() + 1);
+  }
 
   const newSub: HostingSubscriptionRecord = {
     id: `sub_host_${projectId}`,
@@ -323,16 +331,18 @@ export async function getHostingSubscription(projectId: string): Promise<Hosting
     planName: `CodeFuser Hosting (${planConfig.planName})`,
     monthlyAmount: planConfig.monthlyHostingPrice,
     currency: planConfig.currency,
-    freeHostingMonths: planConfig.freeHostingMonths,
+    freeHostingMonths,
     domainFreeYears: planConfig.domainFreeYears,
     domainRenewalPrice: planConfig.domainRenewalPrice,
     freeTrialStart: createdAt.toISOString(),
-    freeTrialEnd: freeEnd.toISOString(),
-    nextBillingDate: freeEnd.toISOString(),
-    status: "FREE_TRIAL_ACTIVE",
+    freeTrialEnd: freeHostingMonths > 0 ? nextBilling.toISOString() : createdAt.toISOString(),
+    nextBillingDate: nextBilling.toISOString(),
+    status: isHostingPaidToday ? "PAID" : (freeHostingMonths > 0 ? "FREE_TRIAL_ACTIVE" : "PAID"),
     razorpayPlanId: planConfig.razorpayPlanId,
     autopayStatus: "inactive",
     mandateStatus: "none",
+    lastPaymentAmount: isHostingPaidToday ? planConfig.monthlyHostingPrice : 0,
+    lastPaymentDate: isHostingPaidToday ? createdAt.toISOString() : undefined,
     failedPaymentCount: 0,
     reconciliationStatus: "OK",
     createdAt: createdAt.toISOString(),
@@ -341,28 +351,51 @@ export async function getHostingSubscription(projectId: string): Promise<Hosting
 
   localStore.subscriptions[projectId] = newSub;
 
-  // Initial promotional free trial invoice
-  const freeInvoice: HostingInvoiceRecord = {
-    id: `INV-HOST-PROMO-${projectId.slice(-6)}`,
-    subscriptionId: newSub.id,
-    projectId,
-    receiptNumber: `HST-PROMO-${Date.now().toString().slice(-6)}`,
-    billingPeriodStart: createdAt.toISOString(),
-    billingPeriodEnd: freeEnd.toISOString(),
-    amount: planConfig.monthlyHostingPrice,
-    discount: planConfig.monthlyHostingPrice,
-    finalAmount: 0,
-    status: "PAID",
-    transactionId: "PROMO_FREE_PERIOD",
-    paymentDate: createdAt.toISOString(),
-    nextBillingDate: freeEnd.toISOString(),
-    createdAt: createdAt.toISOString(),
-  };
-
-  if (!localStore.invoices[projectId]) {
-    localStore.invoices[projectId] = [];
+  if (isHostingPaidToday) {
+    const paidInvoice: HostingInvoiceRecord = {
+      id: `INV-HOST-INIT-${projectId.slice(-6)}`,
+      subscriptionId: newSub.id,
+      projectId,
+      receiptNumber: `HST-REC-${Date.now().toString().slice(-6)}`,
+      billingPeriodStart: createdAt.toISOString(),
+      billingPeriodEnd: nextBilling.toISOString(),
+      amount: planConfig.monthlyHostingPrice,
+      discount: 0,
+      finalAmount: planConfig.monthlyHostingPrice,
+      status: "PAID",
+      transactionId: (project.paymentId || "CHECKOUT_HOSTING_PAID"),
+      razorpayPaymentId: project.paymentId,
+      paymentDate: createdAt.toISOString(),
+      nextBillingDate: nextBilling.toISOString(),
+      createdAt: createdAt.toISOString(),
+    };
+    if (!localStore.invoices[projectId]) {
+      localStore.invoices[projectId] = [];
+    }
+    localStore.invoices[projectId].push(paidInvoice);
+  } else {
+    // Initial promotional free trial invoice
+    const freeInvoice: HostingInvoiceRecord = {
+      id: `INV-HOST-PROMO-${projectId.slice(-6)}`,
+      subscriptionId: newSub.id,
+      projectId,
+      receiptNumber: `HST-PROMO-${Date.now().toString().slice(-6)}`,
+      billingPeriodStart: createdAt.toISOString(),
+      billingPeriodEnd: nextBilling.toISOString(),
+      amount: planConfig.monthlyHostingPrice,
+      discount: planConfig.monthlyHostingPrice,
+      finalAmount: 0,
+      status: "PAID",
+      transactionId: "PROMO_FREE_PERIOD",
+      paymentDate: createdAt.toISOString(),
+      nextBillingDate: nextBilling.toISOString(),
+      createdAt: createdAt.toISOString(),
+    };
+    if (!localStore.invoices[projectId]) {
+      localStore.invoices[projectId] = [];
+    }
+    localStore.invoices[projectId].push(freeInvoice);
   }
-  localStore.invoices[projectId].push(freeInvoice);
 
   saveLocalHostingStore(localStore);
   return newSub;

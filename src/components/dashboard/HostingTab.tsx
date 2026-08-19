@@ -398,37 +398,70 @@ export const HostingTab: React.FC<HostingTabProps> = ({ project }) => {
             </div>
           )}
 
-          {/* PROMOTIONAL BENEFIT HIGHLIGHT BOX */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest">
-                <CheckCircle2 size={15} />
-                <span>Hosting Benefit Included</span>
+          {/* PROMOTIONAL BENEFIT / ACTIVE SUBSCRIPTION HIGHLIGHT BOX */}
+          {(subData?.freeHostingMonths || 0) > 0 ? (
+            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest">
+                  <CheckCircle2 size={15} />
+                  <span>Hosting Benefit Included</span>
+                </div>
+                <span className="text-[11px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                  {subData?.freeHostingMonths} Month{(subData?.freeHostingMonths || 1) > 1 ? "s" : ""} FREE Promotional Hosting
+                </span>
               </div>
-              <span className="text-[11px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                {subData?.freeHostingMonths || 1} Month{(subData?.freeHostingMonths || 1) > 1 ? "s" : ""} FREE Promotional Hosting
-              </span>
-            </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs border-t border-emerald-500/20 pt-3">
-              <div>
-                <span className="text-neutral-400 text-[10px] block">Regular Price</span>
-                <span className="text-neutral-300 font-bold line-through">₹{subData?.monthlyAmount?.toLocaleString("en-IN")}</span>
-              </div>
-              <div>
-                <span className="text-neutral-400 text-[10px] block">Promotional Discount</span>
-                <span className="text-emerald-400 font-bold">-₹{subData?.monthlyAmount?.toLocaleString("en-IN")}</span>
-              </div>
-              <div>
-                <span className="text-neutral-400 text-[10px] block">Current Paid</span>
-                <span className="text-white font-extrabold">₹0</span>
-              </div>
-              <div>
-                <span className="text-neutral-400 text-[10px] block">Next Billing Rate</span>
-                <span className="text-amber-400 font-bold">₹{subData?.monthlyAmount?.toLocaleString("en-IN")}/mo</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs border-t border-emerald-500/20 pt-3">
+                <div>
+                  <span className="text-neutral-400 text-[10px] block">Regular Price</span>
+                  <span className="text-neutral-300 font-bold line-through">₹{subData?.monthlyAmount?.toLocaleString("en-IN")}</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 text-[10px] block">Promotional Discount</span>
+                  <span className="text-emerald-400 font-bold">-₹{subData?.monthlyAmount?.toLocaleString("en-IN")}</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 text-[10px] block">Current Paid</span>
+                  <span className="text-white font-extrabold">₹0</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 text-[10px] block">Next Billing Rate</span>
+                  <span className="text-amber-400 font-bold">₹{subData?.monthlyAmount?.toLocaleString("en-IN")}/mo</span>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/80 border border-white/15 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-widest">
+                  <CheckCircle2 size={15} className="text-emerald-400" />
+                  <span>Monthly Hosting Active</span>
+                </div>
+                <span className="text-[11px] font-mono font-bold text-white bg-white/10 border border-white/20 px-2.5 py-0.5 rounded-full">
+                  Month 1 Paid at Checkout
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs border-t border-white/10 pt-3">
+                <div>
+                  <span className="text-neutral-400 text-[10px] block">Monthly Rate</span>
+                  <span className="text-white font-bold">₹{subData?.monthlyAmount?.toLocaleString("en-IN")}/mo</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 text-[10px] block">Checkout Hosting Fee</span>
+                  <span className="text-emerald-400 font-bold">₹{subData?.lastPaymentAmount || subData?.monthlyAmount || 999} (Paid)</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 text-[10px] block">Current Status</span>
+                  <span className="text-white font-extrabold">Active</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 text-[10px] block">Next Billing Rate</span>
+                  <span className="text-white font-bold">₹{subData?.monthlyAmount?.toLocaleString("en-IN")}/mo</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* SUBSCRIPTION DETAILS GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
