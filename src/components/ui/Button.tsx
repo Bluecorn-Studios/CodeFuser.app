@@ -14,7 +14,7 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseStyles = "inline-flex items-center justify-center font-semibold uppercase tracking-wider transition-all cursor-pointer select-none active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-white/40";
+  const baseStyles = "inline-flex items-center justify-center gap-2.5 font-semibold uppercase tracking-wider transition-all cursor-pointer select-none active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-white/40";
 
   const sizeStyles = {
     sm: "text-[10px] px-3 py-1.5 rounded-lg font-mono",

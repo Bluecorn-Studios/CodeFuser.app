@@ -188,7 +188,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const isGrowth = pkgName.includes("growth") || pkgName.includes("fusion");
   const defaultFreeMonths = isDominance ? 3 : isGrowth ? 2 : 1;
   const quoteData = project.quote || {};
-  const isHostingPaidToday = quoteData.firstMonthHostingCharged === true || (quoteData.couponCode === "FUSIONFREE" || (quoteData.hostingPromoRule === "do_not_apply" && !quoteData.hostingWaived));
+  const isHostingPaidToday = quoteData.firstMonthHostingCharged === true || (quoteData.couponCode === "FUSIONFREE" || ((quoteData.hostingPromoRule === "do_not_apply" || quoteData.hostingPromoMode === "do_not_apply") && !quoteData.hostingWaived));
   const effectiveFreeMonths = isHostingPaidToday ? 0 : (quoteData.freeHostingMonths !== undefined ? quoteData.freeHostingMonths : defaultFreeMonths);
 
   const getHostingBillingDate = (): string => {

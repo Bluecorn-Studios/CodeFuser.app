@@ -13,7 +13,10 @@ export interface CouponRecord {
   discountValue: number; // e.g. 50, 20000, 100
   eligiblePlans: string[]; // e.g. ["ignite", "fusion"], ["fusion"]
   hostingRule: "charge_normally" | "waive_hosting";
-  freeHostingPromoRule: "apply" | "do_not_apply";
+  hostingPromoMode?: "use_plan_default" | "do_not_apply";
+  freeHostingPromoRule?: "apply" | "do_not_apply";
+  hostingPriceMode?: "use_plan_default" | "override";
+  fixedHostingPrice?: number | null;
   redemptionLimit: number; // e.g. 10 (0 for unlimited)
   maxUsesPerCustomer: number; // default 1
   customerEligibility: "all" | "new_only";
@@ -54,7 +57,10 @@ export const INITIAL_STARTER_COUPONS: CouponRecord[] = [
     discountValue: 100,
     eligiblePlans: ["fusion", "growth"],
     hostingRule: "charge_normally",
+    hostingPromoMode: "do_not_apply",
     freeHostingPromoRule: "do_not_apply",
+    hostingPriceMode: "use_plan_default",
+    fixedHostingPrice: null,
     redemptionLimit: 10,
     maxUsesPerCustomer: 1,
     customerEligibility: "new_only",
@@ -72,7 +78,10 @@ export const INITIAL_STARTER_COUPONS: CouponRecord[] = [
     discountValue: 50,
     eligiblePlans: ["ignite", "starter", "fusion", "growth"],
     hostingRule: "charge_normally",
+    hostingPromoMode: "use_plan_default",
     freeHostingPromoRule: "apply",
+    hostingPriceMode: "use_plan_default",
+    fixedHostingPrice: null,
     redemptionLimit: 10,
     maxUsesPerCustomer: 1,
     customerEligibility: "new_only",
@@ -90,7 +99,10 @@ export const INITIAL_STARTER_COUPONS: CouponRecord[] = [
     discountValue: 100,
     eligiblePlans: ["ignite", "starter", "fusion", "growth", "catalyst", "dominance"],
     hostingRule: "waive_hosting",
+    hostingPromoMode: "use_plan_default",
     freeHostingPromoRule: "apply",
+    hostingPriceMode: "use_plan_default",
+    fixedHostingPrice: null,
     redemptionLimit: 10,
     maxUsesPerCustomer: 1,
     customerEligibility: "new_only",
@@ -133,7 +145,10 @@ export async function initCouponsStore(): Promise<CouponsStore> {
             discountValue: Number(row.discount_value) || 0,
             eligiblePlans: row.eligible_plans || ["ignite", "fusion"],
             hostingRule: row.hosting_rule || "charge_normally",
-            freeHostingPromoRule: row.free_hosting_promo_rule || "apply",
+            hostingPromoMode: row.hosting_promo_mode || (row.free_hosting_promo_rule === "do_not_apply" ? "do_not_apply" : "use_plan_default"),
+            freeHostingPromoRule: row.free_hosting_promo_rule || (row.hosting_promo_mode === "do_not_apply" ? "do_not_apply" : "apply"),
+            hostingPriceMode: row.hosting_price_mode || "use_plan_default",
+            fixedHostingPrice: row.fixed_hosting_price !== undefined && row.fixed_hosting_price !== null ? Number(row.fixed_hosting_price) : null,
             redemptionLimit: Number(row.redemption_limit) || 10,
             maxUsesPerCustomer: Number(row.max_uses_per_customer) || 1,
             customerEligibility: row.customer_eligibility || "new_only",
@@ -308,7 +323,10 @@ export async function saveCouponsToSupabase(store: CouponsStore): Promise<void> 
           discount_value: c.discountValue,
           eligible_plans: c.eligiblePlans,
           hosting_rule: c.hostingRule,
-          free_hosting_promo_rule: c.freeHostingPromoRule,
+          hosting_promo_mode: c.hostingPromoMode || (c.freeHostingPromoRule === "do_not_apply" ? "do_not_apply" : "use_plan_default"),
+          free_hosting_promo_rule: c.freeHostingPromoRule || (c.hostingPromoMode === "do_not_apply" ? "do_not_apply" : "apply"),
+          hosting_price_mode: c.hostingPriceMode || "use_plan_default",
+          fixed_hosting_price: c.fixedHostingPrice ?? null,
           redemption_limit: c.redemptionLimit,
           max_uses_per_customer: c.maxUsesPerCustomer,
           customer_eligibility: c.customerEligibility,
@@ -604,6 +622,9 @@ export function validateAndCalculateCoupon(
   hostingWaived?: boolean;
   hostingDiscountAmount?: number;
   finalHostingPrice?: number;
+  effectiveMonthlyHostingPrice?: number;
+  freeHostingMonths?: number;
+  firstMonthHostingCharged?: boolean;
   finalTotal?: number;
   coupon?: CouponRecord;
 } {
@@ -664,7 +685,7 @@ export function validateAndCalculateCoupon(
     }
   }
 
-  // 8. Calculate discount
+  // 8. Calculate website discount
   let discountAmount = 0;
   if (coupon.discountType === "free_build" || coupon.discountValue >= 100) {
     discountAmount = baseWebsitePrice;
@@ -677,24 +698,58 @@ export function validateAndCalculateCoupon(
   discountAmount = Math.max(0, Math.min(baseWebsitePrice, discountAmount));
   const finalWebsitePrice = Math.max(0, baseWebsitePrice - discountAmount);
 
-  // 9. Calculate hosting waiver using authoritative getHostingPlanConfig
-  let effectiveHostingPrice: number;
-  if (typeof baseHostingPrice === "number" && !isNaN(baseHostingPrice) && baseHostingPrice >= 0) {
-    effectiveHostingPrice = baseHostingPrice;
-  } else {
-    try {
-      effectiveHostingPrice = getHostingPlanConfig(planId).monthlyHostingPrice;
-    } catch {
-      effectiveHostingPrice = 999;
-    }
+  // 9. Calculate hosting terms cleanly using two independent controls:
+  // A. Determine authoritative plan defaults
+  let planConfig: ReturnType<typeof getHostingPlanConfig>;
+  try {
+    planConfig = getHostingPlanConfig(planId);
+  } catch {
+    planConfig = {
+      packageId: "growth",
+      planName: "Fusion",
+      monthlyHostingPrice: typeof baseHostingPrice === "number" && baseHostingPrice > 0 ? baseHostingPrice : 999,
+      freeHostingMonths: 2,
+      domainFreeYears: 1,
+      domainRenewalPrice: 999,
+      currency: "INR",
+      razorpayPlanId: "plan_fusion"
+    };
   }
 
   const hostingWaived = coupon.hostingRule === "waive_hosting";
-  const hostingDiscountAmount = hostingWaived ? effectiveHostingPrice : 0;
-  const finalHostingPrice = hostingWaived ? 0 : effectiveHostingPrice;
+
+  // B. Effective Monthly Hosting Price (recurring price after free months)
+  let effectiveMonthlyHostingPrice: number;
+  if (hostingWaived) {
+    effectiveMonthlyHostingPrice = 0;
+  } else if (coupon.hostingPriceMode === "override" && typeof coupon.fixedHostingPrice === "number" && coupon.fixedHostingPrice >= 0) {
+    effectiveMonthlyHostingPrice = coupon.fixedHostingPrice;
+  } else {
+    effectiveMonthlyHostingPrice = planConfig.monthlyHostingPrice;
+  }
+
+  // C. Free Hosting Months
+  const isPromoDisabled = coupon.hostingPromoMode === "do_not_apply" || coupon.freeHostingPromoRule === "do_not_apply";
+  let freeHostingMonths: number;
+  if (hostingWaived) {
+    freeHostingMonths = 0; // Completely waived
+  } else if (isPromoDisabled) {
+    freeHostingMonths = 0;
+  } else {
+    freeHostingMonths = planConfig.freeHostingMonths;
+  }
+
+  // D. First Month Hosting Charged today during checkout
+  const firstMonthHostingCharged = !hostingWaived && freeHostingMonths === 0;
+
+  // E. Final Hosting Price due TODAY at checkout
+  const dueTodayHostingPrice = firstMonthHostingCharged ? effectiveMonthlyHostingPrice : 0;
+  const hostingDiscountAmount = hostingWaived
+    ? planConfig.monthlyHostingPrice
+    : (dueTodayHostingPrice === 0 ? planConfig.monthlyHostingPrice : 0);
 
   // 10. Final total
-  const finalTotal = finalWebsitePrice + finalHostingPrice;
+  const finalTotal = finalWebsitePrice + dueTodayHostingPrice;
 
   return {
     valid: true,
@@ -702,7 +757,10 @@ export function validateAndCalculateCoupon(
     finalWebsitePrice,
     hostingWaived,
     hostingDiscountAmount,
-    finalHostingPrice,
+    finalHostingPrice: dueTodayHostingPrice,
+    effectiveMonthlyHostingPrice,
+    freeHostingMonths,
+    firstMonthHostingCharged,
     finalTotal,
     coupon
   };

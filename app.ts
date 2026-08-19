@@ -1955,11 +1955,15 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
         summary: summary || "",
         couponCode: verifiedCouponCode || undefined,
         hostingPrice: effectiveHostingPrice,
-        finalHostingPrice: quoteValidation?.finalHostingPrice ?? (verifiedCouponCode === "FUSIONFREE" ? effectiveHostingPrice : 0),
-        hostingWaived: quoteValidation?.coupon?.hostingRule === "waive_100_percent",
-        hostingPromoRule: quoteValidation?.coupon?.freeHostingPromoRule || "apply",
-        freeHostingMonths: quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply" ? 0 : undefined,
-        firstMonthHostingCharged: quoteValidation?.coupon?.hostingRule === "charge_normally" && quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply",
+        monthlyHostingPrice: quoteValidation?.effectiveMonthlyHostingPrice ?? effectiveHostingPrice,
+        finalHostingPrice: quoteValidation?.finalHostingPrice ?? (verifiedCouponCode === "FUSIONFREE" ? (quoteValidation?.effectiveMonthlyHostingPrice ?? effectiveHostingPrice) : 0),
+        hostingWaived: quoteValidation?.hostingWaived ?? (quoteValidation?.coupon?.hostingRule === "waive_hosting"),
+        hostingPromoRule: quoteValidation?.coupon?.freeHostingPromoRule || (quoteValidation?.coupon?.hostingPromoMode === "do_not_apply" ? "do_not_apply" : "apply"),
+        hostingPromoMode: quoteValidation?.coupon?.hostingPromoMode || (quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply" ? "do_not_apply" : "use_plan_default"),
+        hostingPriceMode: quoteValidation?.coupon?.hostingPriceMode || "use_plan_default",
+        fixedHostingPrice: quoteValidation?.coupon?.fixedHostingPrice ?? null,
+        freeHostingMonths: quoteValidation?.freeHostingMonths,
+        firstMonthHostingCharged: quoteValidation?.firstMonthHostingCharged ?? false,
         timestamp: new Date().toISOString(),
         expiryDate: new Date(Date.now() + 7 * 86400000).toISOString(),
         status: "active" as const
@@ -2007,11 +2011,15 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
       summary: summary || "",
       couponCode: verifiedCouponCode || undefined,
       hostingPrice: effectiveHostingPrice,
-      finalHostingPrice: quoteValidation?.finalHostingPrice ?? (verifiedCouponCode === "FUSIONFREE" ? effectiveHostingPrice : 0),
-      hostingWaived: quoteValidation?.coupon?.hostingRule === "waive_100_percent",
-      hostingPromoRule: quoteValidation?.coupon?.freeHostingPromoRule || "apply",
-      freeHostingMonths: quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply" ? 0 : undefined,
-      firstMonthHostingCharged: quoteValidation?.coupon?.hostingRule === "charge_normally" && quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply"
+      monthlyHostingPrice: quoteValidation?.effectiveMonthlyHostingPrice ?? effectiveHostingPrice,
+      finalHostingPrice: quoteValidation?.finalHostingPrice ?? (verifiedCouponCode === "FUSIONFREE" ? (quoteValidation?.effectiveMonthlyHostingPrice ?? effectiveHostingPrice) : 0),
+      hostingWaived: quoteValidation?.hostingWaived ?? (quoteValidation?.coupon?.hostingRule === "waive_hosting"),
+      hostingPromoRule: quoteValidation?.coupon?.freeHostingPromoRule || (quoteValidation?.coupon?.hostingPromoMode === "do_not_apply" ? "do_not_apply" : "apply"),
+      hostingPromoMode: quoteValidation?.coupon?.hostingPromoMode || (quoteValidation?.coupon?.freeHostingPromoRule === "do_not_apply" ? "do_not_apply" : "use_plan_default"),
+      hostingPriceMode: quoteValidation?.coupon?.hostingPriceMode || "use_plan_default",
+      fixedHostingPrice: quoteValidation?.coupon?.fixedHostingPrice ?? null,
+      freeHostingMonths: quoteValidation?.freeHostingMonths,
+      firstMonthHostingCharged: quoteValidation?.firstMonthHostingCharged ?? false
     });
 
     // Log quote generation event
@@ -4415,11 +4423,17 @@ app.post("/api/coupons/validate", async (req: any, res) => {
       discountAmount: result.discountAmount,
       finalWebsitePrice: result.finalWebsitePrice,
       hostingRule: result.coupon?.hostingRule,
+      hostingPromoMode: result.coupon?.hostingPromoMode || (result.coupon?.freeHostingPromoRule === "do_not_apply" ? "do_not_apply" : "use_plan_default"),
+      hostingPriceMode: result.coupon?.hostingPriceMode || "use_plan_default",
+      fixedHostingPrice: result.coupon?.fixedHostingPrice ?? null,
       hostingWaived: result.hostingWaived,
       hostingDiscountAmount: result.hostingDiscountAmount,
       finalHostingPrice: result.finalHostingPrice,
+      effectiveMonthlyHostingPrice: result.effectiveMonthlyHostingPrice,
+      freeHostingMonths: result.freeHostingMonths,
+      firstMonthHostingCharged: result.firstMonthHostingCharged,
       finalTotal: result.finalTotal,
-      freeHostingPromoRule: result.coupon?.freeHostingPromoRule,
+      freeHostingPromoRule: result.coupon?.freeHostingPromoRule || (result.coupon?.hostingPromoMode === "do_not_apply" ? "do_not_apply" : "apply"),
       description: result.coupon?.discountType === "free_build" ? "100% OFF website build" : result.coupon?.discountType === "percentage" ? `${result.coupon.discountValue}% OFF website build` : `₹${result.coupon?.discountValue} OFF website build`
     });
   } catch (err: any) {

@@ -25,7 +25,7 @@ export const HostingSetupModal: React.FC<HostingSetupModalProps> = ({
   const planTitle = isDominance ? "Catalyst" : isGrowth ? "Fusion" : "Ignite";
 
   const quote = project?.quote || {};
-  const isHostingPaidToday = quote.firstMonthHostingCharged === true || (quote.couponCode === "FUSIONFREE" || (quote.hostingPromoRule === "do_not_apply" && !quote.hostingWaived));
+  const isHostingPaidToday = quote.firstMonthHostingCharged === true || (quote.couponCode === "FUSIONFREE" || ((quote.hostingPromoRule === "do_not_apply" || quote.hostingPromoMode === "do_not_apply") && !quote.hostingWaived));
   const freeMonths = isHostingPaidToday ? 0 : (quote.freeHostingMonths !== undefined ? quote.freeHostingMonths : (isDominance ? 3 : isGrowth ? 2 : 1));
 
   const baseDate = new Date(project?.purchaseDate || project?.timestamp || Date.now());

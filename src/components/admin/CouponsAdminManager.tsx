@@ -9,7 +9,10 @@ interface Coupon {
   discountValue: number;
   eligiblePlans: string[];
   hostingRule: "charge_normally" | "waive_hosting";
-  freeHostingPromoRule: "apply" | "do_not_apply";
+  hostingPromoMode?: "use_plan_default" | "do_not_apply";
+  freeHostingPromoRule?: "apply" | "do_not_apply";
+  hostingPriceMode?: "use_plan_default" | "override";
+  fixedHostingPrice?: number | null;
   redemptionLimit: number;
   maxUsesPerCustomer: number;
   customerEligibility: "all" | "new_only";
@@ -39,7 +42,9 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
   const [discountValue, setDiscountValue] = useState<number>(50);
   const [eligiblePlans, setEligiblePlans] = useState<string[]>(["ignite", "fusion"]);
   const [hostingRule, setHostingRule] = useState<"charge_normally" | "waive_hosting">("charge_normally");
-  const [freeHostingPromoRule, setFreeHostingPromoRule] = useState<"apply" | "do_not_apply">("apply");
+  const [hostingPromoMode, setHostingPromoMode] = useState<"use_plan_default" | "do_not_apply">("use_plan_default");
+  const [hostingPriceMode, setHostingPriceMode] = useState<"use_plan_default" | "override">("use_plan_default");
+  const [fixedHostingPrice, setFixedHostingPrice] = useState<number | null>(499);
   const [redemptionLimit, setRedemptionLimit] = useState<number>(10);
   const [maxUsesPerCustomer, setMaxUsesPerCustomer] = useState<number>(1);
   const [customerEligibility, setCustomerEligibility] = useState<"all" | "new_only">("new_only");
@@ -95,7 +100,9 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
     setDiscountValue(50);
     setEligiblePlans(["ignite", "fusion"]);
     setHostingRule("charge_normally");
-    setFreeHostingPromoRule("apply");
+    setHostingPromoMode("use_plan_default");
+    setHostingPriceMode("use_plan_default");
+    setFixedHostingPrice(499);
     setRedemptionLimit(10);
     setMaxUsesPerCustomer(1);
     setCustomerEligibility("new_only");
@@ -111,7 +118,9 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
     setDiscountValue(c.discountValue);
     setEligiblePlans(c.eligiblePlans || ["ignite", "fusion"]);
     setHostingRule(c.hostingRule || "charge_normally");
-    setFreeHostingPromoRule(c.freeHostingPromoRule || "apply");
+    setHostingPromoMode(c.hostingPromoMode || (c.freeHostingPromoRule === "do_not_apply" ? "do_not_apply" : "use_plan_default"));
+    setHostingPriceMode(c.hostingPriceMode || "use_plan_default");
+    setFixedHostingPrice(c.fixedHostingPrice !== undefined && c.fixedHostingPrice !== null ? c.fixedHostingPrice : 499);
     setRedemptionLimit(c.redemptionLimit ?? 10);
     setMaxUsesPerCustomer(c.maxUsesPerCustomer ?? 1);
     setCustomerEligibility(c.customerEligibility || "new_only");
@@ -142,7 +151,10 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
         discountValue: discountType === "free_build" ? 100 : Number(discountValue),
         eligiblePlans,
         hostingRule,
-        freeHostingPromoRule,
+        hostingPromoMode,
+        freeHostingPromoRule: hostingPromoMode === "do_not_apply" ? "do_not_apply" : "apply",
+        hostingPriceMode,
+        fixedHostingPrice: hostingPriceMode === "override" ? Number(fixedHostingPrice || 499) : null,
         redemptionLimit: Number(redemptionLimit),
         maxUsesPerCustomer: Number(maxUsesPerCustomer),
         customerEligibility,
@@ -402,6 +414,26 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
                         <span className="font-medium text-zinc-300">{plansText}</span>
                       </div>
                       <div className="flex justify-between text-xs">
+                        <span className="text-zinc-500">Hosting Promo:</span>
+                        <span className="font-medium text-zinc-300 font-mono">
+                          {c.hostingRule === "waive_hosting"
+                            ? "100% Waived"
+                            : c.hostingPromoMode === "do_not_apply" || c.freeHostingPromoRule === "do_not_apply"
+                            ? "Charge Immediately (0 Mo Free)"
+                            : "Plan Free Trial"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-zinc-500">Hosting Price:</span>
+                        <span className="font-medium text-zinc-300 font-mono">
+                          {c.hostingRule === "waive_hosting"
+                            ? "₹0"
+                            : c.hostingPriceMode === "override"
+                            ? `₹${c.fixedHostingPrice}/mo`
+                            : "Standard Plan Price"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
                         <span className="text-zinc-500">Claimed:</span>
                         <span className="font-mono text-zinc-300">
                           {c.currentRedemptions} / {c.redemptionLimit === 0 ? "∞" : c.redemptionLimit} claimed
@@ -658,6 +690,134 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Control 1: Free Hosting Promotion */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">Free Hosting Promotion</label>
+                    <select
+                      value={hostingPromoMode}
+                      onChange={(e) => setHostingPromoMode(e.target.value as any)}
+                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-sans"
+                    >
+                      <option value="use_plan_default">Use Plan's Standard Free Hosting</option>
+                      <option value="do_not_apply">Do Not Apply — Charge Immediately</option>
+                    </select>
+                    <p className="text-[10px] text-neutral-500 font-mono">
+                      {hostingPromoMode === "use_plan_default"
+                        ? "Ignite: 1 Mo Free | Fusion: 2 Mo Free | Catalyst: 3 Mo Free"
+                        : "0 Mo Free (First month hosting charged at checkout)"}
+                    </p>
+                  </div>
+
+                  {/* Control 2: Hosting Price */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">Hosting Price</label>
+                    <select
+                      value={hostingPriceMode}
+                      onChange={(e) => {
+                        const val = e.target.value as any;
+                        setHostingPriceMode(val);
+                        if (val === "override" && !fixedHostingPrice) {
+                          setFixedHostingPrice(499);
+                        }
+                      }}
+                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-sans"
+                    >
+                      <option value="use_plan_default">Use Plan Price (Standard)</option>
+                      <option value="override">Override Hosting Price</option>
+                    </select>
+                    <p className="text-[10px] text-neutral-500 font-mono">
+                      {hostingPriceMode === "use_plan_default"
+                        ? "Standard: Ignite ₹499/mo | Fusion ₹999/mo | Catalyst ₹1,999/mo"
+                        : `Custom recurring price: ₹${fixedHostingPrice || 499}/mo for all eligible plans`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* If Override Hosting Price is selected, show presets & input */}
+                {hostingPriceMode === "override" && (
+                  <div className="p-3 bg-[#0A0A0A] border border-white/15 rounded-xl space-y-3">
+                    <label className="text-xs font-mono font-medium text-neutral-300 block">
+                      Override Monthly Hosting Price (₹ INR / mo)
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[499, 999, 1999].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setFixedHostingPrice(p)}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
+                            fixedHostingPrice === p
+                              ? "bg-white text-black border-white shadow-md"
+                              : "bg-neutral-900 border-white/10 text-neutral-400 hover:border-white/30 hover:text-white"
+                          }`}
+                        >
+                          ₹{p.toLocaleString("en-IN")}/mo
+                        </button>
+                      ))}
+                    </div>
+                    <div className="space-y-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={fixedHostingPrice ?? 499}
+                        onChange={(e) => setFixedHostingPrice(Number(e.target.value))}
+                        placeholder="e.g. 499"
+                        className="w-full sm:w-48 bg-[#050505] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none transition-all"
+                      />
+                      <span className="text-[10px] text-neutral-500 block font-mono">
+                        Monthly hosting subscription price applied to all selected plans.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Plan Hosting Breakdown Preview */}
+                <div className="p-3 bg-[#0A0A0A]/80 border border-white/10 rounded-xl space-y-2">
+                  <span className="text-[10px] font-mono uppercase font-bold text-neutral-400 block tracking-wider">
+                    Plan Hosting Breakdown Preview
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      { id: "ignite", name: "Ignite", stdPrice: 499, stdFree: 1 },
+                      { id: "fusion", name: "Fusion", stdPrice: 999, stdFree: 2 },
+                      { id: "catalyst", name: "Catalyst", stdPrice: 1999, stdFree: 3 }
+                    ].map((p) => {
+                      const isSelected = eligiblePlans.includes(p.id);
+                      const effPrice = hostingRule === "waive_hosting" ? 0 : (hostingPriceMode === "override" ? (fixedHostingPrice || 499) : p.stdPrice);
+                      const effFree = hostingRule === "waive_hosting" ? 0 : (hostingPromoMode === "do_not_apply" ? 0 : p.stdFree);
+                      const chargedToday = hostingRule !== "waive_hosting" && effFree === 0;
+
+                      return (
+                        <div
+                          key={p.id}
+                          className={`p-2 rounded-lg border text-xs font-mono ${
+                            isSelected
+                              ? "bg-neutral-900 border-white/20 text-white"
+                              : "bg-neutral-950/50 border-white/5 text-neutral-600 opacity-60"
+                          }`}
+                        >
+                          <div className="flex justify-between font-bold">
+                            <span>{p.name}</span>
+                            <span className="text-[10px]">{isSelected ? "ACTIVE" : "OFF"}</span>
+                          </div>
+                          <div className="text-[11px] mt-1 space-y-0.5">
+                            <div>
+                              Trial: <span className="text-white font-bold">{hostingRule === "waive_hosting" ? "Waived" : `${effFree} Mo Free`}</span>
+                            </div>
+                            <div>
+                              Price: <span className="text-white font-bold">₹{effPrice.toLocaleString("en-IN")}/mo</span>
+                            </div>
+                            <div>
+                              Due Today: <span className="text-white font-bold">₹{(chargedToday ? effPrice : 0).toLocaleString("en-IN")}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-white/5">
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono font-medium text-neutral-300 block">Hosting Billing Rule</label>
                     <select
@@ -665,20 +825,8 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
                       onChange={(e) => setHostingRule(e.target.value as any)}
                       className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-sans"
                     >
-                      <option value="charge_normally">Charge Normally (Monthly/Annual)</option>
-                      <option value="waive_hosting">Waive Hosting Completely</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-medium text-neutral-300 block">Free Hosting Promotion</label>
-                    <select
-                      value={freeHostingPromoRule}
-                      onChange={(e) => setFreeHostingPromoRule(e.target.value as any)}
-                      className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-sans"
-                    >
-                      <option value="apply">Apply Standard Promo (1st Mo Free)</option>
-                      <option value="do_not_apply">Do Not Apply (Charge Immediately)</option>
+                      <option value="charge_normally">Charge Normally (Standard)</option>
+                      <option value="waive_hosting">Waive Hosting Completely (₹0)</option>
                     </select>
                   </div>
 
@@ -691,7 +839,7 @@ export const CouponsAdminManager: React.FC<CouponsAdminManagerProps> = ({ getAdm
                       onChange={(e) => setRedemptionLimit(Number(e.target.value))}
                       className="w-full bg-[#0A0A0A] border border-white/20 hover:border-white/30 focus:border-white focus:ring-2 focus:ring-white/20 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none transition-all"
                     />
-                    <span className="text-[10px] text-neutral-500 mt-0.5 block font-mono">0 = Unlimited redemptions</span>
+                    <span className="text-[10px] text-neutral-500 block font-mono">0 = Unlimited</span>
                   </div>
 
                   <div className="space-y-1.5">

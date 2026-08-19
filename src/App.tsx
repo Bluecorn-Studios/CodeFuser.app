@@ -103,6 +103,38 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    // Dynamic Page Title & Canonical URL Management for SPA Navigation
+    const titles: Record<string, string> = {
+      '/': 'CodeFuser — Website Development & Digital Growth Agency',
+      '/story': 'CodeFuser Founder Story — Fusing Potential With Scale',
+      '/process': 'CodeFuser Process — Website Development & Digital Growth Roadmap',
+      '/pricing': 'CodeFuser Pricing — Transparent Website & Digital Growth Plans',
+      '/faq': 'CodeFuser FAQ — Websites, SEO & Automation Answers',
+      '/contact': 'Contact CodeFuser — Start Your Digital Growth Strategy',
+      '/portfolio': 'CodeFuser Portfolio — Website & Digital Growth Case Studies',
+      '/start-project': 'Start Your Project — CodeFuser Digital Growth Audit',
+      '/dashboard': 'Client Portal — CodeFuser',
+      '/login': 'Login — CodeFuser Client Portal',
+      '/mission-control': 'Mission Control — CodeFuser Admin',
+      '/logo': 'Brand Assets — CodeFuser',
+    };
+
+    const cleanPath = currentPath.split('?')[0];
+    const pageTitle = titles[cleanPath] || 'CodeFuser — Website Development & Digital Growth Agency';
+    document.title = pageTitle;
+
+    // Update canonical link
+    let canonicalLink = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    const canonicalUrl = cleanPath === '/' ? 'https://codefuser.in/' : `https://codefuser.in${cleanPath}`;
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', canonicalUrl);
+  }, [currentPath]);
+
   const navigate = (to: PagePath) => {
     window.history.pushState(null, '', to);
     setCurrentPath(to);

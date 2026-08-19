@@ -10,10 +10,14 @@ export interface OfficialQuoteRecord {
   websitePrice?: number;
   websiteDiscount?: number;
   hostingPrice?: number;
+  monthlyHostingPrice?: number;
   finalHostingPrice?: number;
   hostingDiscount?: number;
   hostingWaived?: boolean;
   hostingPromoRule?: string;
+  hostingPromoMode?: string;
+  hostingPriceMode?: string;
+  fixedHostingPrice?: number | null;
   freeHostingMonths?: number;
   firstMonthHostingCharged?: boolean;
   timestamp: string; // ISO string

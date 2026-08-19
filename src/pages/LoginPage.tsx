@@ -255,7 +255,7 @@ export default function LoginPage() {
               size="lg"
               disabled={isLoading}
               onClick={handleGoogleSignIn}
-              className="w-full"
+              className="w-full flex items-center justify-center gap-3"
             >
               <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
                 <path
@@ -275,7 +275,7 @@ export default function LoginPage() {
                   d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.2-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
                 />
               </svg>
-              <span>Continue with Google</span>
+              <span className="font-mono text-xs font-bold uppercase tracking-wider">Continue with Google</span>
             </Button>
           </form>
 
