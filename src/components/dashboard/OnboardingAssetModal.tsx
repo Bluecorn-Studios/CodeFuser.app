@@ -399,8 +399,8 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
           {activeStep === "1" && (
             <div className="space-y-5 animate-fade-in">
               <div className="space-y-1">
-                <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">Step 1 of 5</span>
-                <h3 className="text-base font-bold text-[#EAE5D9]">Business Name & Contact Details</h3>
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">Step 1 of 5</span>
+                <h3 className="text-base font-bold text-white">Business Name & Contact Details</h3>
                 <p className="text-xs text-neutral-400">
                   Tell us your business details so we can display correct branding and contact links on your site.
                 </p>
@@ -409,7 +409,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-neutral-300">
-                    Business / Brand Name <span className="text-amber-400">*</span>
+                    Business / Brand Name <span className="text-white">*</span>
                   </label>
                   <div className="relative">
                     <Building2 size={15} className="absolute left-3.5 top-3 text-neutral-500" />
@@ -418,7 +418,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
                       placeholder="e.g. Apex Legal Solutions"
-                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-[#EAE5D9] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none"
+                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
@@ -430,13 +430,13 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
                     placeholder="e.g. Jonathan Smith"
-                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-[#EAE5D9] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
+                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-neutral-300">
-                    Phone Number / WhatsApp <span className="text-amber-400">*</span>
+                    Phone Number / WhatsApp <span className="text-white">*</span>
                   </label>
                   <div className="relative">
                     <Phone size={15} className="absolute left-3.5 top-3 text-neutral-500" />
@@ -444,15 +444,15 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       type="text"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="e.g. +1 555-0192"
-                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-[#EAE5D9] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none"
+                      placeholder="e.g. +91 98765 43210"
+                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-neutral-300">
-                    Business Email Address <span className="text-amber-400">*</span>
+                    Business Email Address <span className="text-white">*</span>
                   </label>
                   <div className="relative">
                     <Mail size={15} className="absolute left-3.5 top-3 text-neutral-500" />
@@ -461,7 +461,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="e.g. contact@apexlegal.com"
-                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-[#EAE5D9] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none"
+                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
@@ -474,8 +474,8 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      placeholder="e.g. 100 Main St, New York, NY 10001 (or Online / Nationwide)"
-                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-[#EAE5D9] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none"
+                      placeholder="e.g. Anna Nagar, Chennai, Tamil Nadu (or Online / Pan-India)"
+                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
@@ -487,10 +487,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
           {activeStep === "2" && (
             <div className="space-y-5 animate-fade-in">
               <div className="space-y-1">
-                <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">Step 2 of 5</span>
-                <h3 className="text-base font-bold text-[#EAE5D9]">Your Business Logo</h3>
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">Step 2 of 5</span>
+                <h3 className="text-base font-bold text-white">Your Business Logo</h3>
                 <p className="text-xs text-neutral-400">
-                  Upload your brand logo file, send a link, or request CodeFuser designers to create one for you.
+                  Select an option below: upload a logo file, provide a cloud link, or have CodeFuser designers create one for you.
                 </p>
               </div>
 
@@ -499,71 +499,111 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setLogoMode("upload")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     logoMode === "upload"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <Upload size={18} className={logoMode === "upload" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Upload Logo File</div>
-                  <div className="text-[11px] opacity-70">PNG, SVG, or JPG</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <Upload size={20} className={logoMode === "upload" ? "text-white" : "text-zinc-500"} />
+                    {logoMode === "upload" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Upload Logo File</div>
+                    <div className="text-[11px] text-zinc-400">PNG, SVG, or JPG format</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setLogoMode("link")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     logoMode === "link"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <LinkIcon size={18} className={logoMode === "link" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Paste Drive/Dropbox Link</div>
-                  <div className="text-[11px] opacity-70">Cloud folder or URL</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <LinkIcon size={20} className={logoMode === "link" ? "text-white" : "text-zinc-500"} />
+                    {logoMode === "link" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Drive / Dropbox Link</div>
+                    <div className="text-[11px] text-zinc-400">Cloud folder or Canva URL</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setLogoMode("help")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     logoMode === "help"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <Sparkles size={18} className={logoMode === "help" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Design Logo For Me</div>
-                  <div className="text-[11px] opacity-70">CodeFuser custom design</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <Sparkles size={20} className={logoMode === "help" ? "text-white" : "text-zinc-500"} />
+                    {logoMode === "help" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Design Logo For Me</div>
+                    <div className="text-[11px] text-zinc-400">CodeFuser custom design</div>
+                  </div>
                 </button>
               </div>
 
-              {/* Mode Details */}
+              {/* Mode Details Container */}
               {logoMode === "upload" && (
-                <div className="space-y-3 p-4 bg-neutral-900/40 border border-neutral-800 rounded-2xl">
+                <div className="space-y-3 p-5 bg-zinc-950 border border-white/20 rounded-2xl">
                   {logoFilePreview ? (
-                    <div className="flex items-center justify-between p-3 bg-black border border-neutral-800 rounded-xl">
+                    <div className="flex items-center justify-between p-3.5 bg-black border border-white/20 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <img src={logoFilePreview} alt="Logo preview" className="w-12 h-12 object-contain bg-neutral-900 rounded-lg p-1" />
+                        <img src={logoFilePreview} alt="Logo preview" className="w-14 h-14 object-contain bg-zinc-900 border border-white/10 rounded-lg p-1.5" />
                         <div>
-                          <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                            <Check size={14} /> Logo image ready
+                          <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <CheckCircle2 size={14} className="text-white" /> Logo file attached & ready
                           </p>
-                          <p className="text-[11px] text-neutral-400">Click save below to submit</p>
+                          <p className="text-[11px] text-neutral-400">Click Save & Continue below to submit</p>
                         </div>
                       </div>
                       <button
+                        type="button"
                         onClick={() => setLogoFilePreview(null)}
-                        className="text-neutral-500 hover:text-red-400 p-1 cursor-pointer"
+                        className="text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-zinc-900 border border-transparent hover:border-white/10 transition-all cursor-pointer"
+                        title="Remove file"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
                   ) : (
-                    <div className="border border-dashed border-neutral-700 hover:border-amber-500/50 rounded-2xl p-6 text-center space-y-2 bg-neutral-950 transition-all">
-                      <ImageIcon size={28} className="text-neutral-500 mx-auto" />
-                      <p className="text-xs font-bold text-neutral-200">Drag & drop your logo here, or browse files</p>
+                    <div className="border-2 border-dashed border-white/20 hover:border-white/50 rounded-2xl p-7 text-center space-y-3 bg-black transition-all">
+                      <div className="w-12 h-12 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center mx-auto text-white">
+                        <ImageIcon size={24} />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-white">Drag & drop your logo file here, or click browse</p>
+                        <p className="text-[11px] text-neutral-400">Supports PNG (transparent), SVG, or high-res JPG</p>
+                      </div>
                       <input
                         type="file"
                         id="modal-logo-uploader"
@@ -573,9 +613,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       />
                       <label
                         htmlFor="modal-logo-uploader"
-                        className="inline-block px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs font-bold text-white rounded-xl transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-zinc-200 transition-all cursor-pointer shadow-lg"
                       >
-                        Browse Logo File
+                        <Upload size={14} />
+                        <span>Browse Logo File</span>
                       </label>
                     </div>
                   )}
@@ -583,26 +624,37 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
               )}
 
               {logoMode === "link" && (
-                <div className="space-y-2 p-4 bg-neutral-900/40 border border-neutral-800 rounded-2xl">
-                  <label className="block text-xs font-semibold text-neutral-300">Google Drive, Dropbox, or Canva Link</label>
-                  <input
-                    type="url"
-                    value={logoLink}
-                    onChange={(e) => setLogoLink(e.target.value)}
-                    placeholder="https://drive.google.com/file/d/..."
-                    className="w-full bg-black border border-neutral-800 focus:border-[#EAE5D9] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
-                  />
+                <div className="space-y-3 p-5 bg-zinc-950 border border-white/20 rounded-2xl">
+                  <label className="block text-xs font-semibold text-white">Google Drive, Dropbox, or Canva Share Link</label>
+                  <div className="relative">
+                    <LinkIcon size={15} className="absolute left-3.5 top-3 text-neutral-500" />
+                    <input
+                      type="url"
+                      value={logoLink}
+                      onChange={(e) => setLogoLink(e.target.value)}
+                      placeholder="https://drive.google.com/file/d/... or https://canva.com/..."
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                    />
+                  </div>
+                  <p className="text-[11px] text-neutral-400">
+                    Make sure the link sharing setting is set to "Anyone with the link can view".
+                  </p>
                 </div>
               )}
 
               {logoMode === "help" && (
-                <div className="p-4 bg-zinc-900 border border-white/20 rounded-2xl text-xs text-zinc-200 space-y-1 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-                  <p className="font-bold flex items-center gap-1.5 text-white">
-                    <Sparkles size={15} className="text-white" /> CodeFuser Design Team Assigned
+                <div className="p-5 bg-zinc-950 border border-white/20 rounded-2xl space-y-2.5 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-2 text-white font-bold text-xs">
+                    <Sparkles size={16} className="text-white" />
+                    <span>CodeFuser Professional Design Team Assigned</span>
+                  </div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    Our graphics team will design clean, high-visibility logo concepts for your business based on your brand name, industry, and aesthetic preferences.
                   </p>
-                  <p className="leading-relaxed opacity-90 text-zinc-400">
-                    Our graphics team will design clean, modern logo options for your business based on your industry and brand identity!
-                  </p>
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400">
+                    <span>Status: Included with your project onboarding</span>
+                    <span className="font-mono text-white font-bold">✓ Active</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -612,10 +664,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
           {activeStep === "3" && (
             <div className="space-y-5 animate-fade-in">
               <div className="space-y-1">
-                <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">Step 3 of 5</span>
-                <h3 className="text-base font-bold text-[#EAE5D9]">Business Photos & Gallery</h3>
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">Step 3 of 5</span>
+                <h3 className="text-base font-bold text-white">Business Photos & Gallery</h3>
                 <p className="text-xs text-neutral-400">
-                  Upload photos of your business, store, products, or work samples. Or let us use licensed stock photos.
+                  Select how you'd like to provide photos: upload store/work pictures, share a cloud folder, or use our curated stock photos.
                 </p>
               </div>
 
@@ -623,56 +675,89 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setGalleryMode("upload")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     galleryMode === "upload"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <Upload size={18} className={galleryMode === "upload" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Upload Photos Directly</div>
-                  <div className="text-[11px] opacity-70">Multiple images</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <Upload size={20} className={galleryMode === "upload" ? "text-white" : "text-zinc-500"} />
+                    {galleryMode === "upload" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Upload Photos Directly</div>
+                    <div className="text-[11px] text-zinc-400">Attach multiple files</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setGalleryMode("link")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     galleryMode === "link"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <LinkIcon size={18} className={galleryMode === "link" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Cloud Folder Link</div>
-                  <div className="text-[11px] opacity-70">Google Drive / Dropbox</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <LinkIcon size={20} className={galleryMode === "link" ? "text-white" : "text-zinc-500"} />
+                    {galleryMode === "link" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Cloud Folder Link</div>
+                    <div className="text-[11px] text-zinc-400">Google Drive / Dropbox</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setGalleryMode("help")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     galleryMode === "help"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <Sparkles size={18} className={galleryMode === "help" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Use Stock Photos</div>
-                  <div className="text-[11px] opacity-70">CodeFuser curated HD media</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <Sparkles size={20} className={galleryMode === "help" ? "text-white" : "text-zinc-500"} />
+                    {galleryMode === "help" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Use Curated Stock Photos</div>
+                    <div className="text-[11px] text-zinc-400">CodeFuser licensed HD media</div>
+                  </div>
                 </button>
               </div>
 
               {galleryMode === "upload" && (
-                <div className="space-y-3 p-4 bg-neutral-900/40 border border-neutral-800 rounded-2xl">
+                <div className="space-y-3 p-5 bg-zinc-950 border border-white/20 rounded-2xl">
                   {galleryFilesPreviews.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                        <Check size={14} /> {galleryFilesPreviews.length} Photo(s) Attached
+                      <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-white" /> {galleryFilesPreviews.length} Photo(s) Attached
                       </p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2.5">
                         {galleryFilesPreviews.map((src, i) => (
-                          <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-800 group">
+                          <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-white/20">
                             <img src={src} alt="Gallery item" className="w-full h-full object-cover" />
                           </div>
                         ))}
@@ -680,9 +765,14 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                     </div>
                   )}
 
-                  <div className="border border-dashed border-neutral-700 hover:border-amber-500/50 rounded-2xl p-5 text-center space-y-2 bg-neutral-950 transition-all">
-                    <Upload size={24} className="text-neutral-500 mx-auto" />
-                    <p className="text-xs font-bold text-neutral-200">Select images from your device</p>
+                  <div className="border-2 border-dashed border-white/20 hover:border-white/50 rounded-2xl p-7 text-center space-y-3 bg-black transition-all">
+                    <div className="w-12 h-12 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center mx-auto text-white">
+                      <Upload size={24} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-white">Select photos of your shop, products, or work</p>
+                      <p className="text-[11px] text-neutral-400">You can select multiple photos at once</p>
+                    </div>
                     <input
                       type="file"
                       id="modal-gallery-uploader"
@@ -693,35 +783,47 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                     />
                     <label
                       htmlFor="modal-gallery-uploader"
-                      className="inline-block px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs font-bold text-white rounded-xl transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-zinc-200 transition-all cursor-pointer shadow-lg"
                     >
-                      Browse & Attach Photos
+                      <Upload size={14} />
+                      <span>Browse & Attach Photos</span>
                     </label>
                   </div>
                 </div>
               )}
 
               {galleryMode === "link" && (
-                <div className="space-y-2 p-4 bg-neutral-900/40 border border-neutral-800 rounded-2xl">
-                  <label className="block text-xs font-semibold text-neutral-300">Google Drive / Dropbox Folder Link</label>
-                  <input
-                    type="url"
-                    value={galleryLink}
-                    onChange={(e) => setGalleryLink(e.target.value)}
-                    placeholder="https://drive.google.com/drive/folders/..."
-                    className="w-full bg-black border border-neutral-800 focus:border-[#EAE5D9] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
-                  />
+                <div className="space-y-3 p-5 bg-zinc-950 border border-white/20 rounded-2xl">
+                  <label className="block text-xs font-semibold text-white">Google Drive or Dropbox Folder Link</label>
+                  <div className="relative">
+                    <LinkIcon size={15} className="absolute left-3.5 top-3 text-neutral-500" />
+                    <input
+                      type="url"
+                      value={galleryLink}
+                      onChange={(e) => setGalleryLink(e.target.value)}
+                      placeholder="https://drive.google.com/drive/folders/..."
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                    />
+                  </div>
+                  <p className="text-[11px] text-neutral-400">
+                    Ensure link access is set to "Anyone with the link can view".
+                  </p>
                 </div>
               )}
 
               {galleryMode === "help" && (
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-200 space-y-1">
-                  <p className="font-bold flex items-center gap-1.5 text-amber-300">
-                    <Sparkles size={15} /> Professional Stock Photography Selected
+                <div className="p-5 bg-zinc-950 border border-white/20 rounded-2xl space-y-2.5 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-2 text-white font-bold text-xs">
+                    <Sparkles size={16} className="text-white" />
+                    <span>Professional Stock Photography Selected</span>
+                  </div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    CodeFuser will curate high-resolution, commercial-licensed imagery specifically tailored to your industry, aesthetic, and services.
                   </p>
-                  <p className="leading-relaxed opacity-90">
-                    CodeFuser will source high-resolution, royalty-free images tailored to your industry.
-                  </p>
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400">
+                    <span>Status: Curated by CodeFuser content team</span>
+                    <span className="font-mono text-white font-bold">✓ Active</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -731,10 +833,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
           {activeStep === "4" && (
             <div className="space-y-5 animate-fade-in">
               <div className="space-y-1">
-                <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">Step 4 of 5</span>
-                <h3 className="text-base font-bold text-[#EAE5D9]">Services / Products Provided</h3>
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">Step 4 of 5</span>
+                <h3 className="text-base font-bold text-white">Services / Products Provided</h3>
                 <p className="text-xs text-neutral-400">
-                  Describe what your business offers, list services & prices, or upload a brochure/menu PDF.
+                  Describe what your business offers, list services & prices, or let CodeFuser copywriters structure them for you.
                 </p>
               </div>
 
@@ -742,47 +844,69 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setServicesMode("text")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     servicesMode === "text"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <FileText size={18} className={servicesMode === "text" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Type Services / Upload Doc</div>
-                  <div className="text-[11px] opacity-70">List offerings, prices, menu</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <FileText size={20} className={servicesMode === "text" ? "text-white" : "text-zinc-500"} />
+                    {servicesMode === "text" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Type Services / Attach Document</div>
+                    <div className="text-[11px] text-zinc-400">List offerings, prices, menu, or PDF</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setServicesMode("help")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     servicesMode === "help"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <Sparkles size={18} className={servicesMode === "help" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">CodeFuser Copywriting Help</div>
-                  <div className="text-[11px] opacity-70">We write professional copy for you</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <Sparkles size={20} className={servicesMode === "help" ? "text-white" : "text-zinc-500"} />
+                    {servicesMode === "help" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">CodeFuser Copywriting Help</div>
+                    <div className="text-[11px] text-zinc-400">We research and write copy for you</div>
+                  </div>
                 </button>
               </div>
 
               {servicesMode === "text" && (
-                <div className="space-y-3 p-4 bg-neutral-900/40 border border-neutral-800 rounded-2xl">
+                <div className="space-y-3 p-5 bg-zinc-950 border border-white/20 rounded-2xl">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-neutral-300">Type or Paste Your Offerings & Details</label>
+                    <label className="block text-xs font-semibold text-white">Type or Paste Your Offerings & Details</label>
                     <textarea
                       rows={4}
                       value={servicesText}
                       onChange={(e) => setServicesText(e.target.value)}
-                      placeholder="e.g. 1. Corporate Consultation ($150) - 1hr session&#10;2. Contract Review ($300)&#10;3. Full Retainer Package"
-                      className="w-full bg-black border border-neutral-800 focus:border-[#EAE5D9] rounded-xl p-3 text-xs text-white focus:outline-none resize-none"
+                      placeholder="e.g.&#10;1. General Consultation - ₹500&#10;2. Premium Styling Package - ₹2,500&#10;3. Annual Maintenance Plan"
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl p-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 resize-none font-sans"
                     />
                   </div>
 
-                  <div className="pt-2 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <span className="text-xs text-neutral-400">Or attach a document (PDF, Word, TXT):</span>
+                  <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <span className="text-xs text-neutral-400">Or attach a menu/brochure file (PDF, Word, Image):</span>
                     <input
                       type="file"
                       id="modal-services-doc-uploader"
@@ -791,23 +915,28 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                     />
                     <label
                       htmlFor="modal-services-doc-uploader"
-                      className="px-3.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-white rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 self-start"
+                      className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-xs font-bold text-white rounded-xl border border-white/20 hover:border-white/40 transition-all cursor-pointer inline-flex items-center gap-1.5 self-start"
                     >
                       <Upload size={14} />
-                      <span>{servicesDocName ? servicesDocName : "Attach File"}</span>
+                      <span>{servicesDocName ? servicesDocName : "Attach Document File"}</span>
                     </label>
                   </div>
                 </div>
               )}
 
               {servicesMode === "help" && (
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-200 space-y-1">
-                  <p className="font-bold flex items-center gap-1.5 text-amber-300">
-                    <Sparkles size={15} /> CodeFuser Copywriting Service
+                <div className="p-5 bg-zinc-950 border border-white/20 rounded-2xl space-y-2.5 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-2 text-white font-bold text-xs">
+                    <Sparkles size={16} className="text-white" />
+                    <span>CodeFuser Professional Copywriting Assigned</span>
+                  </div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    Our agency copywriters will research standard offerings in your domain and craft clear, engaging, customer-focused text for your website.
                   </p>
-                  <p className="leading-relaxed opacity-90">
-                    Our copywriters will craft clear, engaging, sales-focused text for your website based on your industry!
-                  </p>
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400">
+                    <span>Status: Included with your project onboarding</span>
+                    <span className="font-mono text-white font-bold">✓ Active</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -817,10 +946,10 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
           {activeStep === "5" && (
             <div className="space-y-5 animate-fade-in">
               <div className="space-y-1">
-                <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">Step 5 of 5</span>
-                <h3 className="text-base font-bold text-[#EAE5D9]">Preferred Website Address (Domain)</h3>
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">Step 5 of 5</span>
+                <h3 className="text-base font-bold text-white">Preferred Website Address (Domain)</h3>
                 <p className="text-xs text-neutral-400">
-                  Where should your website live on the web? Choose your preferred domain address.
+                  Where should your website live on the web? Choose your preferred domain address or let CodeFuser register one for you.
                 </p>
               </div>
 
@@ -828,85 +957,128 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setDomainMode("own")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     domainMode === "own"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <Globe size={18} className={domainMode === "own" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">I Have A Domain</div>
-                  <div className="text-[11px] opacity-70">e.g. mybusiness.com</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <Globe size={20} className={domainMode === "own" ? "text-white" : "text-zinc-500"} />
+                    {domainMode === "own" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">I Have A Domain</div>
+                    <div className="text-[11px] text-zinc-400">e.g. mybusiness.com</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setDomainMode("buy_for_me")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     domainMode === "buy_for_me"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <Sparkles size={18} className={domainMode === "buy_for_me" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Buy/Register Domain For Me</div>
-                  <div className="text-[11px] opacity-70">CodeFuser domain setup</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <Sparkles size={20} className={domainMode === "buy_for_me" ? "text-white" : "text-zinc-500"} />
+                    {domainMode === "buy_for_me" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Buy / Register Domain</div>
+                    <div className="text-[11px] text-zinc-400">CodeFuser domain setup</div>
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setDomainMode("subdomain")}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     domainMode === "subdomain"
-                      ? "bg-zinc-900 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                      : "bg-zinc-950 border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                      ? "bg-zinc-900 border-white text-white ring-2 ring-white/30 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
+                      : "bg-zinc-950/80 border-white/10 text-zinc-400 hover:text-white hover:border-white/30"
                   }`}
                 >
-                  <FileCode size={18} className={domainMode === "subdomain" ? "text-white" : "text-zinc-500"} />
-                  <div className="text-xs font-bold">Free CodeFuser Domain</div>
-                  <div className="text-[11px] opacity-70">mybusiness.codefuser.app</div>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <FileCode size={20} className={domainMode === "subdomain" ? "text-white" : "text-zinc-500"} />
+                    {domainMode === "subdomain" ? (
+                      <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-tight">
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Free Subdomain</div>
+                    <div className="text-[11px] text-zinc-400">mybrand.codefuser.app</div>
+                  </div>
                 </button>
               </div>
 
               {domainMode === "own" && (
-                <div className="space-y-2 p-4 bg-neutral-900/40 border border-neutral-800 rounded-2xl">
-                  <label className="block text-xs font-semibold text-neutral-300">Enter Your Registered Domain Name</label>
-                  <input
-                    type="text"
-                    value={domainName}
-                    onChange={(e) => setDomainName(e.target.value)}
-                    placeholder="e.g. apexlegal.com"
-                    className="w-full bg-black border border-neutral-800 focus:border-[#EAE5D9] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
-                  />
+                <div className="space-y-3 p-5 bg-zinc-950 border border-white/20 rounded-2xl">
+                  <label className="block text-xs font-semibold text-white">Enter Your Registered Domain Name</label>
+                  <div className="relative">
+                    <Globe size={15} className="absolute left-3.5 top-3 text-neutral-500" />
+                    <input
+                      type="text"
+                      value={domainName}
+                      onChange={(e) => setDomainName(e.target.value)}
+                      placeholder="e.g. apexlegal.com"
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 font-mono"
+                    />
+                  </div>
                   <p className="text-[11px] text-neutral-400">
-                    We'll provide DNS setup instructions when your site preview is approved!
+                    We'll provide straightforward DNS linking instructions when your site preview is approved.
                   </p>
                 </div>
               )}
 
               {domainMode === "buy_for_me" && (
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-200 space-y-2">
-                  <p className="font-bold flex items-center gap-1.5 text-amber-300">
-                    <Sparkles size={15} /> CodeFuser Domain Concierge
+                <div className="space-y-3 p-5 bg-zinc-950 border border-white/20 rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-2 text-white font-bold text-xs">
+                    <Sparkles size={16} className="text-white" />
+                    <span>CodeFuser Domain Concierge</span>
+                  </div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    Tell us your preferred domain name below and CodeFuser will assist you in acquiring, configuring SSL, and linking it to your website.
                   </p>
-                  <p className="leading-relaxed opacity-90">
-                    Tell us your preferred domain name below and CodeFuser will assist you in acquiring and linking it seamlessly.
-                  </p>
-                  <input
-                    type="text"
-                    value={domainName}
-                    onChange={(e) => setDomainName(e.target.value)}
-                    placeholder="e.g. apexlegalsolutions.com"
-                    className="w-full bg-black/80 border border-amber-500/30 focus:border-amber-400 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none"
-                  />
+                  <div className="relative">
+                    <Globe size={15} className="absolute left-3.5 top-3 text-neutral-500" />
+                    <input
+                      type="text"
+                      value={domainName}
+                      onChange={(e) => setDomainName(e.target.value)}
+                      placeholder="e.g. apexlegalsolutions.com"
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 font-mono"
+                    />
+                  </div>
                 </div>
               )}
 
               {domainMode === "subdomain" && (
-                <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl text-xs text-neutral-300 space-y-1">
-                  <p className="font-bold text-[#EAE5D9]">Free CodeFuser Subdomain</p>
-                  <p className="text-neutral-400">
-                    Your website will be published on a clean, fast CodeFuser web address. You can connect a custom domain at any time later!
+                <div className="p-5 bg-zinc-950 border border-white/20 rounded-2xl text-xs text-neutral-300 space-y-2">
+                  <div className="flex items-center gap-2 text-white font-bold">
+                    <FileCode size={16} className="text-white" />
+                    <span>Free CodeFuser Subdomain Address</span>
+                  </div>
+                  <p className="text-zinc-400 leading-relaxed">
+                    Your website will be published on a clean, fast CodeFuser web address (e.g. <span className="font-mono text-white font-bold">{((businessName || project?.businessName || "yourbusiness").toLowerCase().replace(/[^a-z0-9]/g, "") || "mybrand")}.codefuser.app</span>). You can connect a custom .com or .in domain at any time later!
                   </p>
                 </div>
               )}
