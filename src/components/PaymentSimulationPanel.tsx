@@ -23,6 +23,8 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
   const [isVerificationOn, setIsVerificationOn] = useState<boolean>(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"success" | "failed" | "cancelled" | "pending" | null>(null);
 
   const fetchConfig = () => {
     fetch("/api/config/razorpay")
@@ -43,9 +45,6 @@ export const PaymentSimulationPanel: React.FC<PaymentSimulationPanelProps> = ({
   if (isVerificationOn) {
     return null;
   }
-
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<"success" | "failed" | "cancelled" | "pending" | null>(null);
 
   const handleSimulateConfirm = (action: "success" | "failed" | "cancelled" | "pending") => {
     setPendingAction(action);
