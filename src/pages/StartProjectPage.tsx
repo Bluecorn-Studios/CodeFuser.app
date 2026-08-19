@@ -4172,168 +4172,279 @@ That's enough. We'll help with the rest.`}
               </div>
 
               {/* Coupon / Offer Code Section */}
-              <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 space-y-3 text-left">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono">
-                    Have an Offer or Waiver Code?
-                  </span>
-                  {appliedCoupon && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAppliedCoupon(null);
-                        setCouponCodeInput("");
-                      }}
-                      className="text-xs text-red-400 hover:text-red-300 underline cursor-pointer"
-                    >
-                      Remove Offer
-                    </button>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCodeInput}
-                    onChange={(e) => setCouponCodeInput(e.target.value)}
-                    placeholder="e.g. FULLWAIVER or FOUNDING50"
-                    className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-white uppercase tracking-wider font-mono focus:outline-none focus:border-amber-500"
-                    disabled={couponLoading || !!appliedCoupon}
-                  />
+              <div className="text-left">
+                <AnimatePresence mode="wait">
                   {!appliedCoupon ? (
-                    <button
-                      type="button"
-                      disabled={couponLoading || !couponCodeInput.trim()}
-                      onClick={async () => {
-                        setCouponLoading(true);
-                        setCouponError(null);
-                        try {
-                          const currentProjId = createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || undefined;
-                          const res = await fetch("/api/coupons/validate", {
-                            method: "POST",
-                            headers: getApiHeaders(),
-                            body: JSON.stringify({
-                              code: couponCodeInput.trim(),
-                              planId: finalSelCardForPayment.name,
-                              customerEmail: formData.email,
-                              baseWebsitePrice: numericPriceForPayment,
-                              projectId: currentProjId
-                            })
-                          });
-                          const data = await res.json();
-                          if (data.valid) {
-                            setAppliedCoupon(data);
-                          } else {
-                            setCouponError(data.error || "Invalid offer code.");
-                          }
-                        } catch (err) {
-                          setCouponError("Failed to validate offer code.");
-                        } finally {
-                          setCouponLoading(false);
-                        }
-                      }}
-                      className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                    <motion.div
+                      key="coupon-input-panel"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.25 }}
+                      className="p-4 sm:p-5 rounded-2xl border border-zinc-800 bg-zinc-950/60 space-y-3"
                     >
-                      {couponLoading ? "Checking..." : "Apply"}
-                    </button>
-                  ) : (
-                    <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs rounded-xl flex items-center gap-1.5">
-                      <Check size={14} /> Applied
-                    </div>
-                  )}
-                </div>
-                {couponError && (
-                  <p className="text-xs text-red-400 font-medium">{couponError}</p>
-                )}
-                {appliedCoupon && (
-                  <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950 border border-white/20 text-xs text-white space-y-3.5 shadow-lg">
-                    {/* Header: Coupon code + Applied badge */}
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                      <span className="font-mono font-bold text-white text-xs uppercase tracking-wider">
-                        {appliedCoupon.code || appliedCoupon.name}
-                      </span>
-                      <span className="text-emerald-400 font-bold text-xs flex items-center gap-1">
-                        <Check size={14} strokeWidth={3} /> Applied
-                      </span>
-                    </div>
-
-                    {/* Clean itemized breakdown */}
-                    <div className="space-y-2 text-xs">
-                      {/* Website build line */}
-                      <div className="flex justify-between items-center text-zinc-300">
-                        <span>Website build</span>
-                        {finalWebsitePrice === 0 ? (
-                          <div className="flex items-center gap-2">
-                            {numericPriceForPayment > 0 && (
-                              <span className="text-zinc-500 text-[11px] font-sans">Was ₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
-                            )}
-                            <span className="font-bold text-emerald-400 font-mono tracking-wider">FREE</span>
-                          </div>
-                        ) : websiteDiscount > 0 ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-zinc-500 text-[11px] font-sans">Was ₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
-                            <span className="font-bold text-white font-mono">₹{finalWebsitePrice.toLocaleString('en-IN')}</span>
-                          </div>
-                        ) : (
-                          <span className="font-bold text-white font-mono">₹{numericPriceForPayment.toLocaleString('en-IN')}</span>
-                        )}
-                      </div>
-
-                      {/* Hosting line */}
-                      <div className="flex justify-between items-center text-zinc-300">
-                        <span>Hosting</span>
-                        {hostingWaived ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-zinc-500 text-[11px] font-sans">Was ₹{baseHostingPrice.toLocaleString('en-IN')}</span>
-                            <span className="font-bold text-emerald-400 font-mono tracking-wider">FREE</span>
-                          </div>
-                        ) : (
-                          <span className="font-mono text-zinc-200">₹{baseHostingPrice.toLocaleString('en-IN')} <span className="text-[10px] text-zinc-400 font-sans">/ month</span></span>
-                        )}
-                      </div>
-
-                      {/* You pay today */}
-                      <div className="border-t border-white/10 pt-2.5 flex justify-between items-baseline">
-                        <span className="font-bold text-white text-xs uppercase tracking-wider">You pay today</span>
-                        <span className="text-xl sm:text-2xl font-extrabold text-white font-display tracking-tight">
-                          ₹{(selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment).toLocaleString('en-IN')}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono">
+                          Have an Offer or Waiver Code?
                         </span>
                       </div>
-                    </div>
-
-                    {/* Small supporting explanation */}
-                    <div className="pt-1 text-[11px] text-zinc-400 border-t border-white/5">
-                      {finalTotal === 0 ? (
-                        <span className="text-emerald-400 font-medium">No payment required.</span>
-                      ) : finalWebsitePrice === 0 ? (
-                        <span>Website build is free. Hosting is charged normally.</span>
-                      ) : (
-                        <span>You save ₹{websiteDiscount.toLocaleString('en-IN')} on website build.</span>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponCodeInput}
+                          onChange={(e) => setCouponCodeInput(e.target.value)}
+                          placeholder="e.g. FULLWAIVER or FOUNDING50"
+                          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white uppercase tracking-wider font-mono focus:outline-none focus:border-white"
+                          disabled={couponLoading}
+                        />
+                        <button
+                          type="button"
+                          disabled={couponLoading || !couponCodeInput.trim()}
+                          onClick={async () => {
+                            setCouponLoading(true);
+                            setCouponError(null);
+                            try {
+                              const currentProjId = createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || undefined;
+                              const res = await fetch("/api/coupons/validate", {
+                                method: "POST",
+                                headers: getApiHeaders(),
+                                body: JSON.stringify({
+                                  code: couponCodeInput.trim(),
+                                  planId: finalSelCardForPayment.name,
+                                  customerEmail: formData.email,
+                                  baseWebsitePrice: numericPriceForPayment,
+                                  projectId: currentProjId
+                                })
+                              });
+                              const data = await res.json();
+                              if (data.valid) {
+                                setAppliedCoupon(data);
+                              } else {
+                                setCouponError(data.error || "Invalid offer code.");
+                              }
+                            } catch (err) {
+                              setCouponError("Failed to validate offer code.");
+                            } finally {
+                              setCouponLoading(false);
+                            }
+                          }}
+                          className="px-5 py-2.5 bg-white text-black hover:bg-neutral-200 font-bold text-xs rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                        >
+                          {couponLoading ? "Checking..." : "Apply"}
+                        </button>
+                      </div>
+                      {couponError && (
+                        <p className="text-xs text-red-400 font-medium">{couponError}</p>
                       )}
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  ) : (
+                    /* Redesigned Hero Coupon Summary Card with Animated Pricing Story */
+                    <motion.div
+                      key="coupon-story-card"
+                      initial={{ opacity: 0, y: 8, scale: 0.99 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.99 }}
+                      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                      className="p-5 sm:p-6 rounded-2xl bg-zinc-950 border border-white/20 text-white space-y-4 shadow-[0_0_30px_rgba(255,255,255,0.06)]"
+                    >
+                      {/* Step 1: Header - Single prominent Coupon Code + Single Applied Badge + Remove Action */}
+                      <motion.div
+                        initial={{ opacity: 0, y: -3 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, delay: 0.05 }}
+                        className="flex items-center justify-between border-b border-white/10 pb-3.5"
+                      >
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="font-mono font-extrabold text-white text-sm sm:text-base uppercase tracking-wider">
+                            {appliedCoupon.code || appliedCoupon.name}
+                          </span>
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.85 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.25, delay: 0.15, ease: "easeOut" }}
+                            className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1"
+                          >
+                            <Check size={13} strokeWidth={3} /> Applied
+                          </motion.span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAppliedCoupon(null);
+                            setCouponCodeInput("");
+                          }}
+                          className="text-xs text-zinc-400 hover:text-white underline transition-colors cursor-pointer"
+                        >
+                          Remove Offer
+                        </button>
+                      </motion.div>
+
+                      {/* Step 2 & 3: Savings Indicator Badge */}
+                      {(websiteDiscount > 0 || hostingWaived) && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ duration: 0.35, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                          className="flex items-center"
+                        >
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white font-mono text-xs font-bold shadow-sm">
+                            <Sparkles size={13} className="text-white" />
+                            <span>YOU SAVE ₹{(websiteDiscount + (hostingWaived ? baseHostingPrice : 0)).toLocaleString('en-IN')}</span>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Itemized Rows */}
+                      <div className="space-y-3 text-left">
+                        {/* Step 4 & 5: Website Build Row with Animated Strikethrough & Result */}
+                        <div className="flex items-center justify-between py-1">
+                          <span className="text-xs sm:text-sm font-semibold text-zinc-300 uppercase tracking-wider">
+                            WEBSITE BUILD
+                          </span>
+                          <div className="text-right">
+                            {finalWebsitePrice === 0 ? (
+                              <div className="flex items-center justify-end gap-2.5">
+                                {numericPriceForPayment > 0 && (
+                                  <span className="relative inline-block text-zinc-500 text-sm sm:text-base font-medium font-mono">
+                                    ₹{numericPriceForPayment.toLocaleString('en-IN')}
+                                    <motion.span
+                                      initial={{ scaleX: 0 }}
+                                      animate={{ scaleX: 1 }}
+                                      transition={{ duration: 0.35, delay: 0.45, ease: "easeOut" }}
+                                      className="absolute left-0 top-1/2 w-full h-[1.5px] bg-zinc-500 origin-left"
+                                    />
+                                  </span>
+                                )}
+                                <motion.span
+                                  initial={{ opacity: 0, x: 6, scale: 0.92 }}
+                                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                                  transition={{ duration: 0.35, delay: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                                  className="font-extrabold text-emerald-400 text-base sm:text-lg font-mono tracking-wide"
+                                >
+                                  FREE
+                                </motion.span>
+                              </div>
+                            ) : websiteDiscount > 0 ? (
+                              <div className="flex items-center justify-end gap-2.5">
+                                <span className="relative inline-block text-zinc-500 text-sm sm:text-base font-medium font-mono">
+                                  ₹{numericPriceForPayment.toLocaleString('en-IN')}
+                                  <motion.span
+                                    initial={{ scaleX: 0 }}
+                                    animate={{ scaleX: 1 }}
+                                    transition={{ duration: 0.35, delay: 0.45, ease: "easeOut" }}
+                                    className="absolute left-0 top-1/2 w-full h-[1.5px] bg-zinc-500 origin-left"
+                                  />
+                                </span>
+                                <motion.span
+                                  initial={{ opacity: 0, x: 6, scale: 0.92 }}
+                                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                                  transition={{ duration: 0.35, delay: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                                  className="font-bold text-white text-base sm:text-lg font-mono"
+                                >
+                                  ₹{finalWebsitePrice.toLocaleString('en-IN')}
+                                </motion.span>
+                              </div>
+                            ) : (
+                              <span className="font-bold text-white text-base sm:text-lg font-mono">
+                                ₹{numericPriceForPayment.toLocaleString('en-IN')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Step 6: Hosting Row (Stable or Animated for Full Waiver) */}
+                        <div className="flex items-center justify-between py-1">
+                          <span className="text-xs sm:text-sm font-semibold text-zinc-300 uppercase tracking-wider">
+                            HOSTING
+                          </span>
+                          <div className="text-right">
+                            {hostingWaived ? (
+                              <div className="flex items-center justify-end gap-2.5">
+                                <span className="relative inline-block text-zinc-500 text-sm sm:text-base font-medium font-mono">
+                                  ₹{baseHostingPrice.toLocaleString('en-IN')} / month
+                                  <motion.span
+                                    initial={{ scaleX: 0 }}
+                                    animate={{ scaleX: 1 }}
+                                    transition={{ duration: 0.35, delay: 0.85, ease: "easeOut" }}
+                                    className="absolute left-0 top-1/2 w-full h-[1.5px] bg-zinc-500 origin-left"
+                                  />
+                                </span>
+                                <motion.span
+                                  initial={{ opacity: 0, x: 6, scale: 0.92 }}
+                                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                                  transition={{ duration: 0.35, delay: 1.05, ease: [0.16, 1, 0.3, 1] }}
+                                  className="font-extrabold text-emerald-400 text-base sm:text-lg font-mono tracking-wide"
+                                >
+                                  FREE
+                                </motion.span>
+                              </div>
+                            ) : (
+                              <span className="font-medium text-zinc-200 text-sm sm:text-base font-mono">
+                                ₹{baseHostingPrice.toLocaleString('en-IN')} <span className="text-xs text-zinc-400 font-sans">/ month</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Step 7: Divider & You Pay Today Total (Visual Endpoint) */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.35, delay: 1.15, ease: [0.16, 1, 0.3, 1] }}
+                          className="border-t border-white/15 pt-3.5 mt-2 flex items-baseline justify-between"
+                        >
+                          <span className="font-extrabold text-white text-xs sm:text-sm uppercase tracking-wider">
+                            YOU PAY TODAY
+                          </span>
+                          <div className="text-right">
+                            <AnimatePresence mode="wait" initial={false}>
+                              <motion.span
+                                key={`${finalTotal}-${selectedPaymentTerm}`}
+                                initial={{ opacity: 0, y: 3 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -3 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                className={`inline-block text-3xl sm:text-4xl font-extrabold font-display tracking-tight ${finalTotal === 0 ? "text-emerald-400" : "text-white"}`}
+                              >
+                                ₹{(finalTotal === 0 ? 0 : (selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment)).toLocaleString('en-IN')}
+                              </motion.span>
+                            </AnimatePresence>
+                          </div>
+                        </motion.div>
+                      </div>
+
+                      {/* Supporting Explanation */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.35, delay: 1.35 }}
+                        className="pt-2 text-xs text-zinc-400 border-t border-white/10 text-left"
+                      >
+                        {finalTotal === 0 ? (
+                          <span className="text-emerald-400 font-medium">No payment required.</span>
+                        ) : finalWebsitePrice === 0 && hostingWaived ? (
+                          <span className="text-emerald-400 font-medium">Your coupon covers the website build and hosting.</span>
+                        ) : finalWebsitePrice === 0 ? (
+                          <span>Website build is free. Hosting is ₹{baseHostingPrice.toLocaleString('en-IN')}/month.</span>
+                        ) : (
+                          <span>Your coupon reduced the website price by ₹{websiteDiscount.toLocaleString('en-IN')}.</span>
+                        )}
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Payment Section */}
-              {finalTotal === 0 ? (
-                <div className="p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 text-left space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">Full Waiver Active</span>
-                    <span className="text-[10px] font-bold font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                      100% Free
-                    </span>
-                  </div>
-                  <p className="text-2xl font-extrabold font-display text-emerald-400 tracking-tight">₹0 <span className="text-xs font-normal text-zinc-400 font-sans">total</span></p>
-                  <p className="text-xs text-zinc-300">Your coupon covers the entire website build and hosting. No payment card required.</p>
-                </div>
-              ) : (
+              {finalTotal === 0 ? null : (
                 <div className="space-y-2.5 text-left pt-1">
                   <h3 className="text-sm font-bold text-white tracking-tight">
                     How would you like to pay?
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Option 1: 50% Now */}
-                    <div 
+                    <motion.div 
+                      layout
                       onClick={() => setSelectedPaymentTerm('milestone')}
                       className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
                         selectedPaymentTerm === 'milestone' 
@@ -4348,7 +4459,17 @@ That's enough. We'll help with the rest.`}
                               50% Now
                             </span>
                             <p className={`text-2xl sm:text-3xl font-extrabold mt-1 font-display tracking-tight ${selectedPaymentTerm === 'milestone' ? 'text-white' : 'text-zinc-300'}`}>
-                              ₹{partPayment.toLocaleString('en-IN')} <span className="text-xs font-normal text-zinc-400 font-sans">today</span>
+                              <AnimatePresence mode="wait" initial={false}>
+                                <motion.span
+                                  key={partPayment}
+                                  initial={{ opacity: 0, y: 2 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -2 }}
+                                  transition={{ duration: 0.15 }}
+                                >
+                                  ₹{partPayment.toLocaleString('en-IN')}
+                                </motion.span>
+                              </AnimatePresence> <span className="text-xs font-normal text-zinc-400 font-sans">today</span>
                             </p>
                           </div>
                           <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
@@ -4373,10 +4494,11 @@ That's enough. We'll help with the rest.`}
                           )}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
                     {/* Option 2: Full Payment */}
-                    <div 
+                    <motion.div 
+                      layout
                       onClick={() => setSelectedPaymentTerm('upfront')}
                       className={`select-none cursor-pointer p-5 rounded-2xl border transition-all duration-200 text-left relative overflow-hidden flex flex-col justify-between ${
                         selectedPaymentTerm === 'upfront' 
@@ -4398,7 +4520,17 @@ That's enough. We'll help with the rest.`}
                               )}
                             </div>
                             <p className={`text-2xl sm:text-3xl font-extrabold mt-1 font-display tracking-tight ${selectedPaymentTerm === 'upfront' ? 'text-white' : 'text-zinc-300'}`}>
-                              ₹{upfrontTotal.toLocaleString('en-IN')} <span className="text-xs font-normal text-zinc-400 font-sans">today</span>
+                              <AnimatePresence mode="wait" initial={false}>
+                                <motion.span
+                                  key={upfrontTotal}
+                                  initial={{ opacity: 0, y: 2 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -2 }}
+                                  transition={{ duration: 0.15 }}
+                                >
+                                  ₹{upfrontTotal.toLocaleString('en-IN')}
+                                </motion.span>
+                              </AnimatePresence> <span className="text-xs font-normal text-zinc-400 font-sans">today</span>
                             </p>
                           </div>
                           <div className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-all mt-0.5 ${
@@ -4423,7 +4555,7 @@ That's enough. We'll help with the rest.`}
                           )}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
                 </div>
               )}
