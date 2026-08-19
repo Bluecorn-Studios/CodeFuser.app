@@ -49,7 +49,7 @@ import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { pricingPlans } from '../components/Pricing';
 import { getAuthUser, getAuthToken, setAuthSession, clearAuthSession } from '../utils/auth';
-import { getInitialPlusPackagePrice } from '../utils/pricingUtils';
+import { getInitialPlusPackagePrice, getHostingPriceForPackage } from '../utils/pricingUtils';
 import { supabase } from '../lib/supabase';
 import { safeLocalStorage } from '../utils/safeStorage';
 import { normalizeProjectFormData } from '../lib/schemaNormalizer';
@@ -958,7 +958,6 @@ export const StartProjectPage: React.FC = () => {
     setPaymentLoading(true);
     setPaymentErrorMsg(null);
 
-    const freeOrderPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
     const discount = appliedCoupon ? websiteDiscount : (selectedPaymentTerm === 'upfront' ? discountVal : 0);
     const normalizedFeats = normalizeFeatures(finalSelCardForPayment.features);
     try {
@@ -967,7 +966,7 @@ export const StartProjectPage: React.FC = () => {
         headers: getApiHeaders(),
         body: JSON.stringify({
           packageName: finalSelCardForPayment.name || "Selected Package",
-          price: freeOrderPrice,
+          price: finalWebsitePrice,
           discount: discount,
           features: normalizedFeats,
           summary: aiSummary?.recommendationReason || "Custom engineered web application.",
@@ -1014,7 +1013,7 @@ export const StartProjectPage: React.FC = () => {
     : { name: 'Fusion Baseline', price: '₹19,999' };
   const numericPriceForPayment = parseInt((finalSelCardForPayment.price || "").replace(/[^\d]/g, ""), 10) || 19999;
   
-  const baseHostingPrice = 1000;
+  const baseHostingPrice = getHostingPriceForPackage(finalSelCardForPayment);
   const websiteDiscount = appliedCoupon ? (appliedCoupon.discountAmount || 0) : 0;
   const finalWebsitePrice = appliedCoupon ? (appliedCoupon.finalWebsitePrice ?? Math.max(0, numericPriceForPayment - websiteDiscount)) : numericPriceForPayment;
   const hostingWaived = appliedCoupon ? Boolean(appliedCoupon.hostingWaived) : false;
@@ -4208,6 +4207,7 @@ That's enough. We'll help with the rest.`}
                         setCouponLoading(true);
                         setCouponError(null);
                         try {
+                          const currentProjId = createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || undefined;
                           const res = await fetch("/api/coupons/validate", {
                             method: "POST",
                             headers: getApiHeaders(),
@@ -4215,7 +4215,8 @@ That's enough. We'll help with the rest.`}
                               code: couponCodeInput.trim(),
                               planId: finalSelCardForPayment.name,
                               customerEmail: formData.email,
-                              baseWebsitePrice: numericPriceForPayment
+                              baseWebsitePrice: numericPriceForPayment,
+                              projectId: currentProjId
                             })
                           });
                           const data = await res.json();
@@ -4282,11 +4283,11 @@ That's enough. We'll help with the rest.`}
                         <span>Hosting</span>
                         {hostingWaived ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-zinc-500 text-[11px] font-sans">Was ₹1,000</span>
+                            <span className="text-zinc-500 text-[11px] font-sans">Was ₹{baseHostingPrice.toLocaleString('en-IN')}</span>
                             <span className="font-bold text-emerald-400 font-mono tracking-wider">FREE</span>
                           </div>
                         ) : (
-                          <span className="font-mono text-zinc-200">₹1,000 <span className="text-[10px] text-zinc-400 font-sans">/ month</span></span>
+                          <span className="font-mono text-zinc-200">₹{baseHostingPrice.toLocaleString('en-IN')} <span className="text-[10px] text-zinc-400 font-sans">/ month</span></span>
                         )}
                       </div>
 
@@ -4492,7 +4493,6 @@ That's enough. We'll help with the rest.`}
                     }
 
                     // Attempt quote lock on server (non-blocking)
-                    const paidFinalPrice = selectedPaymentTerm === 'upfront' ? upfrontTotal : partPayment;
                     const discount = appliedCoupon ? websiteDiscount : (selectedPaymentTerm === 'upfront' ? discountVal : 0);
                     const normalizedFeats = normalizeFeatures(finalSelCardForPayment.features);
                     try {
@@ -4501,7 +4501,7 @@ That's enough. We'll help with the rest.`}
                         headers: getApiHeaders(),
                         body: JSON.stringify({
                           packageName: finalSelCardForPayment.name || "Selected Package",
-                          price: paidFinalPrice,
+                          price: finalWebsitePrice,
                           discount: discount,
                           features: normalizedFeats,
                           summary: aiSummary?.recommendationReason || "Custom engineered web application.",

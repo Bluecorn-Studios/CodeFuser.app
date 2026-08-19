@@ -4,7 +4,8 @@ import {
   getProjectCashCollected, 
   getProjectWaivedValue, 
   isProjectCashPaying, 
-  isProjectCovered 
+  isProjectCovered,
+  calculateHostingRecurringRevenue 
 } from "../utils/moneyMetrics";
 import { formatINR, formatDateSafe, formatPaymentMethod, formatPaymentReference } from "../utils/formatters";
 import { 
@@ -18,24 +19,28 @@ import {
   Clock, 
   AlertCircle,
   ExternalLink,
-  ArrowUpRight
+  ArrowUpRight,
+  RefreshCw,
+  Repeat
 } from "lucide-react";
 
 interface MoneyRevenueLedgerProps {
   projects: ProjectRecord[];
+  hostingList?: any[];
   onSelectProject?: (projectId: string) => void;
   onModifyProject?: (projectId: string, updates: Partial<ProjectRecord>) => Promise<void>;
 }
 
 export const MoneyRevenueLedger: React.FC<MoneyRevenueLedgerProps> = ({ 
   projects, 
+  hostingList = [],
   onSelectProject,
   onModifyProject 
 }) => {
   const [filterType, setFilterType] = useState<"all" | "cash" | "waiver" | "unpaid">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Real authoritative calculations
+  // Authoritative cash calculations
   const totalCashCollected = projects.reduce((acc, p) => acc + getProjectCashCollected(p), 0);
   const totalWaivedValue = projects.reduce((acc, p) => acc + getProjectWaivedValue(p), 0);
   const coveredCount = projects.filter(isProjectCovered).length;
@@ -45,6 +50,11 @@ export const MoneyRevenueLedger: React.FC<MoneyRevenueLedgerProps> = ({
     const pid = String(p.paymentId || p.payment?.paymentId || "").toLowerCase();
     return prov.includes("coupon_waiver") || pid.startsWith("waiver_pay_");
   }).length;
+
+  // Authoritative recurring revenue calculations (MRR & ARR from hosting subscriptions)
+  const recurringMetrics = calculateHostingRecurringRevenue(
+    hostingList && hostingList.length > 0 ? hostingList : projects
+  );
 
   const filteredProjects = projects.filter(p => {
     const q = searchQuery.toLowerCase();
@@ -75,7 +85,7 @@ export const MoneyRevenueLedger: React.FC<MoneyRevenueLedgerProps> = ({
         <div>
           <h2 className="text-3xl sm:text-4xl font-bold font-founder text-white tracking-wide">Money</h2>
           <p className="text-xs text-neutral-400 mt-1">
-            Money received and waived.
+            Cash collected, recurring subscription revenue (MRR/ARR), and waived amounts.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -86,81 +96,174 @@ export const MoneyRevenueLedger: React.FC<MoneyRevenueLedgerProps> = ({
         </div>
       </div>
 
-      {/* 4 Core Financial Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Card 1: Cash Collected */}
-        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Cash Collected</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <DollarSign size={16} />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
-              {formatINR(totalCashCollected)}
-            </h3>
-            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
-              From {cashPayingCount} paying clients
-            </p>
-          </div>
+      {/* RECURRING REVENUE (MRR / ARR) CARDS */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
+            <Repeat size={13} className="text-white" />
+            Recurring Hosting Revenue
+          </span>
+          <span className="text-[10px] font-mono text-neutral-500">
+            ARR = MRR × 12
+          </span>
         </div>
 
-        {/* Card 2: Covered Projects */}
-        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Projects Covered</span>
-            <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
-              <ShieldCheck size={16} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Card: MRR */}
+          <div className="bg-[#0A0A0A] border border-white/15 rounded-2xl p-5 flex flex-col justify-between hover:border-white/30 transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">MRR</span>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Monthly recurring revenue</p>
+              </div>
+              <div className="p-2 rounded-xl bg-white/10 border border-white/20 text-white">
+                <Repeat size={16} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
+                {formatINR(recurringMetrics.mrr)}<span className="text-xs text-neutral-400 font-normal"> / mo</span>
+              </h3>
+              <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+                From {recurringMetrics.activePaidSubscriptionsCount} active recurring subscriptions
+              </p>
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
-              {coveredCount} <span className="text-sm font-normal text-neutral-400">/ {projects.length}</span>
-            </h3>
-            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
-              Active covered accounts
-            </p>
-          </div>
-        </div>
 
-        {/* Card 3: Paying Clients */}
-        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Paying Clients</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <CreditCard size={16} />
+          {/* Card: ARR */}
+          <div className="bg-[#0A0A0A] border border-white/15 rounded-2xl p-5 flex flex-col justify-between hover:border-white/30 transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">ARR</span>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Annual recurring revenue</p>
+              </div>
+              <div className="p-2 rounded-xl bg-white/10 border border-white/20 text-white">
+                <ArrowUpRight size={16} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
+                {formatINR(recurringMetrics.arr)}<span className="text-xs text-neutral-400 font-normal"> / yr</span>
+              </h3>
+              <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+                Annualized run-rate (MRR × 12)
+              </p>
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono tracking-tight">
-              {cashPayingCount}
-            </h3>
-            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
-              Verified Razorpay transactions
-            </p>
-          </div>
-        </div>
 
-        {/* Card 4: Waived */}
-        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Waived</span>
-            <div className="p-2 rounded-xl bg-neutral-900 border border-white/10 text-neutral-300">
-              <Tag size={16} />
+          {/* Card: Active Subscriptions Status */}
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Active Subscriptions</span>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Hosting subscription breakdown</p>
+              </div>
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
+                <ShieldCheck size={16} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1.5 font-mono text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400">Active Paid Subscriptions:</span>
+                <span className="text-white font-bold">{recurringMetrics.activePaidSubscriptionsCount}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400">Promotional Free Trials:</span>
+                <span className="text-neutral-300 font-bold">{recurringMetrics.freeTrialSubscriptionsCount}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400">Suspended / Inactive:</span>
+                <span className="text-neutral-500 font-bold">{recurringMetrics.suspendedSubscriptionsCount}</span>
+              </div>
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
-              {formatINR(totalWaivedValue)}
-            </h3>
-            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
-              Across {waiverCount} coupon waivers
-            </p>
-          </div>
+        </div>
+      </div>
+
+      {/* CASH & WAIVERS SUMMARY CARDS */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
+            <DollarSign size={13} className="text-white" />
+            Website Payments &amp; Cash Overview
+          </span>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          {/* Card 1: Cash Collected */}
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Cash Collected</span>
+              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <DollarSign size={16} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
+                {formatINR(totalCashCollected)}
+              </h3>
+              <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+                From {cashPayingCount} paying clients
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: Covered Projects */}
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Projects Covered</span>
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
+                <ShieldCheck size={16} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
+                {coveredCount} <span className="text-sm font-normal text-neutral-400">/ {projects.length}</span>
+              </h3>
+              <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+                Active covered accounts
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3: Paying Clients */}
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Paying Clients</span>
+              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <CreditCard size={16} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono tracking-tight">
+                {cashPayingCount}
+              </h3>
+              <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+                Verified Razorpay transactions
+              </p>
+            </div>
+          </div>
+
+          {/* Card 4: Waived */}
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Waived</span>
+              <div className="p-2 rounded-xl bg-neutral-900 border border-white/10 text-neutral-300">
+                <Tag size={16} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
+                {formatINR(totalWaivedValue)}
+              </h3>
+              <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+                Across {waiverCount} coupon waivers
+              </p>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       {/* Transactions & Client Ledger Table */}

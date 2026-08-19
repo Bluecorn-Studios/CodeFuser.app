@@ -1,5 +1,8 @@
 import fs from "fs";
 import path from "path";
+import { getHostingPlanConfig } from "./hosting_model.js";
+import { getProjects } from "./db.js";
+import { isProjectIdPreview, getPreviewProjectsForUser } from "./preview_store.js";
 
 export interface CouponRecord {
   id: string;
@@ -255,12 +258,18 @@ export function normalizePlanId(planId: string): string {
   return s;
 }
 
+export interface CouponValidationOptions {
+  isExistingCustomer?: boolean;
+  currentProjectId?: string;
+}
+
 export function validateAndCalculateCoupon(
   code: string,
   planId: string,
   customerEmail: string,
   baseWebsitePrice: number,
-  baseHostingPrice: number = 1000
+  baseHostingPrice?: number,
+  options?: CouponValidationOptions
 ): {
   valid: boolean;
   error?: string;
@@ -272,11 +281,13 @@ export function validateAndCalculateCoupon(
   finalTotal?: number;
   coupon?: CouponRecord;
 } {
+  // 1. Coupon existence check
   const coupon = getCouponByCode(code);
   if (!coupon) {
     return { valid: false, error: "We couldn't find that offer." };
   }
 
+  // 2. Active status check
   if (coupon.status === "PAUSED") {
     return { valid: false, error: "This offer isn't available right now." };
   }
@@ -285,7 +296,7 @@ export function validateAndCalculateCoupon(
     return { valid: false, error: "This offer has ended." };
   }
 
-  // Date window check
+  // 3. Date window check
   const now = new Date();
   if (coupon.startDate && new Date(coupon.startDate) > now) {
     return { valid: false, error: "This offer has not started yet." };
@@ -294,23 +305,30 @@ export function validateAndCalculateCoupon(
     return { valid: false, error: "This offer has ended." };
   }
 
-  // Plan eligibility check
+  // 4. Plan eligibility check
   const normPlan = normalizePlanId(planId);
   const eligibleNorm = coupon.eligiblePlans.map(p => normalizePlanId(p));
   if (!eligibleNorm.includes(normPlan)) {
     return { valid: false, error: "This offer doesn't apply to this plan." };
   }
 
+  // 5. Customer eligibility check
+  if (coupon.customerEligibility === "new_only") {
+    if (options?.isExistingCustomer === true) {
+      return { valid: false, error: "This offer is valid for new customers only." };
+    }
+  }
+
   const store = getCouponsStore();
 
-  // Redemption limit check
+  // 6. Redemption limit check
   if (coupon.redemptionLimit > 0 && coupon.currentRedemptions >= coupon.redemptionLimit) {
     if (coupon.afterLimitBehavior === "stop") {
       return { valid: false, error: "This offer is no longer available (redemption limit reached)." };
     }
   }
 
-  // Customer usage limit check
+  // 7. Customer usage limit check
   if (customerEmail) {
     const userRedemptions = store.redemptions.filter(
       r => r.couponCode.toUpperCase() === coupon.code.toUpperCase() && r.customerEmail.toLowerCase() === customerEmail.toLowerCase()
@@ -320,7 +338,7 @@ export function validateAndCalculateCoupon(
     }
   }
 
-  // Calculate discount
+  // 8. Calculate discount
   let discountAmount = 0;
   if (coupon.discountType === "free_build" || coupon.discountValue >= 100) {
     discountAmount = baseWebsitePrice;
@@ -333,10 +351,23 @@ export function validateAndCalculateCoupon(
   discountAmount = Math.max(0, Math.min(baseWebsitePrice, discountAmount));
   const finalWebsitePrice = Math.max(0, baseWebsitePrice - discountAmount);
 
-  // Calculate hosting waiver
+  // 9. Calculate hosting waiver using authoritative getHostingPlanConfig
+  let effectiveHostingPrice: number;
+  if (typeof baseHostingPrice === "number" && !isNaN(baseHostingPrice) && baseHostingPrice >= 0) {
+    effectiveHostingPrice = baseHostingPrice;
+  } else {
+    try {
+      effectiveHostingPrice = getHostingPlanConfig(planId).monthlyHostingPrice;
+    } catch {
+      effectiveHostingPrice = 999;
+    }
+  }
+
   const hostingWaived = coupon.hostingRule === "waive_hosting";
-  const hostingDiscountAmount = hostingWaived ? baseHostingPrice : 0;
-  const finalHostingPrice = hostingWaived ? 0 : baseHostingPrice;
+  const hostingDiscountAmount = hostingWaived ? effectiveHostingPrice : 0;
+  const finalHostingPrice = hostingWaived ? 0 : effectiveHostingPrice;
+
+  // 10. Final total
   const finalTotal = finalWebsitePrice + finalHostingPrice;
 
   return {
@@ -349,6 +380,44 @@ export function validateAndCalculateCoupon(
     finalTotal,
     coupon
   };
+}
+
+/**
+ * Authoritatively determines if a customer already exists in Supabase DB or Preview Store.
+ */
+export async function isCustomerExisting(
+  email?: string,
+  userId?: string,
+  currentProjectId?: string,
+  isPreview?: boolean,
+  reqId: string = "N/A"
+): Promise<boolean> {
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  const cleanUserId = String(userId || "").trim();
+
+  if (!cleanEmail && !cleanUserId) return false;
+
+  // 1. Preview store isolation check
+  if (isPreview || (currentProjectId && isProjectIdPreview(currentProjectId))) {
+    const previewProjects = cleanUserId ? getPreviewProjectsForUser(cleanUserId) : [];
+    const priorProjects = previewProjects.filter(p => p.id !== currentProjectId);
+    return priorProjects.length > 0;
+  }
+
+  // 2. Production Supabase check
+  try {
+    const projects = await getProjects(reqId, {
+      email: cleanEmail || undefined,
+      userId: cleanUserId || undefined
+    });
+    const priorProjects = projects.filter(p => p.id !== currentProjectId);
+    return priorProjects.some(
+      p => p.paymentStatus === "paid" || p.paymentStatus === "partially_paid" || (p.status && p.status !== "draft")
+    );
+  } catch (err) {
+    console.warn("[Customer Eligibility] Error querying customer projects:", err);
+    return false;
+  }
 }
 
 export function recordRedemption(code: string, customerEmail: string, projectId: string, discountAmount: number, isSimulated: boolean = false): boolean {

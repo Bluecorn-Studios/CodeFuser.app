@@ -26,7 +26,8 @@ import {
   runHostingLifecycleScan,
   runHostingLifecycleTestMatrix,
   getOrCreatePendingHostingInvoice,
-  recordManualHostingPayment
+  recordManualHostingPayment,
+  calculateHostingRecurringRevenue
 } from "./server/hosting_model.js";
 import { generateHostingReceiptPDF } from "./server/hosting_pdf.js";
 import { sendHostingLifecycleNotification, runNotificationHardeningTestMatrix } from "./server/hosting_notifications.js";
@@ -48,6 +49,7 @@ import {
   archiveCoupon,
   deleteCoupon,
   validateAndCalculateCoupon,
+  isCustomerExisting,
   recordRedemption
 } from "./server/coupons.js";
 import {
@@ -1913,7 +1915,17 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
       let verifiedCouponCode = couponCode ? couponCode.trim().toUpperCase() : undefined;
       if (verifiedCouponCode) {
         const basePrice = finalDiscount > 0 ? finalPrice + finalDiscount : finalPrice;
-        const validation = validateAndCalculateCoupon(verifiedCouponCode, packageName, "", basePrice);
+        const isExisting = await isCustomerExisting("", req.user?.id, id, true, req.reqId);
+        let effectiveHostingPrice: number;
+        try {
+          effectiveHostingPrice = getHostingPlanConfig(packageName).monthlyHostingPrice;
+        } catch {
+          effectiveHostingPrice = 999;
+        }
+        const validation = validateAndCalculateCoupon(verifiedCouponCode, packageName, "", basePrice, effectiveHostingPrice, {
+          isExistingCustomer: isExisting,
+          currentProjectId: id
+        });
         if (validation.valid) {
           finalDiscount = validation.discountAmount !== undefined ? validation.discountAmount : finalDiscount;
           finalPrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : finalPrice;
@@ -1945,7 +1957,17 @@ app.post("/api/projects/:id/quote", requestTimeout(10000, "Save Quote"), validat
     if (verifiedCouponCode) {
       const project = req.project;
       const basePrice = finalDiscount > 0 ? finalPrice + finalDiscount : finalPrice;
-      const validation = validateAndCalculateCoupon(verifiedCouponCode, packageName, project?.email || "", basePrice);
+      const isExisting = await isCustomerExisting(project?.email, project?.userId, id, false, req.reqId);
+      let effectiveHostingPrice: number;
+      try {
+        effectiveHostingPrice = getHostingPlanConfig(packageName).monthlyHostingPrice;
+      } catch {
+        effectiveHostingPrice = 999;
+      }
+      const validation = validateAndCalculateCoupon(verifiedCouponCode, packageName, project?.email || "", basePrice, effectiveHostingPrice, {
+        isExistingCustomer: isExisting,
+        currentProjectId: id
+      });
       if (validation.valid && validation.coupon) {
         finalDiscount = validation.discountAmount !== undefined ? validation.discountAmount : finalDiscount;
         finalPrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : finalPrice;
@@ -2895,13 +2917,27 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
         let totalPrice = extra.quote.price;
         const couponCode = extra.quote.couponCode;
         let finalWebsitePrice = totalPrice;
+        let finalHostingPrice = 0;
         if (couponCode) {
-          const validation = validateAndCalculateCoupon(couponCode, extra.quote.packageName || "Package", "", totalPrice);
+          const isExisting = await isCustomerExisting("", req.user?.id, id, true, req.reqId);
+          let effectiveHostingPrice: number;
+          try {
+            effectiveHostingPrice = getHostingPlanConfig(extra.quote.packageName || "Package").monthlyHostingPrice;
+          } catch {
+            effectiveHostingPrice = 999;
+          }
+          const validation = validateAndCalculateCoupon(couponCode, extra.quote.packageName || "Package", "", totalPrice, effectiveHostingPrice, {
+            isExistingCustomer: isExisting,
+            currentProjectId: id
+          });
           if (validation.valid) {
             finalWebsitePrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : totalPrice;
+            finalHostingPrice = validation.finalHostingPrice !== undefined ? validation.finalHostingPrice : 0;
           }
         }
-        amountInRupees = term === "upfront" ? Math.round(finalWebsitePrice * 0.9) : Math.round(finalWebsitePrice * 0.5);
+        amountInRupees = term === "upfront" 
+          ? (couponCode ? Math.round(finalWebsitePrice + finalHostingPrice) : Math.round(finalWebsitePrice * 0.9) + finalHostingPrice) 
+          : (Math.round(finalWebsitePrice * 0.5) + finalHostingPrice);
       }
       if (amountInRupees === 0) {
         savePreviewProject({
@@ -2945,26 +2981,38 @@ app.post("/api/projects/:id/razorpay-order", requestTimeout(15000, "Create Razor
       const couponCode = extra.quote.couponCode;
 
       let finalWebsitePrice = totalPrice;
+      let finalHostingPrice = 0;
       if (couponCode) {
         const basePrice = quoteDiscount > 0 ? (totalPrice + quoteDiscount) : totalPrice;
-        const validation = validateAndCalculateCoupon(couponCode, planName, project.email || "", basePrice);
+        const isExisting = await isCustomerExisting(project.email, project.userId, id, false, req.reqId);
+        let effectiveHostingPrice: number;
+        try {
+          effectiveHostingPrice = getHostingPlanConfig(planName).monthlyHostingPrice;
+        } catch {
+          effectiveHostingPrice = 999;
+        }
+        const validation = validateAndCalculateCoupon(couponCode, planName, project.email || "", basePrice, effectiveHostingPrice, {
+          isExistingCustomer: isExisting,
+          currentProjectId: id
+        });
         if (!validation.valid) {
           return res.status(400).json({ success: false, error: `Coupon revalidation failed at order creation: ${validation.error}` });
         }
         finalWebsitePrice = validation.finalWebsitePrice !== undefined ? validation.finalWebsitePrice : totalPrice;
+        finalHostingPrice = validation.finalHostingPrice !== undefined ? validation.finalHostingPrice : 0;
       }
 
       if (term === "upfront") {
         if (quoteDiscount > 0 || couponCode) {
           // If discount or coupon was applied when locking quote
-          amountInRupees = Math.round(finalWebsitePrice);
+          amountInRupees = Math.round(finalWebsitePrice + finalHostingPrice);
         } else {
           // If price stored is the base price (e.g., 9999), apply 10% upfront discount
-          amountInRupees = Math.round(finalWebsitePrice * 0.9);
+          amountInRupees = Math.round(finalWebsitePrice * 0.9) + finalHostingPrice;
         }
       } else {
-        // Milestone term (50% of final website price after coupon - never calculate 50% before coupon!)
-        amountInRupees = Math.round(finalWebsitePrice * 0.5);
+        // Milestone term (50% of final website price after coupon + hosting)
+        amountInRupees = Math.round(finalWebsitePrice * 0.5) + finalHostingPrice;
       }
     } else {
       // Fallback manual price calculation if quote is missing
@@ -4062,10 +4110,16 @@ app.get("/api/admin/hosting", requireAuth, requireRole(["super_admin", "admin"])
       })
     );
 
+    const subscriptions = list.map((l) => l.subscription).filter(Boolean);
+    const recurringMetrics = calculateHostingRecurringRevenue(subscriptions);
+
     return res.json({
       success: true,
       hostingList: list,
-      totalActiveSubscriptions: list.filter((l) => l.subscription.status === "AUTOPAY_ACTIVE" || l.subscription.status === "FREE_TRIAL_ACTIVE").length
+      totalActiveSubscriptions: recurringMetrics.activePaidSubscriptionsCount,
+      recurringMetrics,
+      mrr: recurringMetrics.mrr,
+      arr: recurringMetrics.arr,
     });
   } catch (err: any) {
     logger.error("Failed to load admin hosting overview:", err);
@@ -4285,12 +4339,33 @@ app.delete("/api/admin/coupons/:id", requireAuth, requireRole(["super_admin", "a
 // POST /api/coupons/validate
 app.post("/api/coupons/validate", async (req: any, res) => {
   try {
-    const { code, planId, customerEmail, baseWebsitePrice } = req.body;
+    const { code, planId, customerEmail, baseWebsitePrice, projectId, userId } = req.body;
     if (!code || !planId) {
       return res.status(400).json({ valid: false, error: "Missing coupon code or plan ID." });
     }
     const basePrice = Number(baseWebsitePrice) || 19999;
-    const result = validateAndCalculateCoupon(code, planId, customerEmail || "", basePrice);
+    
+    // Authoritative check for existing customer history
+    const isExisting = await isCustomerExisting(
+      customerEmail, 
+      userId || req.user?.id, 
+      projectId, 
+      req.isPreview || (projectId && isProjectIdPreview(projectId)), 
+      req.reqId
+    );
+
+    // Authoritative hosting price for the plan
+    let effectiveHostingPrice: number;
+    try {
+      effectiveHostingPrice = getHostingPlanConfig(planId).monthlyHostingPrice;
+    } catch {
+      effectiveHostingPrice = 999;
+    }
+
+    const result = validateAndCalculateCoupon(code, planId, customerEmail || "", basePrice, effectiveHostingPrice, {
+      isExistingCustomer: isExisting,
+      currentProjectId: projectId
+    });
     if (!result.valid) {
       return res.json({ valid: false, error: result.error });
     }

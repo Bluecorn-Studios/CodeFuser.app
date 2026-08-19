@@ -48,7 +48,8 @@ import {
   getProjectCashCollected, 
   getProjectWaivedValue, 
   isProjectCashPaying, 
-  isProjectCovered 
+  isProjectCovered,
+  calculateHostingRecurringRevenue 
 } from "../utils/moneyMetrics";
 
 export const MissionControl: React.FC = () => {
@@ -91,8 +92,25 @@ export const MissionControl: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
+  const [hostingList, setHostingList] = useState<any[]>([]);
   const [founderNotifications, setFounderNotifications] = useState<any[]>([]);
   const [showFounderNotifications, setShowFounderNotifications] = useState<boolean>(false);
+
+  const fetchHostingData = async () => {
+    try {
+      const res = await fetch("/api/admin/hosting", {
+        headers: getAdminHeaders()
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.hostingList)) {
+          setHostingList(data.hostingList);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch admin hosting data:", e);
+    }
+  };
 
   const fetchFounderNotifications = async () => {
     try {
@@ -111,7 +129,11 @@ export const MissionControl: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchFounderNotifications();
-      const interval = setInterval(fetchFounderNotifications, 10000);
+      fetchHostingData();
+      const interval = setInterval(() => {
+        fetchFounderNotifications();
+        fetchHostingData();
+      }, 10000);
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
@@ -1043,12 +1065,20 @@ export const MissionControl: React.FC = () => {
                     <div className="text-3xl font-extrabold text-white tracking-tight">
                       ₹{projects.reduce((acc, p) => acc + getProjectCashCollected(p), 0).toLocaleString("en-IN")}
                     </div>
-                    <div className="text-xs text-neutral-400 mt-1">Cash Collected</div>
+                    <div className="text-xs text-neutral-400 mt-1">Cash Collected (One-Time &amp; Milestones)</div>
                   </div>
                   <div className="mt-6 space-y-2 text-xs font-mono border-t border-white/5 pt-4">
                     <div className="flex justify-between">
-                      <span className="text-neutral-400">Projects Covered:</span>
-                      <span className="text-white font-bold">{projects.filter(isProjectCovered).length}</span>
+                      <span className="text-neutral-400">MRR (Hosting):</span>
+                      <span className="text-emerald-400 font-bold">
+                        ₹{calculateHostingRecurringRevenue(hostingList.length > 0 ? hostingList : projects).mrr.toLocaleString("en-IN")}/mo
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">ARR (Hosting):</span>
+                      <span className="text-white font-bold">
+                        ₹{calculateHostingRecurringRevenue(hostingList.length > 0 ? hostingList : projects).arr.toLocaleString("en-IN")}/yr
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-neutral-400">Paying Clients:</span>
@@ -1117,16 +1147,28 @@ export const MissionControl: React.FC = () => {
                   </div>
                   <div className="font-mono space-y-3">
                     <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                      <span className="text-xs text-neutral-400">Active Subscriptions</span>
-                      <span className="text-sm font-bold text-white">{projects.length}</span>
+                      <span className="text-xs text-neutral-400">MRR (Hosting):</span>
+                      <span className="text-sm font-bold text-emerald-400">
+                        ₹{calculateHostingRecurringRevenue(hostingList.length > 0 ? hostingList : projects).mrr.toLocaleString("en-IN")}/mo
+                      </span>
                     </div>
                     <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                      <span className="text-xs text-neutral-400">Renewals Due</span>
-                      <span className="text-sm font-bold text-neutral-300">0</span>
+                      <span className="text-xs text-neutral-400">ARR (Hosting):</span>
+                      <span className="text-sm font-bold text-white">
+                        ₹{calculateHostingRecurringRevenue(hostingList.length > 0 ? hostingList : projects).arr.toLocaleString("en-IN")}/yr
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                      <span className="text-xs text-neutral-400">Active Paid Subscriptions:</span>
+                      <span className="text-sm font-bold text-white">
+                        {calculateHostingRecurringRevenue(hostingList.length > 0 ? hostingList : projects).activePaidSubscriptionsCount}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-neutral-400">System Errors</span>
-                      <span className="text-sm font-bold text-emerald-400">0</span>
+                      <span className="text-xs text-neutral-400">Free Trials / Promos:</span>
+                      <span className="text-sm font-bold text-neutral-300">
+                        {calculateHostingRecurringRevenue(hostingList.length > 0 ? hostingList : projects).freeTrialSubscriptionsCount}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -3160,7 +3202,8 @@ export const MissionControl: React.FC = () => {
 
         {activeTab === "money" && (
           <MoneyRevenueLedger 
-            projects={projects} 
+            projects={projects}
+            hostingList={hostingList}
             onSelectProject={(id) => {
               setActiveTab("projects");
               setActiveProjectId(id);

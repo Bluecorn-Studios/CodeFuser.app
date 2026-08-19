@@ -1229,3 +1229,139 @@ export async function runHostingLifecycleTestMatrix(): Promise<{
     results,
   };
 }
+
+/**
+ * Recurring Revenue Metrics Interface
+ */
+export interface RecurringRevenueMetrics {
+  mrr: number;
+  arr: number;
+  activePaidSubscriptionsCount: number;
+  totalSubscriptionsCount: number;
+  freeTrialSubscriptionsCount: number;
+  suspendedSubscriptionsCount: number;
+}
+
+/**
+ * Authoritatively determines if a subscription is an active, billable paid recurring subscription.
+ * Excludes simulations, previews, free trial periods, suspended, cancelled, or revoked subscriptions.
+ */
+export function isAuthoritativeActiveRecurringSubscription(sub: HostingSubscriptionRecord): boolean {
+  if (!sub || !sub.id || !sub.projectId) return false;
+
+  // Exclude simulations & previews
+  const idStr = String(sub.id).toLowerCase();
+  const projStr = String(sub.projectId).toLowerCase();
+  if (
+    idStr.startsWith("sim_") ||
+    projStr.startsWith("prev_") ||
+    projStr.includes("simulation") ||
+    (sub as any).isSimulated
+  ) {
+    return false;
+  }
+
+  // Active billable recurring statuses that generate real recurring hosting revenue
+  const activePaidStatuses: HostingSubscriptionStatus[] = [
+    "AUTOPAY_ACTIVE",
+    "PAID",
+    "BILLING_DUE",
+    "RETRYING",
+    "PAYMENT_PROCESSING",
+    "GRACE_PERIOD",
+  ];
+
+  return activePaidStatuses.includes(sub.status);
+}
+
+/**
+ * Authoritatively retrieves the monthly recurring amount for a subscription.
+ * Returns 0 if the subscription is not an active recurring subscription.
+ */
+export function getHostingSubscriptionMonthlyAmount(sub: HostingSubscriptionRecord): number {
+  if (!isAuthoritativeActiveRecurringSubscription(sub)) {
+    return 0;
+  }
+
+  // Authoritative monthlyAmount on the subscription record
+  if (typeof sub.monthlyAmount === "number" && sub.monthlyAmount > 0 && !isNaN(sub.monthlyAmount)) {
+    return Math.max(0, Math.round(sub.monthlyAmount));
+  }
+
+  // Fallback to authoritative package config
+  try {
+    const config = getHostingPlanConfig(sub.packageId);
+    return Math.max(0, Math.round(config.monthlyHostingPrice));
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Authoritatively calculates recurring hosting revenue metrics (MRR & ARR).
+ * MRR = Sum of monthly recurring hosting amounts from currently active PAID/billable recurring subscriptions.
+ * ARR = MRR * 12.
+ */
+export function calculateHostingRecurringRevenue(subscriptions: HostingSubscriptionRecord[]): RecurringRevenueMetrics {
+  if (!Array.isArray(subscriptions) || subscriptions.length === 0) {
+    return {
+      mrr: 0,
+      arr: 0,
+      activePaidSubscriptionsCount: 0,
+      totalSubscriptionsCount: 0,
+      freeTrialSubscriptionsCount: 0,
+      suspendedSubscriptionsCount: 0,
+    };
+  }
+
+  let mrr = 0;
+  let activePaidCount = 0;
+  let freeTrialCount = 0;
+  let suspendedCount = 0;
+
+  for (const sub of subscriptions) {
+    if (!sub) continue;
+    const projStr = String(sub.projectId || "").toLowerCase();
+    const idStr = String(sub.id || "").toLowerCase();
+    if (
+      idStr.startsWith("sim_") ||
+      projStr.startsWith("prev_") ||
+      projStr.includes("simulation") ||
+      (sub as any).isSimulated
+    ) {
+      continue;
+    }
+
+    if (sub.status === "FREE_TRIAL_ACTIVE") {
+      freeTrialCount++;
+    } else if (
+      sub.status === "HOSTING_SUSPENDED" ||
+      sub.status === "SUBSCRIPTION_CANCELLED" ||
+      sub.status === "EXPIRED" ||
+      sub.status === "MANDATE_REVOKED" ||
+      sub.status === "MANDATE_EXPIRED" ||
+      sub.status === "SUBSCRIPTION_PAUSED"
+    ) {
+      suspendedCount++;
+    }
+
+    if (isAuthoritativeActiveRecurringSubscription(sub)) {
+      const amount = getHostingSubscriptionMonthlyAmount(sub);
+      if (amount > 0) {
+        mrr += amount;
+        activePaidCount++;
+      }
+    }
+  }
+
+  const arr = mrr * 12;
+
+  return {
+    mrr,
+    arr,
+    activePaidSubscriptionsCount: activePaidCount,
+    totalSubscriptionsCount: subscriptions.length,
+    freeTrialSubscriptionsCount: freeTrialCount,
+    suspendedSubscriptionsCount: suspendedCount,
+  };
+}

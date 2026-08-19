@@ -13,8 +13,12 @@ import {
   AlertTriangle,
   User,
   Globe,
-  FileText
+  FileText,
+  Repeat,
+  ArrowUpRight
 } from "lucide-react";
+import { calculateHostingRecurringRevenue } from "../../utils/moneyMetrics";
+import { formatINR } from "../../utils/formatters";
 
 interface AdminHostingItem {
   project: {
@@ -147,9 +151,10 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
     return true;
   });
 
-  const autopayCount = hostingList.filter(i => i.subscription.status === "AUTOPAY_ACTIVE").length;
-  const trialCount = hostingList.filter(i => i.subscription.status === "FREE_PROMO_ACTIVE" || i.subscription.status === "TRIAL_ACTIVE").length;
-  const suspendedCount = hostingList.filter(i => i.subscription.status === "HOSTING_SUSPENDED").length;
+  const recurringMetrics = calculateHostingRecurringRevenue(hostingList);
+  const autopayCount = recurringMetrics.activePaidSubscriptionsCount;
+  const trialCount = recurringMetrics.freeTrialSubscriptionsCount;
+  const suspendedCount = recurringMetrics.suspendedSubscriptionsCount;
 
   return (
     <div className="space-y-6">
@@ -171,6 +176,63 @@ export const HostingAdminManager: React.FC<HostingAdminManagerProps> = ({ getAdm
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           <span>Refresh Records</span>
         </button>
+      </div>
+
+      {/* RECURRING REVENUE (MRR / ARR) METRIC STRIP */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* MRR Card */}
+        <div className="bg-[#0A0A0A] border border-white/15 rounded-2xl p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">MRR</span>
+            <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white">
+              <Repeat size={14} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-white font-mono tracking-tight">
+              {formatINR(recurringMetrics.mrr)}<span className="text-xs text-neutral-400 font-normal"> / mo</span>
+            </div>
+            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+              Monthly recurring revenue
+            </p>
+          </div>
+        </div>
+
+        {/* ARR Card */}
+        <div className="bg-[#0A0A0A] border border-white/15 rounded-2xl p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">ARR</span>
+            <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white">
+              <ArrowUpRight size={14} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-white font-mono tracking-tight">
+              {formatINR(recurringMetrics.arr)}<span className="text-xs text-neutral-400 font-normal"> / yr</span>
+            </div>
+            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+              Annual recurring revenue (MRR × 12)
+            </p>
+          </div>
+        </div>
+
+        {/* Active Subscriptions Card */}
+        <div className="bg-[#0A0A0A] border border-white/15 rounded-2xl p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-widest text-neutral-400">Active Subscriptions</span>
+            <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white">
+              <ShieldCheck size={14} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-emerald-400 font-mono tracking-tight">
+              {recurringMetrics.activePaidSubscriptionsCount}
+            </div>
+            <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mt-1">
+              {recurringMetrics.freeTrialSubscriptionsCount} trial{recurringMetrics.freeTrialSubscriptionsCount === 1 ? "" : "s"} &bull; {recurringMetrics.suspendedSubscriptionsCount} suspended
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* FILTER BUTTONS & SEARCH BAR */}
