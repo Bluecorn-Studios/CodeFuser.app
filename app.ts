@@ -623,6 +623,10 @@ const uploadsDir = isVercel
 
 app.use("/uploads", express.static(uploadsDir));
 
+// Serve public static assets (favicons, manifests, robots.txt, sitemaps, fonts, brand assets)
+const publicDir = path.join(process.cwd(), "public");
+app.use(express.static(publicDir));
+
 // Global Customer Preview Mode Header / Query Extractor Middleware
 app.use("/api", (req: any, res: any, next: any) => {
   const previewToken = (
