@@ -1,6 +1,179 @@
 export type OnboardingStepStatus = "Complete" | "Waiting for Customer" | "Needs Review";
 export type AssetStepKey = "1" | "2" | "3" | "4" | "5";
 
+/**
+ * Validates whether a string is an actual valid URL (e.g., Drive, Dropbox, HTTP/HTTPS link).
+ * Explicitly rejects non-URL strings like "Uploaded photos", "My Drive", "hello", "blank", etc.
+ */
+export function isValidUrl(str: string | null | undefined): boolean {
+  if (!str || typeof str !== "string") return false;
+  const raw = str.replace(/^Provided:\s*/i, "").trim();
+  const lower = raw.toLowerCase();
+
+  // Blacklisted non-URL strings
+  const invalidTokens = [
+    "uploaded photos",
+    "my drive",
+    "photos",
+    "hello",
+    "test",
+    "blank",
+    "pending",
+    "upload_pending",
+    "link_pending",
+    "upload_pending: file",
+    "upload_pending: link",
+    "file",
+    "link",
+    "none",
+    "no",
+    "upload"
+  ];
+  if (invalidTokens.includes(lower)) {
+    return false;
+  }
+
+  // Known cloud/drive prefixes
+  if (
+    lower.startsWith("https://") ||
+    lower.startsWith("http://") ||
+    lower.startsWith("drive.google.com") ||
+    lower.startsWith("www.google.com/drive") ||
+    lower.startsWith("dropbox.com") ||
+    lower.startsWith("www.dropbox.com") ||
+    lower.startsWith("onedrive.") ||
+    lower.startsWith("box.com") ||
+    lower.startsWith("icloud.com")
+  ) {
+    return true;
+  }
+
+  // Attempt URL parsing with https:// prefix
+  try {
+    const urlToTest = lower.startsWith("http://") || lower.startsWith("https://") ? lower : `https://${lower}`;
+    const parsed = new URL(urlToTest);
+    // Must have hostname with at least one dot and length >= 4 (e.g. drive.google.com, dropbox.com)
+    return Boolean(parsed.hostname && parsed.hostname.includes(".") && parsed.hostname.length >= 4);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validates whether a domain name is valid (e.g., example.com, www.example.com).
+ * Rejects "blank", "hello", "my website", etc.
+ */
+export function isValidDomainName(str: string | null | undefined): boolean {
+  if (!str || typeof str !== "string") return false;
+  const raw = str.replace(/^Provided:\s*/i, "").replace(/^Help buy\s*/i, "").trim();
+  const lower = raw.toLowerCase();
+
+  const invalidTokens = [
+    "blank",
+    "my website",
+    "hello",
+    "test",
+    "domain_pending",
+    "pending",
+    "no",
+    "own",
+    "upload_pending",
+    "none"
+  ];
+  if (invalidTokens.includes(lower)) {
+    return false;
+  }
+
+  // Must contain a dot separating domain and TLD, e.g. domain.com
+  const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
+  if (domainRegex.test(lower)) {
+    return true;
+  }
+
+  // Also check if user entered URL format like https://example.com
+  try {
+    const urlToTest = lower.startsWith("http://") || lower.startsWith("https://") ? lower : `https://${lower}`;
+    const parsed = new URL(urlToTest);
+    return Boolean(parsed.hostname && parsed.hostname.includes(".") && parsed.hostname.length >= 4);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validates services/document text content.
+ * Rejects empty, whitespace-only, or generic pending strings.
+ */
+export function isValidServicesContent(str: string | null | undefined): boolean {
+  if (!str || typeof str !== "string") return false;
+  const raw = str.replace(/^Provided:\s*/i, "").trim();
+  const lower = raw.toLowerCase();
+
+  const invalidTokens = [
+    "",
+    "text_pending",
+    "pending",
+    "no",
+    "none",
+    "upload_pending",
+    "blank",
+    "test",
+    "hello"
+  ];
+
+  if (invalidTokens.includes(lower)) {
+    return false;
+  }
+
+  return raw.length >= 3;
+}
+
+/**
+ * Validates file/photo/logo asset.
+ */
+export function isValidFileOrImage(str: string | null | undefined): boolean {
+  if (!str || typeof str !== "string") return false;
+  const raw = str.replace(/^Provided:\s*/i, "").trim();
+  const lower = raw.toLowerCase();
+
+  const invalidTokens = [
+    "",
+    "upload_pending",
+    "link_pending",
+    "pending",
+    "no",
+    "none",
+    "upload_pending: file",
+    "upload_pending: link",
+    "uploaded photos",
+    "my drive",
+    "photos",
+    "test",
+    "blank"
+  ];
+
+  if (invalidTokens.includes(lower)) {
+    return false;
+  }
+
+  if (
+    raw.startsWith("data:image") ||
+    raw.startsWith("data:application") ||
+    isValidUrl(raw) ||
+    lower.includes("uploaded ") ||
+    lower.includes(".jpg") ||
+    lower.includes(".jpeg") ||
+    lower.includes(".png") ||
+    lower.includes(".svg") ||
+    lower.includes(".webp") ||
+    lower.includes(".pdf")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function getOnboardingStepStatus(
   stepKey: AssetStepKey,
   project: any
@@ -28,7 +201,7 @@ export function getOnboardingStepStatus(
     const v = rawLogo.trim();
     const vLower = v.toLowerCase();
 
-    // CodeFuser Handles It
+    // CodeFuser Handles It -> Complete
     if (
       v === "Confirmed: help" ||
       v === "help" ||
@@ -39,22 +212,11 @@ export function getOnboardingStepStatus(
       return "Complete";
     }
 
-    // Customer Must Provide Something
-    if (
-      v.startsWith("Provided:") ||
-      v.startsWith("data:image") ||
-      v.startsWith("http://") ||
-      v.startsWith("https://")
-    ) {
+    // Customer Provided Something -> Check if valid file or valid URL
+    if (v.startsWith("Provided:") || v.startsWith("data:image") || v.startsWith("http://") || v.startsWith("https://")) {
       const payloadVal = v.replace(/^Provided:\s*/i, "").trim();
-      if (
-        payloadVal &&
-        payloadVal !== "upload_pending" &&
-        payloadVal !== "link_pending" &&
-        payloadVal !== "pending" &&
-        payloadVal !== "upload_pending: file" &&
-        payloadVal !== "upload_pending: link"
-      ) {
+
+      if (isValidUrl(payloadVal) || isValidFileOrImage(payloadVal)) {
         return "Needs Review";
       }
       return "Waiting for Customer";
@@ -70,7 +232,7 @@ export function getOnboardingStepStatus(
     const v = rawGallery.trim();
     const vLower = v.toLowerCase();
 
-    // CodeFuser Handles It
+    // CodeFuser Handles It -> Complete
     if (
       v === "Confirmed: help" ||
       v === "help" ||
@@ -81,7 +243,7 @@ export function getOnboardingStepStatus(
       return "Complete";
     }
 
-    // Customer Must Provide Something
+    // Customer Provided Something -> Check if valid URL or valid uploaded file(s)
     if (
       v.startsWith("Provided:") ||
       v.startsWith("data:image") ||
@@ -90,14 +252,8 @@ export function getOnboardingStepStatus(
       vLower.includes("uploaded")
     ) {
       const payloadVal = v.replace(/^Provided:\s*/i, "").trim();
-      if (
-        payloadVal &&
-        payloadVal !== "upload_pending" &&
-        payloadVal !== "link_pending" &&
-        payloadVal !== "pending" &&
-        payloadVal !== "upload_pending: file" &&
-        payloadVal !== "upload_pending: link"
-      ) {
+
+      if (isValidUrl(payloadVal) || isValidFileOrImage(payloadVal)) {
         return "Needs Review";
       }
       return "Waiting for Customer";
@@ -113,7 +269,7 @@ export function getOnboardingStepStatus(
     const v = rawCopy.trim();
     const vLower = v.toLowerCase();
 
-    // CodeFuser Handles It
+    // CodeFuser Handles It -> Complete
     if (
       v === "Confirmed: help" ||
       v === "help" ||
@@ -125,16 +281,10 @@ export function getOnboardingStepStatus(
       return "Complete";
     }
 
-    // Customer Must Provide Something
+    // Customer Provided Something -> Check if valid text or doc
     if (v.startsWith("Provided:") || v.length > 0) {
       const payloadVal = v.replace(/^Provided:\s*/i, "").trim();
-      if (
-        payloadVal &&
-        payloadVal !== "text_pending" &&
-        payloadVal !== "pending" &&
-        payloadVal !== "no" &&
-        payloadVal !== "upload_pending"
-      ) {
+      if (isValidServicesContent(payloadVal) || isValidFileOrImage(payloadVal)) {
         return "Needs Review";
       }
       return "Waiting for Customer";
@@ -150,7 +300,15 @@ export function getOnboardingStepStatus(
     const v = rawDomain.trim();
     const vLower = v.toLowerCase();
 
-    // CodeFuser Handles It
+    // Check if Domain is actually Connected / Verified -> Complete
+    const isDomainConnected = Boolean(
+      project.domainConnected ||
+      project.dnsVerified ||
+      vLower.includes("connected") ||
+      vLower.includes("verified")
+    );
+
+    // CodeFuser Handles It -> Complete
     if (
       v === "Provided: not_required" ||
       v === "not_required" ||
@@ -163,18 +321,11 @@ export function getOnboardingStepStatus(
       return "Complete";
     }
 
-    // Customer Must Provide Something
+    // Customer Provided Domain Name
     if (v.startsWith("Provided:") || v.length > 0) {
       const payloadVal = v.replace(/^Provided:\s*/i, "").trim();
-      if (
-        payloadVal &&
-        payloadVal !== "domain_pending" &&
-        payloadVal !== "pending" &&
-        payloadVal !== "no" &&
-        payloadVal !== "own" &&
-        payloadVal !== "upload_pending"
-      ) {
-        return "Needs Review";
+      if (isValidDomainName(payloadVal) || isValidUrl(payloadVal)) {
+        return isDomainConnected ? "Complete" : "Needs Review";
       }
       return "Waiting for Customer";
     }
@@ -192,9 +343,8 @@ export function getOnboardingSummary(project: any) {
     status: getOnboardingStepStatus(key, project)
   }));
 
-  const completedCount = statuses.filter(
-    (s) => s.status === "Complete" || s.status === "Needs Review"
-  ).length;
+  // REQUIREMENT 12: Overall progress counts Complete items only
+  const completedCount = statuses.filter((s) => s.status === "Complete").length;
 
   return {
     completedCount,

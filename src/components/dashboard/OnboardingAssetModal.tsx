@@ -18,11 +18,20 @@ import {
   MapPin,
   Trash2,
   FileCode,
-  ShieldCheck
+  ShieldCheck,
+  AlertCircle
 } from "lucide-react";
 import { ProjectRecord } from "./dashboardTypes";
 
-import { getOnboardingStepStatus, OnboardingStepStatus, AssetStepKey } from "../../lib/onboardingStatus";
+import {
+  getOnboardingStepStatus,
+  OnboardingStepStatus,
+  AssetStepKey,
+  isValidUrl,
+  isValidDomainName,
+  isValidServicesContent,
+  isValidFileOrImage
+} from "../../lib/onboardingStatus";
 export type { AssetStepKey };
 
 interface OnboardingAssetModalProps {
@@ -45,6 +54,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
   const [activeStep, setActiveStep] = useState<AssetStepKey>(initialStep);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [validationErrorMsg, setValidationErrorMsg] = useState<string | null>(null);
 
   // Form states initialized from project
   const [businessName, setBusinessName] = useState("");
@@ -183,6 +193,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
   const handleSaveCurrentStep = async (advanceToNext: boolean = false) => {
     setIsSaving(true);
     setSaveSuccessMsg(null);
+    setValidationErrorMsg(null);
 
     const payload: Partial<ProjectRecord> = {};
 
@@ -203,9 +214,19 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       if (logoMode === "help") {
         payload.hasLogo = "Confirmed: help";
       } else if (logoMode === "link") {
-        payload.hasLogo = logoLink.trim() ? (logoLink.startsWith("Provided:") ? logoLink : `Provided: ${logoLink.trim()}`) : "link_pending";
+        if (isValidUrl(logoLink)) {
+          payload.hasLogo = logoLink.startsWith("Provided:") ? logoLink.trim() : `Provided: ${logoLink.trim()}`;
+        } else {
+          payload.hasLogo = "link_pending";
+          setValidationErrorMsg("Enter a valid link (e.g. https://drive.google.com/...).");
+        }
       } else if (logoMode === "upload") {
-        payload.hasLogo = logoFilePreview ? (logoFilePreview.startsWith("data:") ? logoFilePreview : "Provided: uploaded") : "upload_pending";
+        if (isValidFileOrImage(logoFilePreview)) {
+          payload.hasLogo = logoFilePreview!.startsWith("data:") ? logoFilePreview! : "Provided: uploaded";
+        } else {
+          payload.hasLogo = "upload_pending";
+          setValidationErrorMsg("Upload a logo file first.");
+        }
       } else if (logoMode === "none") {
         payload.hasLogo = "Provided: not_required";
       } else {
@@ -215,11 +236,19 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       if (galleryMode === "help") {
         payload.galleryReady = "Confirmed: help";
       } else if (galleryMode === "link") {
-        payload.galleryReady = galleryLink.trim() ? (galleryLink.startsWith("Provided:") ? galleryLink : `Provided: ${galleryLink.trim()}`) : "link_pending";
+        if (isValidUrl(galleryLink)) {
+          payload.galleryReady = galleryLink.startsWith("Provided:") ? galleryLink.trim() : `Provided: ${galleryLink.trim()}`;
+        } else {
+          payload.galleryReady = "link_pending";
+          setValidationErrorMsg("Enter a valid link (e.g. https://drive.google.com/...).");
+        }
       } else if (galleryMode === "upload") {
-        payload.galleryReady = galleryFilesPreviews.length > 0
-          ? `Provided: Uploaded ${galleryFilesPreviews.length} photo${galleryFilesPreviews.length > 1 ? "s" : ""}`
-          : "upload_pending";
+        if (galleryFilesPreviews.length > 0) {
+          payload.galleryReady = `Provided: Uploaded ${galleryFilesPreviews.length} photo${galleryFilesPreviews.length > 1 ? "s" : ""}`;
+        } else {
+          payload.galleryReady = "upload_pending";
+          setValidationErrorMsg("Upload at least one photo first.");
+        }
       } else if (galleryMode === "none") {
         payload.galleryReady = "Provided: not_required";
       } else {
@@ -233,7 +262,12 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
         if (servicesDocName) {
           contentStr += ` (Doc: ${servicesDocName})`;
         }
-        payload.contentReady = contentStr ? `Provided: ${contentStr}` : "text_pending";
+        if (isValidServicesContent(contentStr) || servicesDocName) {
+          payload.contentReady = `Provided: ${contentStr}`;
+        } else {
+          payload.contentReady = "text_pending";
+          setValidationErrorMsg("Enter your services details or attach a document.");
+        }
       } else if (servicesMode === "none") {
         payload.contentReady = "Provided: not_required";
       } else {
@@ -241,11 +275,16 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
       }
     } else if (activeStep === "5") {
       if (domainMode === "buy_for_me") {
-        payload.hasDomain = domainName.trim() ? `Provided: Help buy ${domainName.trim()}` : "Confirmed: help";
+        payload.hasDomain = domainName.trim() && isValidDomainName(domainName) ? `Provided: Help buy ${domainName.trim()}` : "Confirmed: help";
       } else if (domainMode === "subdomain") {
         payload.hasDomain = "Provided: not_required";
       } else if (domainMode === "own") {
-        payload.hasDomain = domainName.trim() ? (domainName.startsWith("Provided:") ? domainName : `Provided: ${domainName.trim()}`) : "domain_pending";
+        if (isValidDomainName(domainName) || isValidUrl(domainName)) {
+          payload.hasDomain = domainName.startsWith("Provided:") ? domainName.trim() : `Provided: ${domainName.trim()}`;
+        } else {
+          payload.hasDomain = "domain_pending";
+          setValidationErrorMsg("Add your domain first (e.g. example.com).");
+        }
       } else {
         payload.hasDomain = project?.hasDomain || "domain_pending";
       }
@@ -326,7 +365,11 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
             return (
               <button
                 key={s.key}
-                onClick={() => setActiveStep(s.key)}
+                onClick={() => {
+                  setActiveStep(s.key);
+                  setValidationErrorMsg(null);
+                  setSaveSuccessMsg(null);
+                }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer border ${
                   isActive
                     ? "bg-white text-black border-white shadow-lg shadow-white/10"
@@ -358,6 +401,14 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
             <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-fade-in">
               <CheckCircle2 size={16} />
               <span>{saveSuccessMsg}</span>
+            </div>
+          )}
+
+          {/* Validation Error Banner */}
+          {validationErrorMsg && (
+            <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-300 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+              <AlertCircle size={16} className="shrink-0 text-red-400" />
+              <span>{validationErrorMsg}</span>
             </div>
           )}
 

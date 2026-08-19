@@ -281,7 +281,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     },
   ];
 
-  const completedCount = checklistItems.filter((i) => i.itemStatus === "Complete" || i.itemStatus === "Needs Review").length;
+  const completedCount = checklistItems.filter((i) => i.itemStatus === "Complete").length;
 
   // Dynamic progress percentage calculation for build state
   let computedPercent = 20;
