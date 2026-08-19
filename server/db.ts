@@ -339,7 +339,9 @@ export async function getProjects(reqId: string = "N/A", filter?: { userId?: str
 
   if (!data) return [];
 
-  return data.map(item => mapProjectRow(item));
+  return data
+    .filter(item => item.id !== "c0090000-0000-0000-0000-000000000001" && item.email !== "coupons@codefuser.com" && item.email !== "system-coupons@codefuser.com")
+    .map(item => mapProjectRow(item));
 }
 
 export async function updateProject(id: string, updates: Partial<ProjectRecord>, reqId: string = "N/A"): Promise<ProjectRecord> {

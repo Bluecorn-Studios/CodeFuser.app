@@ -40,17 +40,27 @@ import {
   runPeriodicAutomationScan
 } from "./server/automation.js";
 import {
+  initCouponsStore,
   getAllCoupons,
+  getAllCouponsAsync,
   getCouponById,
+  getCouponByIdAsync,
   getCouponByCode,
+  getCouponByCodeAsync,
   createCoupon,
+  createCouponAsync,
   updateCoupon,
+  updateCouponAsync,
   toggleCouponStatus,
+  toggleCouponStatusAsync,
   archiveCoupon,
+  archiveCouponAsync,
   deleteCoupon,
+  deleteCouponAsync,
   validateAndCalculateCoupon,
   isCustomerExisting,
-  recordRedemption
+  recordRedemption,
+  recordRedemptionAsync
 } from "./server/coupons.js";
 import {
   createPreviewSession,
@@ -3185,7 +3195,7 @@ async function processPaymentSuccessCore({
     const cCode = extra.quote.couponCode;
     const custEmail = project.email || "";
     const discAmt = Number(extra.quote.discount || 0);
-    recordRedemption(cCode, custEmail, id, discAmt, isSimulated);
+    await recordRedemptionAsync(cCode, custEmail, id, discAmt, isSimulated);
     console.log(`[Coupon Redemption] Finalized successful redemption for coupon ${cCode} on project ${id}`);
   }
 
@@ -4211,7 +4221,7 @@ app.post("/api/admin/hosting/action", requireAuth, requireRole(["super_admin", "
 // GET /api/admin/coupons
 app.get("/api/admin/coupons", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
   try {
-    const coupons = getAllCoupons();
+    const coupons = await getAllCouponsAsync();
     return res.json({ success: true, coupons });
   } catch (err: any) {
     logger.error("Failed to load admin coupons:", err);
@@ -4243,12 +4253,12 @@ app.post("/api/admin/coupons", requireAuth, requireRole(["super_admin", "admin"]
       return res.status(400).json({ success: false, error: "Missing required fields: name, code, discountType." });
     }
 
-    const existing = getCouponByCode(code);
+    const existing = await getCouponByCodeAsync(code);
     if (existing) {
       return res.status(400).json({ success: false, error: "A coupon with this code already exists." });
     }
 
-    const coupon = createCoupon({
+    const coupon = await createCouponAsync({
       name,
       code,
       discountType,
@@ -4280,7 +4290,7 @@ app.post("/api/admin/coupons", requireAuth, requireRole(["super_admin", "admin"]
 app.put("/api/admin/coupons/:id", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
   try {
     const { id } = req.params;
-    const updated = updateCoupon(id, req.body);
+    const updated = await updateCouponAsync(id, req.body);
     if (!updated) {
       return res.status(404).json({ success: false, error: "Coupon not found." });
     }
@@ -4295,7 +4305,7 @@ app.put("/api/admin/coupons/:id", requireAuth, requireRole(["super_admin", "admi
 app.post("/api/admin/coupons/:id/toggle", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
   try {
     const { id } = req.params;
-    const toggled = toggleCouponStatus(id);
+    const toggled = await toggleCouponStatusAsync(id);
     if (!toggled) {
       return res.status(404).json({ success: false, error: "Coupon not found." });
     }
@@ -4310,7 +4320,7 @@ app.post("/api/admin/coupons/:id/toggle", requireAuth, requireRole(["super_admin
 app.post("/api/admin/coupons/:id/archive", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
   try {
     const { id } = req.params;
-    const archived = archiveCoupon(id);
+    const archived = await archiveCouponAsync(id);
     if (!archived) {
       return res.status(404).json({ success: false, error: "Coupon not found." });
     }
@@ -4325,7 +4335,7 @@ app.post("/api/admin/coupons/:id/archive", requireAuth, requireRole(["super_admi
 app.delete("/api/admin/coupons/:id", requireAuth, requireRole(["super_admin", "admin"]), async (req: any, res) => {
   try {
     const { id } = req.params;
-    const result = deleteCoupon(id);
+    const result = await deleteCouponAsync(id);
     if (!result.success) {
       return res.status(400).json({ success: false, error: result.error });
     }
@@ -5717,6 +5727,12 @@ process.on("unhandledRejection", (reason: any) => {
 
 // Server bootstrap with Vite integration
 async function startServer() {
+  try {
+    await initCouponsStore();
+  } catch (couponInitErr) {
+    logger.error("Failed to initialize coupons store from durable database:", couponInitErr);
+  }
+
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({

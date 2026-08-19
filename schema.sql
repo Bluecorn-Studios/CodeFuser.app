@@ -79,3 +79,53 @@ CREATE POLICY "Enable read access for audit_trail" ON public.audit_trail
 CREATE POLICY "Enable insert access for audit_trail" ON public.audit_trail
   FOR INSERT WITH CHECK (true);
 
+-- SQL Schema to initialize the coupons table in Supabase
+CREATE TABLE IF NOT EXISTS public.coupons (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  code TEXT NOT NULL UNIQUE,
+  discount_type TEXT NOT NULL,
+  discount_value NUMERIC NOT NULL DEFAULT 0,
+  eligible_plans JSONB NOT NULL DEFAULT '["ignite", "fusion"]'::jsonb,
+  hosting_rule TEXT NOT NULL DEFAULT 'charge_normally',
+  free_hosting_promo_rule TEXT NOT NULL DEFAULT 'apply',
+  redemption_limit INTEGER NOT NULL DEFAULT 10,
+  max_uses_per_customer INTEGER NOT NULL DEFAULT 1,
+  customer_eligibility TEXT NOT NULL DEFAULT 'new_only',
+  start_date TIMESTAMPTZ,
+  end_date TIMESTAMPTZ,
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  current_redemptions INTEGER NOT NULL DEFAULT 0,
+  after_limit_behavior TEXT NOT NULL DEFAULT 'stop',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security (RLS) on public.coupons table
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Enable read access for coupons" ON public.coupons
+  FOR SELECT USING (true);
+
+CREATE POLICY "Enable write access for coupons" ON public.coupons
+  FOR ALL USING (true);
+
+-- SQL Schema to initialize coupon_redemptions in Supabase
+CREATE TABLE IF NOT EXISTS public.coupon_redemptions (
+  id TEXT PRIMARY KEY,
+  coupon_code TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  project_id TEXT,
+  discount_amount NUMERIC NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security (RLS) on public.coupon_redemptions table
+ALTER TABLE public.coupon_redemptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Enable read access for coupon_redemptions" ON public.coupon_redemptions
+  FOR SELECT USING (true);
+
+CREATE POLICY "Enable insert access for coupon_redemptions" ON public.coupon_redemptions
+  FOR INSERT WITH CHECK (true);
+
