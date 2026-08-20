@@ -1,10 +1,10 @@
-const CACHE_NAME = 'codefuser-static-cache-v2';
+const CACHE_NAME = 'codefuser-static-cache-v3';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
   '/logo.svg',
   '/logo.png',
-  '/robots.txt'
+  '/robots.txt',
+  '/favicon.ico',
+  '/favicon.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -48,18 +48,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For navigation requests (HTML pages), use Network-First to avoid stale chunk mismatches
+  // For navigation requests (HTML pages), ALWAYS use Network directly to ensure latest JS chunks
   if (event.request.mode === 'navigate' || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-          }
-          return networkResponse;
-        })
-        .catch(() => caches.match(event.request).then((res) => res || caches.match('/')))
+      fetch(event.request).catch((err) => {
+        return caches.match(event.request).then((res) => res || caches.match('/logo.svg'));
+      })
     );
     return;
   }
