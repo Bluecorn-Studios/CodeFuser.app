@@ -226,6 +226,8 @@ body {
   font-family: var(--font-sans);
   overflow-x: hidden;
   background: #000000;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Premium orbital arc travel effect (GPU-composited via clip-path transform) */

@@ -722,6 +722,89 @@ function ResultsSection() {
 }
 
 // ==========================================
+// SECTION: PUBLIC CUSTOMER REVIEWS
+// ==========================================
+function PublicReviewsSection() {
+  const [reviews, setReviews] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetch("/api/reviews/public")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && Array.isArray(data.data)) {
+          setReviews(data.data);
+        }
+      })
+      .catch((err) => console.log("Failed to fetch public reviews:", err));
+  }, []);
+
+  if (reviews.length === 0) return null;
+
+  return (
+    <section className="relative overflow-hidden bg-black px-5 py-20 sm:px-8 border-t border-white/10">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center mb-12">
+          <Eyebrow>VERIFIED CLIENT FEEDBACK</Eyebrow>
+          <h2 className="font-display text-3xl font-black text-white sm:text-4xl mt-3 tracking-tight">
+            What Business Owners Say About CodeFuser
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {reviews.map((rev) => (
+            <div
+              key={rev.id}
+              className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:border-white/20 transition-all space-y-4"
+            >
+              <div>
+                <div className="flex items-center gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      className={
+                        star <= rev.rating ? "text-white text-sm" : "text-neutral-700 text-sm"
+                      }
+                    >
+                      ★
+                    </span>
+                  ))}
+                  <span className="ml-1.5 font-mono text-xs font-bold text-neutral-300">
+                    {rev.rating}.0
+                  </span>
+                </div>
+
+                {rev.answer1 && (
+                  <p className="text-sm text-neutral-200 leading-relaxed italic mb-3">
+                    "{rev.answer1}"
+                  </p>
+                )}
+
+                {rev.answer3 && (
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    <strong className="text-neutral-300 not-italic font-mono">Recommendation: </strong>
+                    "{rev.answer3}"
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-white font-mono">{rev.businessName}</p>
+                  <p className="text-[11px] text-neutral-400">{rev.customerName}</p>
+                </div>
+                <span className="text-[10px] font-mono text-neutral-500 bg-neutral-900 px-2.5 py-1 rounded-full border border-white/5">
+                  Verified Client
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
 // EXPOSED COMPONENT BUNDLING HOMEPAGE
 // ==========================================
 export const Home: React.FC = () => {
@@ -742,6 +825,7 @@ export const Home: React.FC = () => {
       <IndustriesSection />
       <BrandKnowledgeSection />
       <ResultsSection />
+      <PublicReviewsSection />
       <Suspense fallback={<div className="min-h-[300px] bg-black" />}>
         <Faq />
       </Suspense>

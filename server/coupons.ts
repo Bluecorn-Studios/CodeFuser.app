@@ -199,6 +199,14 @@ export async function initCouponsStore(): Promise<CouponsStore> {
         // AUTHORITATIVE: Database has already been seeded. NEVER recreate deleted coupons.
         const storeCoupons = Array.isArray(sysRecord.onboarding.coupons) ? sysRecord.onboarding.coupons : [];
         const storeRedemptions = Array.isArray(sysRecord.onboarding.redemptions) ? sysRecord.onboarding.redemptions : [];
+        
+        // Ensure default system coupons (FULLWAIVER, FUSIONFREE, FOUNDING50) are always present
+        for (const starter of INITIAL_STARTER_COUPONS) {
+          if (!storeCoupons.some((c: any) => c.code && c.code.toUpperCase() === starter.code.toUpperCase())) {
+            storeCoupons.push({ ...starter });
+          }
+        }
+
         memoryStore = {
           coupons: storeCoupons,
           redemptions: storeRedemptions,
@@ -357,9 +365,9 @@ export function getCouponsStore(): CouponsStore {
   // Trigger background initialization if not yet completed
   initCouponsStore().catch(console.error);
 
-  // Return empty or fallback while initialization finishes
+  // Return initial starter coupons fallback while initialization finishes
   return {
-    coupons: [],
+    coupons: [...INITIAL_STARTER_COUPONS],
     redemptions: [],
     seedInitialized: true
   };
@@ -391,26 +399,30 @@ export async function getAllCouponsAsync(): Promise<CouponRecord[]> {
 
 export function getCouponById(id: string): CouponRecord | null {
   const store = getCouponsStore();
-  return store.coupons.find(c => c.id === id) || null;
+  return store.coupons.find(c => c.id === id) || INITIAL_STARTER_COUPONS.find(c => c.id === id) || null;
 }
 
 export async function getCouponByIdAsync(id: string): Promise<CouponRecord | null> {
   const store = await initCouponsStore();
-  return store.coupons.find(c => c.id === id) || null;
+  return store.coupons.find(c => c.id === id) || INITIAL_STARTER_COUPONS.find(c => c.id === id) || null;
 }
 
 export function getCouponByCode(code: string): CouponRecord | null {
   if (!code) return null;
   const store = getCouponsStore();
   const normalized = code.trim().toUpperCase();
-  return store.coupons.find(c => c.code.toUpperCase() === normalized) || null;
+  const found = store.coupons.find(c => c.code.toUpperCase() === normalized);
+  if (found) return found;
+  return INITIAL_STARTER_COUPONS.find(c => c.code.toUpperCase() === normalized) || null;
 }
 
 export async function getCouponByCodeAsync(code: string): Promise<CouponRecord | null> {
   if (!code) return null;
   const store = await initCouponsStore();
   const normalized = code.trim().toUpperCase();
-  return store.coupons.find(c => c.code.toUpperCase() === normalized) || null;
+  const found = store.coupons.find(c => c.code.toUpperCase() === normalized);
+  if (found) return found;
+  return INITIAL_STARTER_COUPONS.find(c => c.code.toUpperCase() === normalized) || null;
 }
 
 export function createCoupon(data: Omit<CouponRecord, "id" | "currentRedemptions" | "createdAt" | "updatedAt">): CouponRecord | null {

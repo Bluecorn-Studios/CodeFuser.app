@@ -129,3 +129,33 @@ CREATE POLICY "Enable read access for coupon_redemptions" ON public.coupon_redem
 CREATE POLICY "Enable insert access for coupon_redemptions" ON public.coupon_redemptions
   FOR INSERT WITH CHECK (true);
 
+-- SQL Schema to initialize the reviews table in Supabase
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL UNIQUE,
+  customer_id TEXT,
+  customer_name TEXT NOT NULL,
+  business_name TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  answer1 TEXT,
+  answer2 TEXT,
+  answer3 TEXT,
+  published BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security (RLS) on public.reviews table
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+
+-- Create Policies to allow public read access for published reviews, and write access for submissions
+CREATE POLICY "Enable read access for published reviews" ON public.reviews
+  FOR SELECT USING (published = true OR auth.role() = 'service_role');
+
+CREATE POLICY "Enable insert access for reviews" ON public.reviews
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Enable update access for reviews" ON public.reviews
+  FOR UPDATE USING (true);
+
+

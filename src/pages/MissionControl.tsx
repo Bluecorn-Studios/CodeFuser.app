@@ -38,6 +38,7 @@ import { MoneyRevenueLedger } from "../components/MoneyRevenueLedger";
 import { ProjectJourneyTimeline } from "../components/ProjectJourneyTimeline";
 import { formatDateSafe, formatDateTimeSafe, formatINR, formatPaymentMethod, formatPaymentReference } from "../utils/formatters";
 import { HostingAdminManager } from "../components/admin/HostingAdminManager";
+import { ReviewsAdminManager } from "../components/admin/ReviewsAdminManager";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
@@ -128,15 +129,50 @@ export const MissionControl: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchFounderNotifications();
-      fetchHostingData();
-      const interval = setInterval(() => {
+    if (!isAuthenticated) return;
+
+    fetchFounderNotifications();
+    fetchHostingData();
+
+    let notifTimer: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (notifTimer) clearInterval(notifTimer);
+      notifTimer = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          fetchFounderNotifications();
+          fetchHostingData();
+        }
+      }, 10000);
+    };
+
+    const stopPolling = () => {
+      if (notifTimer) {
+        clearInterval(notifTimer);
+        notifTimer = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
         fetchFounderNotifications();
         fetchHostingData();
-      }, 10000);
-      return () => clearInterval(interval);
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    if (document.visibilityState === "visible") {
+      startPolling();
     }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [isAuthenticated]);
 
   const unreadFounderCount = founderNotifications.filter(n => !n.readAt).length;
@@ -175,7 +211,7 @@ export const MissionControl: React.FC = () => {
   const [dbSource, setDbSource] = useState<string>("Supabase");
   
   // Controls
-  const [activeTab, setActiveTab] = useState<"overview" | "projects" | "money" | "crm" | "hosting" | "coupons" | "users">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "projects" | "money" | "reviews" | "crm" | "hosting" | "coupons" | "users">("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("all");
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -496,9 +532,47 @@ export const MissionControl: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProjects();
+    if (!isAuthenticated) return;
+
+    fetchProjects();
+
+    let projectTimer: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (projectTimer) clearInterval(projectTimer);
+      projectTimer = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          fetchProjects();
+        }
+      }, 45000);
+    };
+
+    const stopPolling = () => {
+      if (projectTimer) {
+        clearInterval(projectTimer);
+        projectTimer = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchProjects();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    if (document.visibilityState === "visible") {
+      startPolling();
     }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
@@ -844,6 +918,13 @@ export const MissionControl: React.FC = () => {
             onClick={() => setActiveTab("money")}
           >
             Money
+          </Button>
+          <Button
+            variant={activeTab === "reviews" ? "primary" : "quiet"}
+            size="sm"
+            onClick={() => setActiveTab("reviews")}
+          >
+            Reviews
           </Button>
           <Button
             variant={activeTab === "crm" ? "primary" : "quiet"}
@@ -3211,6 +3292,10 @@ export const MissionControl: React.FC = () => {
               setActiveProjectId(id);
             }}
           />
+        )}
+
+        {activeTab === "reviews" && (
+          <ReviewsAdminManager getAdminHeaders={getAdminHeaders} />
         )}
 
         {activeTab === "crm" && (

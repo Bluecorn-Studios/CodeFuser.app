@@ -960,6 +960,8 @@ export const StartProjectPage: React.FC = () => {
 
     const discount = appliedCoupon ? websiteDiscount : (selectedPaymentTerm === 'upfront' ? discountVal : 0);
     const normalizedFeats = normalizeFeatures(finalSelCardForPayment.features);
+    
+    // 1. Lock official quote with coupon metadata
     try {
       await fetch(`/api/projects/${projId}/quote`, {
         method: "POST",
@@ -977,28 +979,39 @@ export const StartProjectPage: React.FC = () => {
       console.warn("Quotation lock notice (non-fatal):", err);
     }
 
+    // 2. Direct Zero-Value Waiver Settlement (Bypasses Razorpay completely)
     let orderData: any;
     try {
-      const orderRes = await fetch(`/api/projects/${projId}/razorpay-order`, {
+      const settleRes = await fetch(`/api/projects/${projId}/settle-waiver`, {
         method: "POST",
         headers: getApiHeaders(),
         body: JSON.stringify({ term: selectedPaymentTerm })
       });
-      orderData = await orderRes.json();
+      orderData = await settleRes.json();
     } catch (err: any) {
-      setPaymentErrorMsg("Network failure connecting to payment servers.");
-      setPaymentLoading(false);
-      return;
+      // Fallback attempt to razorpay-order endpoint in case of network anomaly
+      try {
+        const orderRes = await fetch(`/api/projects/${projId}/razorpay-order`, {
+          method: "POST",
+          headers: getApiHeaders(),
+          body: JSON.stringify({ term: selectedPaymentTerm })
+        });
+        orderData = await orderRes.json();
+      } catch (fallbackErr: any) {
+        setPaymentErrorMsg("Network failure connecting to order processing server.");
+        setPaymentLoading(false);
+        return;
+      }
     }
 
     if (!orderData || !orderData.success) {
-      const errMsg = orderData?.error || "Payment order creation failed.";
+      const errMsg = orderData?.error || "Free order confirmation failed.";
       setPaymentErrorMsg(errMsg);
       setPaymentLoading(false);
       return;
     }
 
-    if (orderData.zeroAmount || orderData.isZeroAmount) {
+    if (orderData.zeroAmount || orderData.isZeroAmount || orderData.isAlreadySettled) {
       setPaymentLoading(false);
       setOnboardingStage('schedule');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1006,6 +1019,8 @@ export const StartProjectPage: React.FC = () => {
     }
 
     setPaymentLoading(false);
+    setOnboardingStage('schedule');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const finalSelCardForPayment = (recommendationCards)
@@ -1305,6 +1320,50 @@ export const StartProjectPage: React.FC = () => {
       return () => clearTimeout(saveTimer);
     }
   }, [formData, step, onboardingStage, selectedCardId, selectedPaymentTerm, localPhone, selectedCountry, recommendationCards, aiSummary, step1Notice, saveDraftToSupabase]);
+
+  // Periodic draft background sync (30s) — paused when hidden
+  useEffect(() => {
+    if (step1Notice) return;
+    if (step === 1 && onboardingStage === 'form') return;
+
+    let syncTimer: NodeJS.Timeout | null = null;
+
+    const startPeriodicSync = () => {
+      if (syncTimer) clearInterval(syncTimer);
+      syncTimer = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          saveDraftToSupabase();
+        }
+      }, 30000);
+    };
+
+    const stopPeriodicSync = () => {
+      if (syncTimer) {
+        clearInterval(syncTimer);
+        syncTimer = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        saveDraftToSupabase();
+        startPeriodicSync();
+      } else {
+        stopPeriodicSync();
+      }
+    };
+
+    if (document.visibilityState === "visible") {
+      startPeriodicSync();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopPeriodicSync();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [step, onboardingStage, step1Notice, saveDraftToSupabase]);
 
   // Memoized Validation Error Helper
   const validationErrors = React.useMemo(() => {

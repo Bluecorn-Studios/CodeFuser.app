@@ -43,41 +43,13 @@ import { NeedHelpTab } from "../components/dashboard/NeedHelpTab";
 import { OnboardingAssetModal, AssetStepKey } from "../components/dashboard/OnboardingAssetModal";
 import { getOnboardingStepStatus, getOnboardingSummary } from "../lib/onboardingStatus";
 import { HostingSetupModal } from "../components/dashboard/HostingSetupModal";
+import { CustomerReviewModal } from "../components/dashboard/CustomerReviewModal";
 import { AccessDenied } from "../components/auth/AccessDenied";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
-
-interface ProjectRecord {
-  id: string;
-  clientName: string;
-  businessName: string;
-  email: string;
-  whatsapp: string;
-  selectedPackage: string;
-  ownershipChoice: string;
-  industry: string;
-  customIndustry: string;
-  goal: string;
-  customGoal: string;
-  hasDomain: string;
-  hasLogo: string;
-  contentReady: string;
-  galleryReady?: string;
-  businessDetails?: string;
-  address?: string;
-  timestamp: string;
-  status: string;
-  paymentStatus?: string;
-  portalAccess?: boolean;
-  paymentProvider?: string;
-  paymentId?: string;
-  orderId?: string;
-  purchasedPlan?: string;
-  purchaseDate?: string;
-  portalAccessSource?: "automatic" | "manual";
-}
+import { ProjectRecord } from "../components/dashboard/dashboardTypes";
 
 interface AssetFileRecord {
   id: string;
@@ -268,6 +240,9 @@ export default function CustomerDashboard() {
   // Hosting Setup Modal State
   const [isHostingSetupModalOpen, setIsHostingSetupModalOpen] = useState<boolean>(false);
 
+  // Post-Launch Customer Review Prompt State
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState<boolean>(false);
+
   useEffect(() => {
     if (project?.id) {
       const shownKey = `fuser_hosting_modal_shown_${project.id}`;
@@ -286,6 +261,39 @@ export default function CustomerDashboard() {
       }
     }
   }, [project?.id]);
+
+  useEffect(() => {
+    if (project?.id) {
+      const statusStr = (project.status || "").toLowerCase();
+      const isPostLaunch =
+        project.launchStatus === "LAUNCHED" ||
+        project.websiteStatus === "ONLINE" ||
+        statusStr.includes("live") ||
+        statusStr === "completed";
+
+      if (isPostLaunch) {
+        const localSubmitted = safeLocalStorage.getItem(`fuser_review_submitted_${project.id}`);
+        if (localSubmitted === "true") {
+          return;
+        }
+
+        fetch(`/api/projects/${project.id}/review`, {
+          headers: { Authorization: `Bearer ${getAuthToken() || ""}` }
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.success) {
+              if (data.hasReview) {
+                safeLocalStorage.setItem(`fuser_review_submitted_${project.id}`, "true");
+              } else {
+                setIsReviewModalOpen(true);
+              }
+            }
+          })
+          .catch((err) => console.log("Review check error:", err));
+      }
+    }
+  }, [project?.id, project?.launchStatus, project?.websiteStatus, project?.status]);
 
   const handleOpenAssetModal = (stepKey: AssetStepKey = "1") => {
     setAssetModalInitialStep(stepKey);
@@ -413,6 +421,51 @@ export default function CustomerDashboard() {
       console.log(`[TRACING] CustomerDashboard setIsLoading(false) executed`);
     }
   }, [ctxProject, projLoading]);
+
+  // Visibility-aware background polling (30s)
+  useEffect(() => {
+    if (!ctxProject?.id) return;
+
+    let pollTimer: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          refreshProject();
+          fetchExtraData(ctxProject.id);
+        }
+      }, 30000);
+    };
+
+    const stopPolling = () => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshProject();
+        fetchExtraData(ctxProject.id);
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    if (document.visibilityState === "visible") {
+      startPolling();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [ctxProject?.id, refreshProject]);
 
   const fetchExtraData = async (projId: string) => {
     setExtraLoading(true);
@@ -1618,22 +1671,44 @@ export default function CustomerDashboard() {
       </SectionErrorBoundary>
 
       {/* Onboarding Asset Submission Modal */}
-      <OnboardingAssetModal
-        isOpen={isAssetModalOpen}
-        onClose={() => setIsAssetModalOpen(false)}
-        initialStep={assetModalInitialStep}
-        project={project}
-        onSaveProject={handleSaveModalProjectData}
-        getWhatsAppLink={getWhatsAppLink}
-      />
+      {isAssetModalOpen && (
+        <OnboardingAssetModal
+          isOpen={isAssetModalOpen}
+          onClose={() => setIsAssetModalOpen(false)}
+          initialStep={assetModalInitialStep}
+          project={project}
+          onSaveProject={handleSaveModalProjectData}
+          getWhatsAppLink={getWhatsAppLink}
+        />
+      )}
 
       {/* First Dashboard Visit Hosting Setup Modal */}
-      <HostingSetupModal
-        isOpen={isHostingSetupModalOpen}
-        onClose={() => setIsHostingSetupModalOpen(false)}
-        project={project}
-        onOpenHostingTab={() => setActiveTab("hosting")}
-      />
+      {isHostingSetupModalOpen && project && (
+        <HostingSetupModal
+          isOpen={isHostingSetupModalOpen}
+          onClose={() => setIsHostingSetupModalOpen(false)}
+          project={project}
+          onOpenHostingTab={() => setActiveTab("hosting")}
+        />
+      )}
+
+      {/* Post-Launch Customer Review Modal */}
+      {isReviewModalOpen && (
+        <CustomerReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          projectId={project?.id || ""}
+          clientName={project?.clientName}
+          businessName={project?.businessName}
+          onSuccess={() => {
+            if (project?.id) {
+              safeLocalStorage.setItem(`fuser_review_submitted_${project.id}`, "true");
+            }
+            setSuccessIndicator("Thank you for your feedback!");
+            setTimeout(() => setSuccessIndicator(null), 4000);
+          }}
+        />
+      )}
     </div>
   );
 }

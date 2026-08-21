@@ -51,6 +51,8 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
   onSaveProject,
   getWhatsAppLink,
 }) => {
+  if (!isOpen) return null;
+
   const [activeStep, setActiveStep] = useState<AssetStepKey>(initialStep);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);

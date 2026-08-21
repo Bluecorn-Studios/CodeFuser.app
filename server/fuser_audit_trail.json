@@ -4658,5 +4658,59 @@
     "status": "Success",
     "notes": "Charged Rs. 499 for project 5f6a20ec-b912-4321-83ab-201693f0d6a5. Ref: pay_host_19_1786383139926.",
     "timestamp": "2026-08-10T17:32:20.595Z"
+  },
+  {
+    "projectId": "test_proj_2",
+    "eventType": "Hosting Lifecycle Transition",
+    "requestId": "lifecycle_scan_1787295700423",
+    "actor": "System",
+    "status": "Success",
+    "notes": "Grace period expired without manual payment. Hosting service suspended.",
+    "timestamp": "2026-08-21T07:01:40.425Z"
+  },
+  {
+    "projectId": "test_proj_2",
+    "eventType": "Hosting Lifecycle Transition",
+    "requestId": "lifecycle_scan_1787295700423",
+    "actor": "System",
+    "status": "Success",
+    "notes": "Grace period expired without manual payment. Hosting service suspended.",
+    "timestamp": "2026-08-21T07:01:40.547Z"
+  },
+  {
+    "projectId": "test_proj_3",
+    "eventType": "Hosting Lifecycle Transition",
+    "requestId": "lifecycle_scan_1787295700841",
+    "actor": "System",
+    "status": "Success",
+    "notes": "Grace period expired without manual payment. Hosting service suspended.",
+    "timestamp": "2026-08-21T07:01:40.843Z"
+  },
+  {
+    "projectId": "test_proj_3",
+    "eventType": "Hosting Lifecycle Transition",
+    "requestId": "lifecycle_scan_1787295700841",
+    "actor": "System",
+    "status": "Success",
+    "notes": "Grace period expired without manual payment. Hosting service suspended.",
+    "timestamp": "2026-08-21T07:01:40.976Z"
+  },
+  {
+    "projectId": "prev_proj_143fd5ed6a6c11118902",
+    "eventType": "Payment Statement Downloaded",
+    "requestId": "4a12be63-8ef0-4854-89d9-e96614e80ce7",
+    "actor": "Admin",
+    "status": "Success",
+    "notes": "Generated official PDF receipt #CF-REC-PREV_PRO for Preview Company",
+    "timestamp": "2026-08-21T08:06:51.929Z"
+  },
+  {
+    "projectId": "prev_proj_143fd5ed6a6c11118902",
+    "eventType": "Payment Statement Downloaded",
+    "requestId": "4a12be63-8ef0-4854-89d9-e96614e80ce7",
+    "actor": "Admin",
+    "status": "Success",
+    "notes": "Generated official PDF receipt #CF-REC-PREV_PRO for Preview Company",
+    "timestamp": "2026-08-21T08:06:52.023Z"
   }
 ]

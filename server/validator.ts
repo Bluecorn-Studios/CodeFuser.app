@@ -49,8 +49,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Standard phone/whatsapp pattern allowing +, numbers, spaces, parens, hyphens
 const PHONE_REGEX = /^\+?[0-9\s\-()]{7,25}$/;
 
-// Project ID pattern matching UUID or other typical alphanumeric IDs
-const PROJECT_ID_REGEX = /^[a-zA-Z0-9\-]{5,100}$/;
+// Project ID pattern matching UUID or other typical alphanumeric IDs (hyphens and underscores allowed)
+const PROJECT_ID_REGEX = /^[a-zA-Z0-9\-_]{5,100}$/;
 
 // Base64 regex pattern
 const BASE64_REGEX = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -397,6 +397,11 @@ export const saveQuoteSchema: Schema = {
 // 6. POST /api/projects/:id/razorpay-order
 export const createOrderSchema: Schema = {
   term: { type: "string", required: true, allowedValues: ["milestone", "upfront", "final"] }
+};
+
+// 6b. POST /api/projects/:id/settle-waiver (Dedicated Zero-Value Settlement)
+export const settleWaiverSchema: Schema = {
+  term: { type: "string", required: false, allowedValues: ["milestone", "upfront", "final", ""] }
 };
 
 // 7. POST /api/projects/:id/verify-payment
