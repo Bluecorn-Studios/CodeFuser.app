@@ -585,8 +585,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 </div>
               </div>
 
-              {/* Browser Window Frame */}
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 overflow-hidden shadow-2xl">
+              {/* Browser Window Frame (Desktop) */}
+              <div className="hidden sm:block rounded-xl border border-zinc-800 bg-zinc-900/60 overflow-hidden shadow-2xl">
                 {/* Browser top address bar */}
                 <div className="px-4 py-3 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-1.5">
@@ -640,6 +640,28 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     </a>
                   </div>
                 </div>
+              </div>
+
+              {/* Mobile Compact Website Banner */}
+              <div className="sm:hidden p-4 bg-zinc-900/80 border border-zinc-800 rounded-xl space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white shrink-0">
+                    <Globe size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-white truncate">{project.businessName || "Your Website"}</div>
+                    <div className="text-[11px] text-zinc-400 font-mono truncate">{displayUrl}</div>
+                  </div>
+                </div>
+                <a
+                  href={liveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 bg-white text-black hover:bg-zinc-200 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.15)]"
+                >
+                  <span>Visit Live Website</span>
+                  <ExternalLink size={14} />
+                </a>
               </div>
             </div>
           </section>
@@ -787,7 +809,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   onChange={(e) => setChangeRequestText(e.target.value)}
                   placeholder="Type your request here (e.g., Please change our Sunday closing time to 8:00 PM, and update our contact phone number)..."
                   rows={4}
-                  className="w-full p-4 bg-zinc-900/70 border border-zinc-800 focus:border-white/30 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none transition-all resize-none leading-relaxed"
+                  className="w-full p-4 bg-zinc-900/70 border border-zinc-800 focus:border-white/30 rounded-xl text-base sm:text-xs text-white placeholder-zinc-500 focus:outline-none transition-all resize-none leading-relaxed"
                 />
 
                 {/* Attached Photo Display */}
@@ -1256,6 +1278,66 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </div>
             </div>
 
+            {/* DOMINANT ACTION BOX: TOP PRIORITY */}
+            <motion.div 
+              whileHover={{ borderColor: "rgba(255,255,255,0.3)" }}
+              className="p-6 sm:p-8 bg-zinc-950 border border-white/15 rounded-2xl relative overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.04)] space-y-4"
+            >
+              <div className="absolute top-0 left-1/3 w-1/3 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                </span>
+                <span className="text-[10px] font-mono font-extrabold text-zinc-300 tracking-widest uppercase">
+                  {hasEmptyAssets ? "Next Step for You" : "Current Project Update"}
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                {primaryActionDetails.title}
+              </h2>
+
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+                {primaryActionDetails.description}
+              </p>
+
+              <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(255,255,255,0.4)" }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={primaryActionDetails.action}
+                  className="px-6 py-4 bg-white text-black hover:bg-zinc-100 font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)] min-h-[44px]"
+                >
+                  <span>{primaryActionDetails.btnText}</span>
+                  <ArrowRight size={16} strokeWidth={2.5} />
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ borderColor: "rgba(255,255,255,0.3)", backgroundColor: "rgba(255,255,255,0.05)" }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onNavigateTab("help")}
+                  className="px-5 py-4 bg-zinc-900 text-zinc-200 hover:text-white font-bold text-xs rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+                >
+                  <MessageSquare size={15} className="text-zinc-400" />
+                  <span>Need Help? Chat With Us</span>
+                </motion.button>
+
+                {project.stagingUrl && (
+                  <a
+                    href={project.stagingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-5 py-4 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                  >
+                    <span>View Website Preview</span>
+                    <ExternalLink size={14} className="text-zinc-400" />
+                  </a>
+                )}
+              </div>
+            </motion.div>
+
             {/* Dynamic Progress Card with Ambient White Glow */}
             <motion.div 
               whileHover={{ borderColor: "rgba(255,255,255,0.2)" }}
@@ -1327,68 +1409,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     </div>
                   );
                 })}
-              </div>
-            </motion.div>
-          </section>
-
-          {/* 2. ONE DOMINANT ACTION BOX */}
-          <section>
-            <motion.div 
-              whileHover={{ borderColor: "rgba(255,255,255,0.3)" }}
-              className="p-6 sm:p-8 bg-zinc-950 border border-white/15 rounded-2xl relative overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.04)] space-y-4"
-            >
-              <div className="absolute top-0 left-1/3 w-1/3 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-                </span>
-                <span className="text-[10px] font-mono font-extrabold text-zinc-300 tracking-widest uppercase">
-                  {hasEmptyAssets ? "Next Step for You" : "Current Project Update"}
-                </span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                {primaryActionDetails.title}
-              </h2>
-
-              <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
-                {primaryActionDetails.description}
-              </p>
-
-              <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(255,255,255,0.4)" }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={primaryActionDetails.action}
-                  className="px-6 py-3.5 bg-white text-black hover:bg-zinc-100 font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)]"
-                >
-                  <span>{primaryActionDetails.btnText}</span>
-                  <ArrowRight size={16} strokeWidth={2.5} />
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ borderColor: "rgba(255,255,255,0.3)", backgroundColor: "rgba(255,255,255,0.05)" }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => onNavigateTab("help")}
-                  className="px-5 py-3.5 bg-zinc-900 text-zinc-200 hover:text-white font-bold text-xs rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <MessageSquare size={15} className="text-zinc-400" />
-                  <span>Need Help? Chat With Us</span>
-                </motion.button>
-
-                {project.stagingUrl && (
-                  <a
-                    href={project.stagingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-5 py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2"
-                  >
-                    <span>View Website Preview</span>
-                    <ExternalLink size={14} className="text-zinc-400" />
-                  </a>
-                )}
               </div>
             </motion.div>
           </section>

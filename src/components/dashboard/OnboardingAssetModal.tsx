@@ -329,18 +329,21 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="relative w-full max-w-3xl bg-neutral-950 border border-neutral-800 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in">
+      <div className="relative w-full max-w-3xl bg-neutral-950 border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden my-0 sm:my-auto flex flex-col max-h-[92vh]">
+        {/* Mobile Sheet Drag Handle */}
+        <div className="sm:hidden w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-3 mb-1 shrink-0" />
+
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-neutral-900 bg-black/80 flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-6 border-b border-neutral-900 bg-black/80 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
               <Sparkles size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                 <span>Provide Onboarding Assets</span>
-                <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-200 text-[10px] font-mono uppercase tracking-widest font-extrabold">
+                <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-200 text-[10px] font-mono uppercase tracking-widest font-extrabold hidden sm:inline-block">
                   Quick Setup
                 </span>
               </h2>
@@ -437,7 +440,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
                       placeholder="e.g. Apex Legal Solutions"
-                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
@@ -449,7 +452,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
                     placeholder="e.g. Jonathan Smith"
-                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                   />
                 </div>
 
@@ -464,7 +467,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="e.g. +91 98765 43210"
-                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
@@ -480,7 +483,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="e.g. contact@apexlegal.com"
-                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
@@ -494,7 +497,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="e.g. Anna Nagar, Chennai, Tamil Nadu (or Online / Pan-India)"
-                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                      className="w-full bg-neutral-900 border border-neutral-800 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
@@ -652,7 +655,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={logoLink}
                       onChange={(e) => setLogoLink(e.target.value)}
                       placeholder="https://drive.google.com/file/d/... or https://canva.com/..."
-                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                   <p className="text-[11px] text-neutral-400">
@@ -821,7 +824,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={galleryLink}
                       onChange={(e) => setGalleryLink(e.target.value)}
                       placeholder="https://drive.google.com/drive/folders/..."
-                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                   <p className="text-[11px] text-neutral-400">
@@ -920,7 +923,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={servicesText}
                       onChange={(e) => setServicesText(e.target.value)}
                       placeholder="e.g.&#10;1. General Consultation - ₹500&#10;2. Premium Styling Package - ₹2,500&#10;3. Annual Maintenance Plan"
-                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl p-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 resize-none font-sans"
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl p-3 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 resize-none font-sans"
                     />
                   </div>
 
@@ -1059,7 +1062,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={domainName}
                       onChange={(e) => setDomainName(e.target.value)}
                       placeholder="e.g. apexlegal.com"
-                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 font-mono"
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 font-mono"
                     />
                   </div>
                   <p className="text-[11px] text-neutral-400">
@@ -1084,7 +1087,7 @@ export const OnboardingAssetModal: React.FC<OnboardingAssetModalProps> = ({
                       value={domainName}
                       onChange={(e) => setDomainName(e.target.value)}
                       placeholder="e.g. apexlegalsolutions.com"
-                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 font-mono"
+                      className="w-full bg-black border border-white/20 focus:border-white rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30 font-mono"
                     />
                   </div>
                 </div>

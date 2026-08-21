@@ -302,6 +302,45 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+      {/* MOBILE BOTTOM NAVIGATION (Mobile only, 4 primary actions: HOME, WEBSITE, PAYMENTS, HELP) */}
+      <nav 
+        aria-label="Mobile Navigation"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-black/95 backdrop-blur-2xl border-t border-neutral-900 px-2 py-1.5 pb-[calc(env(safe-area-inset-bottom,0px)+0.4rem)] flex items-center justify-around select-none shadow-[0_-10px_25px_rgba(0,0,0,0.8)]"
+      >
+        {[
+          { id: "overview" as TabType, label: "Home", icon: Home },
+          { id: "project" as TabType, label: "Website", icon: Globe },
+          { id: "payments" as TabType, label: "Payments", icon: CreditCard },
+          { id: "help" as TabType, label: "Help", icon: HelpCircle },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabClick(tab.id)}
+              className={`flex-1 min-h-[48px] py-1.5 px-1 flex flex-col items-center justify-center gap-1 rounded-xl transition-all cursor-pointer ${
+                isActive
+                  ? "text-white font-extrabold"
+                  : "text-neutral-400 hover:text-neutral-200 font-medium"
+              }`}
+            >
+              <div
+                className={`w-10 h-7 rounded-full flex items-center justify-center transition-all ${
+                  isActive
+                    ? "bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.4)]"
+                    : "bg-transparent text-neutral-400"
+                }`}
+              >
+                <Icon size={16} className={isActive ? "text-black stroke-[2.5]" : "text-neutral-400 stroke-[1.8]"} />
+              </div>
+              <span className={`text-[10px] tracking-tight ${isActive ? "text-white font-extrabold" : "text-neutral-400"}`}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
     </header>
   );
 };

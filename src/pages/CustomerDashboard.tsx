@@ -243,6 +243,28 @@ export default function CustomerDashboard() {
   // Post-Launch Customer Review Prompt State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState<boolean>(false);
 
+  // Workspace Modals State
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState<boolean>(false);
+  const [activeWorkspaceModal, setActiveWorkspaceModal] = useState<"settings" | "billing" | "support" | null>(null);
+
+  // Lock background body scroll when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(
+      activeWorkspaceModal ||
+      isAssetModalOpen ||
+      isHostingSetupModalOpen ||
+      isReviewModalOpen
+    );
+    if (isAnyModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [activeWorkspaceModal, isAssetModalOpen, isHostingSetupModalOpen, isReviewModalOpen]);
+
   useEffect(() => {
     if (project?.id) {
       const shownKey = `fuser_hosting_modal_shown_${project.id}`;
@@ -333,9 +355,6 @@ export default function CustomerDashboard() {
       setTimeout(() => setSuccessIndicator(null), 3000);
     }
   };
-
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState<boolean>(false);
-  const [activeWorkspaceModal, setActiveWorkspaceModal] = useState<"settings" | "billing" | "support" | null>(null);
 
   const [settingsName, setSettingsName] = useState<string>("");
   const [settingsBusiness, setSettingsBusiness] = useState<string>("");
@@ -1289,7 +1308,7 @@ export default function CustomerDashboard() {
       </SectionErrorBoundary>
 
       {/* Main Tab Content */}
-      <main className="pt-16 sm:pt-20 transition-all duration-200">
+      <main className="pt-16 sm:pt-20 pb-24 lg:pb-8 transition-all duration-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 font-sans">
         {successIndicator && (
           <div className="mb-6 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold">
@@ -1394,21 +1413,24 @@ export default function CustomerDashboard() {
       <SectionErrorBoundary name="Modals">
       <AnimatePresence>
         {activeWorkspaceModal === "settings" && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" onClick={() => setActiveWorkspaceModal(null)}>
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md" onClick={() => setActiveWorkspaceModal(null)}>
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-lg bg-neutral-950 border border-neutral-800 rounded-3xl p-6 shadow-2xl relative"
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="w-full max-w-lg bg-neutral-950 border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Mobile Sheet Drag Handle */}
+              <div className="sm:hidden w-12 h-1 bg-neutral-700 rounded-full mx-auto mb-3 shrink-0" />
+
               <div className="flex items-center justify-between border-b border-neutral-900 pb-3 mb-5">
-                <h3 className="text-sm font-mono font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
+                <h3 className="text-sm font-mono font-black uppercase tracking-widest text-white flex items-center gap-2">
                   <User size={15} /> Workspace Settings
                 </h3>
                 <button 
                   onClick={() => setActiveWorkspaceModal(null)}
-                  className="text-neutral-500 hover:text-white transition-colors text-sm font-mono focus:outline-none bg-transparent border-none cursor-pointer"
+                  className="text-neutral-400 hover:text-white transition-colors text-sm font-mono focus:outline-none bg-transparent border-none cursor-pointer p-1"
                 >
                   [Close]
                 </button>
@@ -1421,7 +1443,7 @@ export default function CustomerDashboard() {
                     type="text" 
                     value={settingsName}
                     onChange={(e) => setSettingsName(e.target.value)}
-                    className="w-full bg-[#050505] border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/50 transition-colors"
+                    className="w-full bg-[#050505] border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none transition-colors"
                     required
                   />
                 </div>
@@ -1432,7 +1454,7 @@ export default function CustomerDashboard() {
                     type="text" 
                     value={settingsBusiness}
                     onChange={(e) => setSettingsBusiness(e.target.value)}
-                    className="w-full bg-[#050505] border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/50 transition-colors"
+                    className="w-full bg-[#050505] border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none transition-colors"
                     required
                   />
                 </div>
@@ -1443,20 +1465,20 @@ export default function CustomerDashboard() {
                     type="text" 
                     value={settingsWhatsapp}
                     onChange={(e) => setSettingsWhatsapp(e.target.value)}
-                    className="w-full bg-[#050505] border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/50 transition-colors"
+                    className="w-full bg-[#050505] border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none transition-colors"
                     placeholder="+91..."
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider font-bold">Industry Profile</label>
                     <input 
                       type="text" 
                       value={settingsIndustry}
                       onChange={(e) => setSettingsIndustry(e.target.value)}
-                      className="w-full bg-[#050505] border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/50 transition-colors"
+                      className="w-full bg-[#050505] border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none transition-colors"
                     />
                   </div>
 
@@ -1466,7 +1488,7 @@ export default function CustomerDashboard() {
                       type="text" 
                       value={settingsGoal}
                       onChange={(e) => setSettingsGoal(e.target.value)}
-                      className="w-full bg-[#050505] border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/50 transition-colors"
+                      className="w-full bg-[#050505] border border-neutral-800 focus:border-white rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -1500,21 +1522,24 @@ export default function CustomerDashboard() {
       {/* Billing & Payments Modal */}
       <AnimatePresence>
         {activeWorkspaceModal === "billing" && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" onClick={() => setActiveWorkspaceModal(null)}>
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md" onClick={() => setActiveWorkspaceModal(null)}>
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-md bg-neutral-950 border border-neutral-800 rounded-3xl p-6 shadow-2xl relative"
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="w-full max-w-md bg-neutral-950 border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Mobile Sheet Drag Handle */}
+              <div className="sm:hidden w-12 h-1 bg-neutral-700 rounded-full mx-auto mb-3 shrink-0" />
+
               <div className="flex items-center justify-between border-b border-neutral-900 pb-3 mb-5">
-                <h3 className="text-sm font-mono font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
+                <h3 className="text-sm font-mono font-black uppercase tracking-widest text-white flex items-center gap-2">
                   <Coins size={15} /> Billing & Payments
                 </h3>
                 <button 
                   onClick={() => setActiveWorkspaceModal(null)}
-                  className="text-neutral-500 hover:text-white transition-colors text-sm font-mono focus:outline-none bg-transparent border-none cursor-pointer"
+                  className="text-neutral-400 hover:text-white transition-colors text-sm font-mono focus:outline-none bg-transparent border-none cursor-pointer p-1"
                 >
                   [Close]
                 </button>
@@ -1532,7 +1557,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-neutral-400">Settlement Choice</span>
-                    <span className="font-bold text-amber-400 uppercase">
+                    <span className="font-bold text-white uppercase">
                       {project?.ownershipChoice === "full" ? "Full Ownership (10% Off)" : "Managed / Milestone Split"}
                     </span>
                   </div>
@@ -1552,7 +1577,7 @@ export default function CustomerDashboard() {
                       <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${
                         isFullySettled || isPartiallyPaid
                           ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                          : "text-amber-500 bg-amber-500/10 border-amber-500/20"
+                          : "text-white bg-white/10 border-white/20"
                       }`}>
                         {isFullySettled || isPartiallyPaid ? "PAID" : "DUE"}
                       </span>
@@ -1569,7 +1594,7 @@ export default function CustomerDashboard() {
                       <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${
                         isFullySettled
                           ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                          : "text-amber-500 bg-amber-500/10 border-amber-500/20"
+                          : "text-white bg-white/10 border-white/20"
                       }`}>
                         {isFullySettled ? "PAID" : "DUE"}
                       </span>
@@ -1580,7 +1605,7 @@ export default function CustomerDashboard() {
                 <div className="pt-4">
                   <button
                     onClick={() => setActiveWorkspaceModal(null)}
-                    className="w-full py-3 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-neutral-850/60"
+                    className="w-full py-3 bg-white text-black hover:bg-zinc-200 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg"
                   >
                     Close Details
                   </button>
@@ -1594,21 +1619,24 @@ export default function CustomerDashboard() {
       {/* Support & Concierge Modal */}
       <AnimatePresence>
         {activeWorkspaceModal === "support" && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" onClick={() => setActiveWorkspaceModal(null)}>
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md" onClick={() => setActiveWorkspaceModal(null)}>
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-md bg-neutral-950 border border-neutral-800 rounded-3xl p-6 shadow-2xl relative"
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="w-full max-w-md bg-neutral-950 border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Mobile Sheet Drag Handle */}
+              <div className="sm:hidden w-12 h-1 bg-neutral-700 rounded-full mx-auto mb-3 shrink-0" />
+
               <div className="flex items-center justify-between border-b border-neutral-900 pb-3 mb-5">
-                <h3 className="text-sm font-mono font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
+                <h3 className="text-sm font-mono font-black uppercase tracking-widest text-white flex items-center gap-2">
                   <MessageSquare size={15} /> Support & Concierge
                 </h3>
                 <button 
                   onClick={() => setActiveWorkspaceModal(null)}
-                  className="text-neutral-500 hover:text-white transition-colors text-sm font-mono focus:outline-none bg-transparent border-none cursor-pointer"
+                  className="text-neutral-400 hover:text-white transition-colors text-sm font-mono focus:outline-none bg-transparent border-none cursor-pointer p-1"
                 >
                   [Close]
                 </button>
@@ -1624,15 +1652,15 @@ export default function CustomerDashboard() {
                     href={`https://wa.me/917449100307?text=${encodeURIComponent(`Hi CodeFuser, I am logged in to my workspace for ${project?.businessName || "My Business"} and would like to speak to a project concierge.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block p-4 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-amber-500/35 rounded-2xl transition-all group"
+                    className="block p-4 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-white/30 rounded-2xl transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
+                      <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white">
                         <MessageSquare size={15} />
                       </div>
                       <div>
-                        <span className="block text-xs font-bold text-white group-hover:text-amber-400 transition-colors">Immediate WhatsApp Chat</span>
-                        <span className="block text-[10px] text-neutral-500 mt-0.5">Average response time: &lt; 15 minutes</span>
+                        <span className="block text-xs font-bold text-white group-hover:text-white transition-colors">Immediate WhatsApp Chat</span>
+                        <span className="block text-[10px] text-neutral-400 mt-0.5">Average response time: &lt; 15 minutes</span>
                       </div>
                     </div>
                   </a>
@@ -1641,15 +1669,15 @@ export default function CustomerDashboard() {
                     href={`https://mail.google.com/mail/?view=cm&fs=1&to=aicodefuser@gmail.com&su=${encodeURIComponent(`Priority Support Request: ${activeProject?.businessName || "My Business"}`)}&body=${encodeURIComponent(`Hi CodeFuser Concierge Team,\n\nI need priority support for my active website project.\n\nProject ID: ${activeProject?.id}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block p-4 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-amber-500/35 rounded-2xl transition-all group"
+                    className="block p-4 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-white/30 rounded-2xl transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
+                      <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white">
                         <FileText size={15} />
                       </div>
                       <div>
-                        <span className="block text-xs font-bold text-white group-hover:text-amber-400 transition-colors">Direct Support Email</span>
-                        <span className="block text-[10px] text-neutral-500 mt-0.5">aicodefuser@gmail.com</span>
+                        <span className="block text-xs font-bold text-white group-hover:text-white transition-colors">Direct Support Email</span>
+                        <span className="block text-[10px] text-neutral-400 mt-0.5">aicodefuser@gmail.com</span>
                       </div>
                     </div>
                   </a>
@@ -1658,7 +1686,7 @@ export default function CustomerDashboard() {
                 <div className="pt-4">
                   <button
                     onClick={() => setActiveWorkspaceModal(null)}
-                    className="w-full py-3 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-neutral-850/60"
+                    className="w-full py-3 bg-white text-black hover:bg-zinc-200 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg"
                   >
                     Close Support
                   </button>
