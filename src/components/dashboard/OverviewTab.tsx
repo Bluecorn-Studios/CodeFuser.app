@@ -1278,6 +1278,38 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </div>
             </div>
 
+            {/* QUICK STATS / SUMMARY OVERVIEW ROW */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+              <div className="p-3.5 bg-zinc-950/80 border border-white/10 rounded-xl space-y-1">
+                <span className="text-[10px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Project Stage</span>
+                <span className="text-xs sm:text-sm font-extrabold text-white truncate block">
+                  {getCustomerStatusLabel(currentStageIndex)}
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-zinc-950/80 border border-white/10 rounded-xl space-y-1">
+                <span className="text-[10px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Setup Checklist</span>
+                <span className="text-xs sm:text-sm font-extrabold text-white truncate block">
+                  {completedCount} of 5 Ready
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-zinc-950/80 border border-white/10 rounded-xl space-y-1">
+                <span className="text-[10px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Payment Status</span>
+                <span className={`text-xs sm:text-sm font-extrabold truncate block ${unpaidFunds === 0 ? "text-emerald-400" : "text-white"}`}>
+                  {unpaidFunds === 0 ? "Fully Settled" : `₹${Math.round(paidFunds).toLocaleString("en-IN")} Paid`}
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-zinc-950/80 border border-white/10 rounded-xl space-y-1">
+                <span className="text-[10px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Support Team</span>
+                <span className="text-xs sm:text-sm font-extrabold text-emerald-400 truncate flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Active on WhatsApp
+                </span>
+              </div>
+            </div>
+
             {/* DOMINANT ACTION BOX: TOP PRIORITY */}
             <motion.div 
               whileHover={{ borderColor: "rgba(255,255,255,0.3)" }}
@@ -1474,11 +1506,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   <div className="flex items-center gap-2.5">
                     <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">What We Need From You</h2>
                     <span className="px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-700 text-white text-xs font-bold">
-                      {completedCount} of 5 Complete
+                      {completedCount} of 5 Ready
                     </span>
                   </div>
                   <p className="text-xs text-zinc-400 mt-1">
-                    Click "Send Details" or "Edit" on any item below to type your info or upload photos.
+                    Just a few details are needed to finish your website.
                   </p>
                 </div>
 
@@ -1489,14 +1521,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   className="px-4 py-2 bg-white text-black hover:bg-zinc-200 font-extrabold text-xs rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <Sparkles size={14} />
-                  <span>Open Setup Wizard</span>
+                  <span>Complete Setup →</span>
                 </motion.button>
               </div>
 
               {/* Progress Indicator */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-[11px] font-bold text-zinc-400">
-                  <span>Onboarding Progress</span>
+                  <span>Your Setup Progress</span>
                   <span className="text-white font-mono">{completedCount} / 5 complete</span>
                 </div>
                 <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-white/5">

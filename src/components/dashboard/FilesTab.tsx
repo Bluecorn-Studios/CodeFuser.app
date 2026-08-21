@@ -41,15 +41,16 @@ export const FilesTab: React.FC<FilesTabProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* GROUP 1: Things You Sent Us */}
-        <section className="p-5 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
-          <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
-            <h2 className="text-base font-bold text-white">
-              Files You Shared ({clientFiles.length})
+        <section className="p-5 sm:p-7 bg-zinc-950 border border-white/10 rounded-2xl space-y-6 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <FolderArchive size={18} className="text-zinc-400" />
+              <span>Files You Shared ({clientFiles.length})</span>
             </h2>
           </div>
 
           {/* Uploader */}
-          <div className="border border-dashed border-neutral-800 rounded-2xl p-5 bg-black/40 text-center space-y-3">
+          <div className="border border-dashed border-zinc-800 rounded-xl p-5 bg-black/40 text-center space-y-3">
             <div className="flex items-center justify-center gap-2 text-xs text-white font-semibold">
               <UploadCloud size={18} className="text-white" />
               <span>Send New File or Photo</span>
@@ -63,20 +64,20 @@ export const FilesTab: React.FC<FilesTabProps> = ({
             />
             <label
               htmlFor="files-tab-uploader"
-              className="inline-block px-5 py-2.5 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition-all cursor-pointer shadow-md"
+              className="inline-block px-5 py-3 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-zinc-200 transition-all cursor-pointer shadow-[0_0_15px_rgba(255,255,255,0.15)] min-h-[44px]"
             >
               Browse & Upload File
             </label>
 
             {uploadStatus && (
-              <span className="text-xs text-neutral-300 block font-medium">{uploadStatus}</span>
+              <span className="text-xs text-zinc-300 block font-medium">{uploadStatus}</span>
             )}
             {uploadError && <span className="text-xs text-red-400 block">⚠️ {uploadError}</span>}
           </div>
 
           {/* File List */}
           {clientFiles.length === 0 ? (
-            <div className="p-6 text-center text-xs text-neutral-500">
+            <div className="p-6 text-center text-xs text-zinc-500">
               No uploaded files yet. Use the button above to upload logos, shop photos, or documents.
             </div>
           ) : (
@@ -84,18 +85,18 @@ export const FilesTab: React.FC<FilesTabProps> = ({
               {clientFiles.map((asset) => (
                 <div
                   key={asset.id}
-                  className="p-3.5 bg-black/60 border border-neutral-800 rounded-2xl flex items-center justify-between gap-3 hover:border-neutral-700 transition-all"
+                  className="p-3.5 bg-black/60 border border-zinc-800 rounded-xl flex items-center justify-between gap-3 hover:border-zinc-700 transition-all"
                 >
                   <div className="min-w-0 flex-1">
                     <span className="text-xs font-bold text-white block truncate">{asset.name}</span>
-                    <span className="text-[10px] font-mono text-neutral-500 block mt-0.5">
+                    <span className="text-[10px] font-mono text-zinc-500 block mt-0.5">
                       {Math.round(asset.size / 1024)} KB
                     </span>
                   </div>
 
                   <button
                     onClick={() => handleDownloadAsset(asset.id, asset.url)}
-                    className="px-3.5 py-2 bg-neutral-900 border border-neutral-800 text-xs font-bold text-white hover:bg-neutral-800 rounded-xl cursor-pointer transition-all shrink-0"
+                    className="px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-xs font-bold text-white hover:bg-zinc-800 rounded-xl cursor-pointer transition-all shrink-0 min-h-[44px]"
                   >
                     View File
                   </button>
@@ -106,18 +107,19 @@ export const FilesTab: React.FC<FilesTabProps> = ({
         </section>
 
         {/* GROUP 2: Deliverables From CodeFuser */}
-        <section className="p-5 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
-          <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
-            <h2 className="text-base font-bold text-white">
-              Website Files From CodeFuser ({codefuserDeliverables.length})
+        <section className="p-5 sm:p-7 bg-zinc-950 border border-white/10 rounded-2xl space-y-6 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <FileText size={18} className="text-zinc-400" />
+              <span>Website Files From CodeFuser ({codefuserDeliverables.length})</span>
             </h2>
           </div>
 
           {codefuserDeliverables.length === 0 ? (
-            <div className="p-8 bg-black/40 border border-neutral-800/70 rounded-2xl text-center space-y-2">
-              <FileText size={28} className="text-neutral-600 mx-auto" />
-              <p className="text-xs text-neutral-300 font-medium">No files published yet.</p>
-              <p className="text-xs text-neutral-500 leading-relaxed">
+            <div className="p-8 bg-black/40 border border-zinc-800/70 rounded-xl text-center space-y-2">
+              <FileText size={28} className="text-zinc-600 mx-auto" />
+              <p className="text-xs text-zinc-300 font-medium">No files published yet.</p>
+              <p className="text-xs text-zinc-500 leading-relaxed">
                 Your website designs and deliverables will appear here as soon as they are ready.
               </p>
             </div>
@@ -126,11 +128,11 @@ export const FilesTab: React.FC<FilesTabProps> = ({
               {codefuserDeliverables.map((item: any) => (
                 <div
                   key={item.id}
-                  className="p-3.5 bg-black/60 border border-neutral-800 rounded-2xl flex items-center justify-between gap-3 hover:border-neutral-700 transition-all"
+                  className="p-3.5 bg-black/60 border border-zinc-800 rounded-xl flex items-center justify-between gap-3 hover:border-zinc-700 transition-all"
                 >
                   <div className="min-w-0 flex-1">
                     <span className="text-xs font-bold text-white block truncate">{item.name}</span>
-                    <span className="text-[10px] font-mono text-neutral-500 block mt-0.5">
+                    <span className="text-[10px] font-mono text-zinc-500 block mt-0.5">
                       {item.category || "Deliverable"} • {Math.round((item.size || 1024) / 1024)} KB
                     </span>
                   </div>
@@ -144,7 +146,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
                         window.open(item.url, "_blank");
                       }
                     }}
-                    className="px-3.5 py-2 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md"
+                    className="px-4 py-2.5 bg-white hover:bg-zinc-200 text-black font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md min-h-[44px]"
                   >
                     <Download size={13} />
                     <span>Download</span>

@@ -49,10 +49,11 @@ export const NeedHelpTab: React.FC<NeedHelpTabProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* LEFT COLUMN: Contact Channels */}
-        <section className="p-6 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
-          <div className="border-b border-neutral-900 pb-4">
-            <h2 className="text-base font-bold text-white">
-              Contact Options
+        <section className="p-5 sm:p-7 bg-zinc-950 border border-white/10 rounded-2xl space-y-6 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+          <div className="border-b border-zinc-900 pb-4">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <MessageSquare size={18} className="text-zinc-400" />
+              <span>Contact Options</span>
             </h2>
           </div>
 
@@ -64,17 +65,17 @@ export const NeedHelpTab: React.FC<NeedHelpTabProps> = ({
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="block p-5 bg-black/60 hover:bg-neutral-900/80 border border-neutral-800 hover:border-neutral-600 rounded-2xl transition-all group cursor-pointer"
+              className="block p-5 bg-black/60 hover:bg-zinc-900/80 border border-zinc-800 hover:border-zinc-600 rounded-xl transition-all group cursor-pointer"
             >
               <div className="flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
+                <div className="h-11 w-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
                   <MessageSquare size={20} />
                 </div>
                 <div>
                   <span className="text-sm font-bold text-white group-hover:underline transition-colors block">
                     Message Us on WhatsApp (Recommended)
                   </span>
-                  <span className="text-xs text-neutral-400 mt-1 block">
+                  <span className="text-xs text-zinc-400 mt-1 block">
                     Chat directly with your project manager. Fast replies within 15 minutes.
                   </span>
                 </div>
@@ -89,17 +90,17 @@ export const NeedHelpTab: React.FC<NeedHelpTabProps> = ({
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="block p-5 bg-black/60 hover:bg-neutral-900/80 border border-neutral-800 hover:border-neutral-600 rounded-2xl transition-all group cursor-pointer"
+              className="block p-5 bg-black/60 hover:bg-zinc-900/80 border border-zinc-800 hover:border-zinc-600 rounded-xl transition-all group cursor-pointer"
             >
               <div className="flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-white shrink-0">
+                <div className="h-11 w-11 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white shrink-0">
                   <Mail size={20} />
                 </div>
                 <div>
                   <span className="text-sm font-bold text-white group-hover:underline transition-colors block">
                     Send Us an Email
                   </span>
-                  <span className="text-xs text-neutral-400 mt-1 block">
+                  <span className="text-xs text-zinc-400 mt-1 block">
                     aicodefuser@gmail.com • Monday - Saturday (9 AM - 8 PM)
                   </span>
                 </div>
@@ -107,25 +108,26 @@ export const NeedHelpTab: React.FC<NeedHelpTabProps> = ({
             </a>
           </div>
 
-          <div className="p-4 bg-black/40 border border-neutral-800 rounded-2xl flex items-center gap-3 text-xs text-neutral-400">
-            <Clock size={16} className="text-neutral-300 shrink-0" />
+          <div className="p-4 bg-black/40 border border-zinc-800 rounded-xl flex items-center gap-3 text-xs text-zinc-400">
+            <Clock size={16} className="text-zinc-300 shrink-0" />
             <span>Support hours: Monday to Saturday, 9:00 AM – 8:00 PM IST.</span>
           </div>
         </section>
 
         {/* RIGHT COLUMN: Frequently Asked Questions */}
-        <section className="p-6 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
-          <div className="border-b border-neutral-900 pb-4">
-            <h2 className="text-base font-bold text-white">
-              Frequently Asked Questions
+        <section className="p-5 sm:p-7 bg-zinc-950 border border-white/10 rounded-2xl space-y-6 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+          <div className="border-b border-zinc-900 pb-4">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <HelpCircle size={18} className="text-zinc-400" />
+              <span>Frequently Asked Questions</span>
             </h2>
           </div>
 
           <div className="space-y-4 font-sans">
             {faqs.map((faq, idx) => (
-              <div key={idx} className="p-4 bg-black/60 border border-neutral-800 rounded-2xl space-y-1.5 hover:border-neutral-700 transition-all">
+              <div key={idx} className="p-4 bg-black/60 border border-zinc-800 rounded-xl space-y-1.5 hover:border-zinc-700 transition-all">
                 <h3 className="text-xs font-bold text-white">{faq.q}</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">{faq.a}</p>
+                <p className="text-xs text-zinc-400 leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>

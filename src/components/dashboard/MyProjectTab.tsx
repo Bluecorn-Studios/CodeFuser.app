@@ -69,19 +69,19 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* LEFT COLUMN: Human Timeline */}
         <div className="space-y-6">
-          <section className="p-5 sm:p-7 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6">
-            <div className="flex items-center justify-between border-b border-neutral-900 pb-4">
+          <section className="p-5 sm:p-7 bg-zinc-950 border border-white/10 rounded-2xl space-y-6 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Globe size={18} className="text-neutral-400" />
+                <Globe size={18} className="text-zinc-400" />
                 <span>Website Creation Stages</span>
               </h2>
-              <span className="text-xs font-semibold text-neutral-400 bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
+              <span className="text-xs font-semibold text-zinc-400 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">
                 Stage {Math.min(currentStageIndex + 1, customerTimelineStages.length)} of {customerTimelineStages.length}
               </span>
             </div>
 
             <div className="relative pl-6 space-y-6 font-sans">
-              <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-neutral-900" />
+              <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-zinc-900" />
 
               {customerTimelineStages.map((stage, idx) => {
                 const isCompleted = idx < currentStageIndex;
@@ -96,7 +96,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                           ? "bg-emerald-400 border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
                           : isActive
                           ? "bg-white border-white shadow-[0_0_12px_rgba(255,255,255,0.5)] scale-110"
-                          : "bg-neutral-950 border-neutral-800"
+                          : "bg-zinc-950 border-zinc-800"
                       }`}
                     />
 
@@ -104,7 +104,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                       <div className="flex flex-wrap items-center justify-between gap-1">
                         <span
                           className={`text-sm font-bold ${
-                            isActive ? "text-white" : isCompleted ? "text-neutral-300" : "text-neutral-500"
+                            isActive ? "text-white" : isCompleted ? "text-zinc-300" : "text-zinc-500"
                           }`}
                         >
                           {stage.label}
@@ -120,7 +120,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-neutral-400 mt-1 leading-relaxed">{stage.details || stage.desc}</p>
+                      <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{stage.details || stage.desc}</p>
                     </div>
                   </div>
                 );
@@ -130,10 +130,10 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
           {/* Approved Plan & Scope */}
           {extraStore.quote?.proposal && (
-            <section className="p-5 sm:p-7 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-3">
-              <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
+            <section className="p-5 sm:p-7 bg-zinc-950 border border-white/10 rounded-2xl space-y-3 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+              <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <FileText size={16} className="text-neutral-400" />
+                  <FileText size={16} className="text-zinc-400" />
                   Approved Website Plan
                 </h3>
                 <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-medium">
@@ -141,7 +141,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
                 </span>
               </div>
 
-              <div className="p-4 bg-black/60 rounded-2xl border border-neutral-800 max-h-[220px] overflow-y-auto text-xs text-neutral-300 leading-relaxed whitespace-pre-wrap">
+              <div className="p-4 bg-black/60 rounded-xl border border-zinc-800 max-h-[220px] overflow-y-auto text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">
                 {extraStore.quote.proposal.content}
               </div>
             </section>
@@ -150,7 +150,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
 
         {/* RIGHT COLUMN: Easy Setup Wizard Launchpad */}
         <div className="space-y-6">
-          <section id="information-request-center" className="p-5 sm:p-8 bg-neutral-950 border border-neutral-800/80 rounded-3xl space-y-6 shadow-2xl relative overflow-hidden">
+          <section id="information-request-center" className="p-5 sm:p-8 bg-zinc-950 border border-white/10 rounded-2xl space-y-6 shadow-[0_4px_24px_rgba(0,0,0,0.5)] relative overflow-hidden">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[11px] font-mono font-bold uppercase tracking-widest">
                 <Sparkles size={13} />
@@ -159,36 +159,36 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 Share Your Business Details
               </h2>
-              <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
                 Send your website photos, logo, contact info, or shop details in 5 easy steps. You can also ask our team to write or design anything for you!
               </p>
             </div>
 
             {/* Steps Preview Grid */}
-            <div className="p-4 sm:p-5 bg-black/60 border border-neutral-800/80 rounded-2xl space-y-3">
-              <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
+            <div className="p-4 sm:p-5 bg-black/60 border border-zinc-800 rounded-xl space-y-3">
+              <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider block">
                 5 Simple Steps
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-neutral-300">
-                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-300">
+                <div className="flex items-center gap-2.5 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">1</span>
-                  <span className="font-medium text-neutral-200">Website Address (Domain)</span>
+                  <span className="font-medium text-zinc-200">Website Address (Domain)</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                <div className="flex items-center gap-2.5 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">2</span>
-                  <span className="font-medium text-neutral-200">Logo or Shop Sign</span>
+                  <span className="font-medium text-zinc-200">Logo or Shop Sign</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                <div className="flex items-center gap-2.5 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">3</span>
-                  <span className="font-medium text-neutral-200">Services & Price List</span>
+                  <span className="font-medium text-zinc-200">Services & Price List</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850">
+                <div className="flex items-center gap-2.5 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">4</span>
-                  <span className="font-medium text-neutral-200">Phone & Address</span>
+                  <span className="font-medium text-zinc-200">Phone & Address</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2.5 bg-neutral-900/60 rounded-xl border border-neutral-850 sm:col-span-2">
+                <div className="flex items-center gap-2.5 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800 sm:col-span-2">
                   <span className="h-5 w-5 rounded-lg bg-white/10 text-white font-mono font-extrabold text-[10px] flex items-center justify-center shrink-0">5</span>
-                  <span className="font-medium text-neutral-200">Shop Photos & Requests</span>
+                  <span className="font-medium text-zinc-200">Shop Photos & Requests</span>
                 </div>
               </div>
             </div>
@@ -198,7 +198,7 @@ export const MyProjectTab: React.FC<MyProjectTabProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenAssetModal("1")}
-                className="w-full py-4 bg-white hover:bg-neutral-200 text-black font-black text-xs uppercase tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xl hover:scale-[1.01]"
+                className="w-full py-4 bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:scale-[1.01] active:scale-[0.98] min-h-[48px]"
               >
                 <Sparkles size={16} />
                 <span>Open 5-Step Setup Guide</span>
