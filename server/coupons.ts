@@ -1,8 +1,5 @@
-import fs from "fs";
-import path from "path";
 import { getSupabase } from "./supabase.js";
 import { getHostingPlanConfig } from "./hosting_model.js";
-import { getProjects } from "./db.js";
 import { isProjectIdPreview, getPreviewProjectsForUser } from "./preview_store.js";
 
 export interface CouponRecord {
@@ -46,7 +43,6 @@ export interface CouponsStore {
 }
 
 export const SYSTEM_COUPONS_ROW_ID = "c0090000-0000-0000-0000-000000000001";
-const COUPONS_FILE = path.join(process.cwd(), "server", "fuser_coupons.json");
 
 export const INITIAL_STARTER_COUPONS: CouponRecord[] = [
   {
@@ -120,6 +116,10 @@ let initPromise: Promise<CouponsStore> | null = null;
 /**
  * Initializes and synchronizes coupon store from durable Supabase storage.
  * Enforces one-time idempotent seeding.
+ * Once seedInitialized is true:
+ * - NEVER recreate deleted coupons
+ * - NEVER merge starter coupons back in
+ * - Load exactly what is stored in the authoritative database
  */
 export async function initCouponsStore(): Promise<CouponsStore> {
   if (memoryStore && memoryStore.seedInitialized) {
@@ -133,62 +133,7 @@ export async function initCouponsStore(): Promise<CouponsStore> {
     try {
       const supabase = getSupabase();
 
-      // 1. Check if dedicated public.coupons table exists
-      try {
-        const { data: tableData, error: tableErr } = await supabase.from("coupons").select("*");
-        if (!tableErr && Array.isArray(tableData)) {
-          const coupons: CouponRecord[] = tableData.map((row: any) => ({
-            id: row.id,
-            name: row.name,
-            code: (row.code || "").toUpperCase(),
-            discountType: row.discount_type,
-            discountValue: Number(row.discount_value) || 0,
-            eligiblePlans: row.eligible_plans || ["ignite", "fusion"],
-            hostingRule: row.hosting_rule || "charge_normally",
-            hostingPromoMode: row.hosting_promo_mode || (row.free_hosting_promo_rule === "do_not_apply" ? "do_not_apply" : "use_plan_default"),
-            freeHostingPromoRule: row.free_hosting_promo_rule || (row.hosting_promo_mode === "do_not_apply" ? "do_not_apply" : "apply"),
-            hostingPriceMode: row.hosting_price_mode || "use_plan_default",
-            fixedHostingPrice: row.fixed_hosting_price !== undefined && row.fixed_hosting_price !== null ? Number(row.fixed_hosting_price) : null,
-            redemptionLimit: Number(row.redemption_limit) || 10,
-            maxUsesPerCustomer: Number(row.max_uses_per_customer) || 1,
-            customerEligibility: row.customer_eligibility || "new_only",
-            startDate: row.start_date || undefined,
-            endDate: row.end_date || undefined,
-            status: row.status || "ACTIVE",
-            currentRedemptions: Number(row.current_redemptions) || 0,
-            afterLimitBehavior: row.after_limit_behavior || "stop",
-            createdAt: row.created_at || new Date().toISOString(),
-            updatedAt: row.updated_at || new Date().toISOString()
-          }));
-
-          let redemptions: CouponRedemptionRecord[] = [];
-          const { data: redData } = await supabase.from("coupon_redemptions").select("*");
-          if (Array.isArray(redData)) {
-            redemptions = redData.map((r: any) => ({
-              id: r.id,
-              couponCode: r.coupon_code,
-              customerEmail: r.customer_email,
-              projectId: r.project_id,
-              discountAmount: Number(r.discount_amount) || 0,
-              timestamp: r.created_at || new Date().toISOString()
-            }));
-          }
-
-          memoryStore = {
-            coupons,
-            redemptions,
-            seedInitialized: true,
-            seededAt: new Date().toISOString()
-          };
-          saveCouponsStore(memoryStore);
-          console.log(`[Coupons Store] Loaded ${coupons.length} coupons from Supabase public.coupons table.`);
-          return memoryStore;
-        }
-      } catch (tableCheckErr) {
-        // Fall through to system record store
-      }
-
-      // 2. Query durable Supabase system record
+      // 1. Query durable Supabase system record (Authoritative Source of Truth)
       const { data: sysRecord, error: sysErr } = await supabase
         .from("projects")
         .select("*")
@@ -196,16 +141,10 @@ export async function initCouponsStore(): Promise<CouponsStore> {
         .maybeSingle();
 
       if (sysRecord && sysRecord.onboarding && sysRecord.onboarding.seedInitialized === true) {
-        // AUTHORITATIVE: Database has already been seeded. NEVER recreate deleted coupons.
-        const storeCoupons = Array.isArray(sysRecord.onboarding.coupons) ? sysRecord.onboarding.coupons : [];
-        const storeRedemptions = Array.isArray(sysRecord.onboarding.redemptions) ? sysRecord.onboarding.redemptions : [];
-        
-        // Ensure default system coupons (FULLWAIVER, FUSIONFREE, FOUNDING50) are always present
-        for (const starter of INITIAL_STARTER_COUPONS) {
-          if (!storeCoupons.some((c: any) => c.code && c.code.toUpperCase() === starter.code.toUpperCase())) {
-            storeCoupons.push({ ...starter });
-          }
-        }
+        // AUTHORITATIVE: Database has already been seeded.
+        // NEVER recreate deleted starter coupons. Load EXACTLY what is stored in the database.
+        const storeCoupons: CouponRecord[] = Array.isArray(sysRecord.onboarding.coupons) ? sysRecord.onboarding.coupons : [];
+        const storeRedemptions: CouponRedemptionRecord[] = Array.isArray(sysRecord.onboarding.redemptions) ? sysRecord.onboarding.redemptions : [];
 
         memoryStore = {
           coupons: storeCoupons,
@@ -217,28 +156,10 @@ export async function initCouponsStore(): Promise<CouponsStore> {
         return memoryStore;
       }
 
-      // 3. First-time initialization / migration into Supabase
+      // 2. First-time initialization in Supabase (runs ONLY once when database is uninitialized)
       console.log("[Coupons Store] First-time initialization in Supabase durable storage...");
-      let initialCoupons: CouponRecord[] = [];
-
-      // Check if local fuser_coupons.json exists to migrate existing custom records
-      if (fs.existsSync(COUPONS_FILE)) {
-        try {
-          const raw = fs.readFileSync(COUPONS_FILE, "utf-8");
-          const parsed = JSON.parse(raw);
-          if (parsed && Array.isArray(parsed.coupons) && parsed.coupons.length > 0) {
-            initialCoupons = parsed.coupons;
-            console.log(`[Coupons Store] Migrated ${initialCoupons.length} existing coupons from local JSON into Supabase.`);
-          }
-        } catch (migErr) {
-          console.warn("[Coupons Store] Local JSON parse error during migration:", migErr);
-        }
-      }
-
-      if (initialCoupons.length === 0) {
-        initialCoupons = [...INITIAL_STARTER_COUPONS];
-        console.log("[Coupons Store] Seeded initial starter offers into Supabase (FUSIONFREE, FOUNDING50, FULLWAIVER).");
-      }
+      const initialCoupons: CouponRecord[] = [...INITIAL_STARTER_COUPONS];
+      console.log("[Coupons Store] Seeded initial starter offers into Supabase (FUSIONFREE, FOUNDING50, FULLWAIVER).");
 
       const newStore: CouponsStore = {
         coupons: initialCoupons,
@@ -268,17 +189,11 @@ export async function initCouponsStore(): Promise<CouponsStore> {
       memoryStore = newStore;
       return memoryStore;
     } catch (err: any) {
-      console.error("[Coupons Store] Fatal error during Supabase coupon initialization:", err);
-      // Resilient fallback to starter data in memory if Supabase unreachable
-      if (!memoryStore) {
-        memoryStore = {
-          coupons: [...INITIAL_STARTER_COUPONS],
-          redemptions: [],
-          seedInitialized: true,
-          seededAt: new Date().toISOString()
-        };
+      console.error("[Coupons Store] Error during Supabase coupon initialization:", err);
+      if (memoryStore) {
+        return memoryStore;
       }
-      return memoryStore;
+      throw new Error(`Failed to initialize authoritative coupon store: ${err.message || err}`);
     } finally {
       initPromise = null;
     }
@@ -288,7 +203,8 @@ export async function initCouponsStore(): Promise<CouponsStore> {
 }
 
 /**
- * Durably saves coupon store to Supabase.
+ * Durably saves coupon store to Supabase system record.
+ * Authoritative single-record upsert (fast, atomic, non-blocking).
  */
 export async function saveCouponsToSupabase(store: CouponsStore): Promise<void> {
   memoryStore = {
@@ -296,13 +212,12 @@ export async function saveCouponsToSupabase(store: CouponsStore): Promise<void> 
     seedInitialized: true,
     seededAt: store.seededAt || new Date().toISOString()
   };
-  saveCouponsStore(memoryStore);
 
   try {
     const supabase = getSupabase();
 
-    // 1. Write to authoritative Supabase system record
-    await supabase.from("projects").upsert({
+    // Write to authoritative Supabase system record
+    const { error } = await supabase.from("projects").upsert({
       id: SYSTEM_COUPONS_ROW_ID,
       client_name: "System Coupon Store",
       business_name: "CodeFuser Global Coupons",
@@ -320,38 +235,12 @@ export async function saveCouponsToSupabase(store: CouponsStore): Promise<void> 
       }
     });
 
-    // 2. If dedicated table exists, attempt sync
-    try {
-      for (const c of store.coupons) {
-        await supabase.from("coupons").upsert({
-          id: c.id,
-          name: c.name,
-          code: c.code.toUpperCase(),
-          discount_type: c.discountType,
-          discount_value: c.discountValue,
-          eligible_plans: c.eligiblePlans,
-          hosting_rule: c.hostingRule,
-          hosting_promo_mode: c.hostingPromoMode || (c.freeHostingPromoRule === "do_not_apply" ? "do_not_apply" : "use_plan_default"),
-          free_hosting_promo_rule: c.freeHostingPromoRule || (c.hostingPromoMode === "do_not_apply" ? "do_not_apply" : "apply"),
-          hosting_price_mode: c.hostingPriceMode || "use_plan_default",
-          fixed_hosting_price: c.fixedHostingPrice ?? null,
-          redemption_limit: c.redemptionLimit,
-          max_uses_per_customer: c.maxUsesPerCustomer,
-          customer_eligibility: c.customerEligibility,
-          start_date: c.startDate || null,
-          end_date: c.endDate || null,
-          status: c.status,
-          current_redemptions: c.currentRedemptions,
-          after_limit_behavior: c.afterLimitBehavior,
-          created_at: c.createdAt,
-          updated_at: c.updatedAt
-        });
-      }
-    } catch {
-      // Best-effort table sync
+    if (error) {
+      throw new Error(`Supabase coupon store upsert failed: ${error.message}`);
     }
   } catch (err: any) {
     console.error("[Coupons Store] Error saving coupons to Supabase:", err.message || err);
+    throw err;
   }
 }
 
@@ -365,11 +254,10 @@ export function getCouponsStore(): CouponsStore {
   // Trigger background initialization if not yet completed
   initCouponsStore().catch(console.error);
 
-  // Return initial starter coupons fallback while initialization finishes
   return {
-    coupons: [...INITIAL_STARTER_COUPONS],
+    coupons: [],
     redemptions: [],
-    seedInitialized: true
+    seedInitialized: false
   };
 }
 
@@ -399,30 +287,26 @@ export async function getAllCouponsAsync(): Promise<CouponRecord[]> {
 
 export function getCouponById(id: string): CouponRecord | null {
   const store = getCouponsStore();
-  return store.coupons.find(c => c.id === id) || INITIAL_STARTER_COUPONS.find(c => c.id === id) || null;
+  return store.coupons.find(c => c.id === id) || null;
 }
 
 export async function getCouponByIdAsync(id: string): Promise<CouponRecord | null> {
   const store = await initCouponsStore();
-  return store.coupons.find(c => c.id === id) || INITIAL_STARTER_COUPONS.find(c => c.id === id) || null;
+  return store.coupons.find(c => c.id === id) || null;
 }
 
 export function getCouponByCode(code: string): CouponRecord | null {
   if (!code) return null;
   const store = getCouponsStore();
   const normalized = code.trim().toUpperCase();
-  const found = store.coupons.find(c => c.code.toUpperCase() === normalized);
-  if (found) return found;
-  return INITIAL_STARTER_COUPONS.find(c => c.code.toUpperCase() === normalized) || null;
+  return store.coupons.find(c => c.code.toUpperCase() === normalized) || null;
 }
 
 export async function getCouponByCodeAsync(code: string): Promise<CouponRecord | null> {
   if (!code) return null;
   const store = await initCouponsStore();
   const normalized = code.trim().toUpperCase();
-  const found = store.coupons.find(c => c.code.toUpperCase() === normalized);
-  if (found) return found;
-  return INITIAL_STARTER_COUPONS.find(c => c.code.toUpperCase() === normalized) || null;
+  return store.coupons.find(c => c.code.toUpperCase() === normalized) || null;
 }
 
 export function createCoupon(data: Omit<CouponRecord, "id" | "currentRedemptions" | "createdAt" | "updatedAt">): CouponRecord | null {
@@ -508,11 +392,7 @@ export function toggleCouponStatus(id: string): CouponRecord | null {
   const c = store.coupons.find(x => x.id === id);
   if (!c) return null;
 
-  if (c.status === "ACTIVE") {
-    c.status = "PAUSED";
-  } else if (c.status === "PAUSED") {
-    c.status = "ACTIVE";
-  }
+  c.status = c.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
   c.updatedAt = new Date().toISOString();
   saveCouponsStore(store);
   return c;
@@ -523,11 +403,7 @@ export async function toggleCouponStatusAsync(id: string): Promise<CouponRecord 
   const c = store.coupons.find(x => x.id === id);
   if (!c) return null;
 
-  if (c.status === "ACTIVE") {
-    c.status = "PAUSED";
-  } else if (c.status === "PAUSED") {
-    c.status = "ACTIVE";
-  }
+  c.status = c.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
   c.updatedAt = new Date().toISOString();
   await saveCouponsToSupabase(store);
   return c;
@@ -590,17 +466,8 @@ export async function deleteCouponAsync(id: string): Promise<{ success: boolean;
     };
   }
 
-  const deletedCoupon = store.coupons[idx];
   store.coupons.splice(idx, 1);
   await saveCouponsToSupabase(store);
-
-  // If table exists, delete row as well
-  try {
-    const supabase = getSupabase();
-    await supabase.from("coupons").delete().eq("id", deletedCoupon.id);
-  } catch {
-    // Best-effort table delete
-  }
 
   return { success: true };
 }
@@ -619,12 +486,15 @@ export interface CouponValidationOptions {
   currentProjectId?: string;
 }
 
+/**
+ * Validates a coupon code and returns the complete calculation breakdown.
+ */
 export function validateAndCalculateCoupon(
   code: string,
   planId: string,
   customerEmail: string,
   baseWebsitePrice: number,
-  baseHostingPrice?: number,
+  baseHostingPrice: number,
   options?: CouponValidationOptions
 ): {
   valid: boolean;
@@ -779,7 +649,10 @@ export function validateAndCalculateCoupon(
 }
 
 /**
- * Authoritatively determines if a customer already exists in Supabase DB or Preview Store.
+ * Fast, targeted customer eligibility check.
+ * Queries ONLY whether a qualifying prior paid or active project exists for this email/user ID.
+ * Returns immediately as soon as a qualifying match is confirmed (limit 10).
+ * Never loads all projects or triggers hosting calculations.
  */
 export async function isCustomerExisting(
   email?: string,
@@ -797,21 +670,52 @@ export async function isCustomerExisting(
   if (isPreview || (currentProjectId && isProjectIdPreview(currentProjectId))) {
     const previewProjects = cleanUserId ? getPreviewProjectsForUser(cleanUserId) : [];
     const priorProjects = previewProjects.filter(p => p.id !== currentProjectId);
-    return priorProjects.length > 0;
-  }
-
-  // 2. Production Supabase check
-  try {
-    const projects = await getProjects(reqId, {
-      email: cleanEmail || undefined,
-      userId: cleanUserId || undefined
-    });
-    const priorProjects = projects.filter(p => p.id !== currentProjectId);
     return priorProjects.some(
       p => p.paymentStatus === "paid" || p.paymentStatus === "partially_paid" || (p.status && p.status !== "draft")
     );
-  } catch (err) {
-    console.warn("[Customer Eligibility] Error querying customer projects:", err);
+  }
+
+  // 2. Fast targeted query to Supabase (limit 10, minimal columns)
+  try {
+    const supabase = getSupabase();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validUserId = cleanUserId && cleanUserId !== "undefined" && cleanUserId !== "null" && uuidRegex.test(cleanUserId) ? cleanUserId : undefined;
+    const validEmail = cleanEmail && cleanEmail !== "undefined" && cleanEmail !== "null" ? cleanEmail : undefined;
+
+    let query = supabase
+      .from("projects")
+      .select("id, status, payment_status, email, user_id")
+      .neq("id", SYSTEM_COUPONS_ROW_ID);
+
+    if (validUserId && validEmail) {
+      query = query.or(`user_id.eq.${validUserId},email.eq.${validEmail}`);
+    } else if (validUserId) {
+      query = query.eq("user_id", validUserId);
+    } else if (validEmail) {
+      query = query.eq("email", validEmail);
+    } else {
+      return false;
+    }
+
+    const { data, error } = await query.limit(10);
+    if (error) {
+      console.warn(`[Customer Eligibility] Query warning (${reqId}): ${error.message}`);
+      return false;
+    }
+
+    if (!data || data.length === 0) {
+      return false;
+    }
+
+    const prior = data.filter((row: any) => row.id !== currentProjectId);
+    return prior.some(
+      (row: any) =>
+        row.payment_status === "paid" ||
+        row.payment_status === "partially_paid" ||
+        (row.status && row.status !== "draft")
+    );
+  } catch (err: any) {
+    console.warn(`[Customer Eligibility] Fast check error (${reqId}):`, err.message || err);
     return false;
   }
 }
