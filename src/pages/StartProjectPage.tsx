@@ -94,9 +94,9 @@ interface StartProjectData {
   customGoal: string;
   packageId: string;
   ownership: 'full' | 'managed';
-  hasDomain: 'yes' | 'no' | 'help';
-  hasLogo: 'yes' | 'no' | 'help';
-  contentReady: 'yes' | 'no_help' | 'progress';
+  hasDomain: 'yes' | 'no' | 'help' | '';
+  hasLogo: 'yes' | 'no' | 'help' | '';
+  contentReady: 'yes' | 'no_help' | 'progress' | '';
   aiPrompt?: string;
 }
 
@@ -698,9 +698,9 @@ export const StartProjectPage: React.FC = () => {
       customGoal: '',
       packageId: 'growth', // default package: Fusion
       ownership: 'managed',
-      hasDomain: 'help',
-      hasLogo: 'help',
-      contentReady: 'no_help',
+      hasDomain: '',
+      hasLogo: '',
+      contentReady: '',
       aiPrompt: ''
     };
     if (!isAdminPreview && initialDraft && initialDraft.formData) {
@@ -1602,9 +1602,9 @@ export const StartProjectPage: React.FC = () => {
         customIndustry: formData.customIndustry || "",
         goal: formData.goal || "",
         customGoal: formData.customGoal || "",
-        hasDomain: formData.hasDomain || "help",
-        hasLogo: formData.hasLogo || "help",
-        contentReady: formData.contentReady || "no_help",
+        hasDomain: formData.hasDomain || "",
+        hasLogo: formData.hasLogo || "",
+        contentReady: formData.contentReady || "",
         aiPrompt: formData.aiPrompt || "",
         userId: authUser?.id || "",
         projectId: existingProjId,

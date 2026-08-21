@@ -1076,9 +1076,9 @@ app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) 
         customIndustry: customIndustry || "",
         goal: goal || "",
         customGoal: customGoal || "",
-        hasDomain: hasDomain || "help",
-        hasLogo: hasLogo || "help",
-        contentReady: contentReady || "no_help"
+        hasDomain: hasDomain || "",
+        hasLogo: hasLogo || "",
+        contentReady: contentReady || ""
       };
       const newRecord: Partial<ProjectRecord> = {
         clientName: activeClientName,
@@ -1091,9 +1091,9 @@ app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) 
         customIndustry: customIndustry || "",
         goal: goal || "",
         customGoal: customGoal || "",
-        hasDomain: hasDomain || "help",
-        hasLogo: hasLogo || "help",
-        contentReady: contentReady || "no_help",
+        hasDomain: hasDomain || "",
+        hasLogo: hasLogo || "",
+        contentReady: contentReady || "",
         onboarding: onboardingObj,
         timestamp: new Date().toISOString(),
         status: "draft",

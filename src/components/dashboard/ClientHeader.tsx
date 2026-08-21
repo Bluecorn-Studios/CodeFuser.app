@@ -54,12 +54,12 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 z-40 border-b border-neutral-900 bg-black/95 backdrop-blur-xl h-16 px-4 sm:px-8 flex items-center justify-between select-none">
+    <header className="fixed top-0 inset-x-0 z-40 border-b border-neutral-900/90 bg-black/95 backdrop-blur-xl h-20 sm:h-22 px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between select-none">
       {/* LEFT: CodeFuser Official Logo + Mobile Hamburger */}
       <div className="flex items-center gap-4">
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="lg:hidden p-2 text-neutral-300 hover:text-white bg-neutral-900 border border-neutral-800 rounded-xl cursor-pointer"
+          className="lg:hidden p-2.5 text-neutral-300 hover:text-white bg-neutral-950 border border-neutral-800 rounded-xl cursor-pointer transition-colors"
           aria-label="Toggle Navigation"
         >
           {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -67,18 +67,18 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
 
         <button
           onClick={() => setActiveTab("overview")}
-          className="flex items-center cursor-pointer transition-opacity hover:opacity-85"
+          className="flex items-center cursor-pointer transition-opacity hover:opacity-85 py-1"
         >
           <img
             src="/logo.svg"
             alt="CodeFuser"
-            className="h-[20px] sm:h-[22px] w-auto block select-none"
+            className="h-[22px] sm:h-[24px] w-auto block select-none"
           />
         </button>
       </div>
 
-      {/* CENTER: Navigation Tabs (Desktop) */}
-      <nav className="hidden lg:flex items-center gap-1 bg-neutral-950/90 border border-neutral-900 p-1.5 rounded-full">
+      {/* CENTER: Navigation Tabs (Desktop with spacious breathing room and active-tab pill padding) */}
+      <nav className="hidden lg:flex items-center gap-2 bg-neutral-950/90 border border-neutral-800/80 p-2 rounded-full shadow-inner">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -86,70 +86,81 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all cursor-pointer ${
+              className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs transition-all cursor-pointer ${
                 isActive
                   ? "bg-white text-black shadow-lg shadow-white/10 font-extrabold scale-[1.02]"
                   : "text-neutral-400 hover:text-white hover:bg-neutral-900/80 font-semibold"
               }`}
             >
-              <Icon size={15} className={isActive ? "text-black" : "text-neutral-400"} />
+              <Icon size={16} className={isActive ? "text-black stroke-[2.2]" : "text-neutral-400 stroke-[1.8]"} />
               <span>{tab.label}</span>
             </button>
           );
         })}
       </nav>
 
-      {/* RIGHT: Status Badge & Client Profile */}
+      {/* RIGHT: Status Badge & Client Account/Logout Menu */}
       <div className="flex items-center gap-3">
         {/* Project Status Badge */}
-        <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 bg-neutral-950 border border-neutral-800 rounded-full text-xs">
+        <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 bg-neutral-950 border border-neutral-800/80 rounded-full text-xs">
           <span className={`h-2 w-2 rounded-full shrink-0 ${currentStageIndex >= 8 ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-white animate-pulse"}`} />
           <span className="text-[11px] font-semibold text-neutral-300 truncate max-w-[140px]">
             {currentStageIndex >= 8 ? "Website Live" : getCustomerStatusLabel(currentStageIndex)}
           </span>
         </div>
 
-        {/* Client Profile Dropdown Trigger */}
+        {/* Client Account Menu Trigger & Dropdown */}
         <div className="relative">
           <button
             onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-            className="flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-950 hover:bg-neutral-900 text-xs text-white cursor-pointer transition-all"
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-full border border-neutral-800 bg-neutral-950 hover:bg-neutral-900 hover:border-neutral-700 text-xs text-neutral-300 hover:text-white cursor-pointer transition-all focus:outline-none"
+            aria-label="Account Menu"
+            id="client-account-menu-trigger"
           >
-            <div className="h-6 w-6 rounded-full bg-white text-black flex items-center justify-center text-[11px] font-black shrink-0">
+            <div className="h-6 w-6 rounded-full bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center text-[11px] font-bold shrink-0">
               {clientName?.charAt(0).toUpperCase() || "C"}
             </div>
-            <span className="hidden md:inline text-xs font-bold text-white truncate max-w-[120px]">
-              {clientName || businessName || "Client"}
+            <span className="hidden sm:inline text-xs font-mono font-medium text-neutral-300 truncate max-w-[120px]">
+              {clientName || businessName || "Account"}
             </span>
-            <ChevronDown size={12} className={`text-neutral-400 transition-transform ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
+            <ChevronDown size={13} className={`text-neutral-500 transition-transform duration-200 ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
-          {/* Profile Dropdown Menu */}
+          {/* Profile & Account Dropdown Menu */}
           <AnimatePresence>
             {isProfileDropdownOpen && (
               <>
-                <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsProfileDropdownOpen(false)} />
+                <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]" onClick={() => setIsProfileDropdownOpen(false)} />
                 <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                  transition={{ duration: 0.12 }}
-                  className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-neutral-800 bg-neutral-950 p-2 shadow-2xl z-50 text-left overflow-hidden"
+                  exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-neutral-800 bg-neutral-950 p-2.5 shadow-2xl z-50 text-left overflow-hidden"
                 >
-                  <div className="p-2 border-b border-neutral-900 mb-1">
-                    <span className="text-xs font-bold text-[#EAE5D9] block truncate">
-                      {clientName || "Client"}
-                    </span>
-                    <span className="text-[10px] text-neutral-500 block truncate">
-                      {clientEmail || "Account"}
-                    </span>
-                    {businessName && (
-                      <span className="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">
-                        {businessName}
-                      </span>
-                    )}
+                  {/* Account Header with Client Info */}
+                  <div className="p-3 border-b border-neutral-900 mb-1 bg-neutral-900/40 rounded-xl">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-full bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        {clientName?.charAt(0).toUpperCase() || "C"}
+                      </div>
+                      <div className="overflow-hidden">
+                        <span className="text-xs font-bold text-white block truncate">
+                          {clientName || "Client"}
+                        </span>
+                        <span className="text-[11px] text-neutral-400 block truncate font-mono">
+                          {clientEmail || "No email"}
+                        </span>
+                        {businessName && (
+                          <span className="text-[10px] text-zinc-500 block truncate mt-0.5">
+                            {businessName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
+                  {/* Multiple Projects Switcher if applicable */}
                   {projects && projects.length > 1 && (
                     <div className="p-2 border-b border-neutral-900 mb-1">
                       <span className="text-[10px] uppercase font-mono font-bold text-neutral-400 block mb-1">
@@ -176,16 +187,17 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                     </div>
                   )}
 
-                  <div className="space-y-0.5">
+                  {/* Account Options */}
+                  <div className="space-y-1 pt-1">
                     <button
                       onClick={() => {
                         setIsProfileDropdownOpen(false);
                         setActiveWorkspaceModal("settings");
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left"
                     >
-                      <User size={14} className="text-neutral-400" />
-                      Account Settings
+                      <User size={15} className="text-neutral-400" />
+                      <span>Account Settings</span>
                     </button>
 
                     <button
@@ -193,10 +205,10 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                         setIsProfileDropdownOpen(false);
                         setActiveWorkspaceModal("billing");
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left"
                     >
-                      <Coins size={14} className="text-neutral-400" />
-                      Billing Details
+                      <Coins size={15} className="text-neutral-400" />
+                      <span>Billing Details</span>
                     </button>
 
                     <button
@@ -204,10 +216,10 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                         setIsProfileDropdownOpen(false);
                         setActiveWorkspaceModal("support");
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all cursor-pointer text-left"
                     >
-                      <MessageSquare size={14} className="text-neutral-400" />
-                      Support Inquiry
+                      <MessageSquare size={15} className="text-neutral-400" />
+                      <span>Support Inquiry</span>
                     </button>
 
                     <div className="h-px bg-neutral-900 my-1" />
@@ -217,10 +229,10 @@ export const ClientHeader: React.FC<ClientHeaderProps> = ({
                         setIsProfileDropdownOpen(false);
                         logoutClient();
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 transition-all cursor-pointer text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all cursor-pointer text-left"
                     >
-                      <LogOut size={14} />
-                      Log out
+                      <LogOut size={15} />
+                      <span>Log Out</span>
                     </button>
                   </div>
                 </motion.div>

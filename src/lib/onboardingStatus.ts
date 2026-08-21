@@ -201,13 +201,12 @@ export function getOnboardingStepStatus(
     const v = rawLogo.trim();
     const vLower = v.toLowerCase();
 
-    // CodeFuser Handles It -> Complete
+    // Check if explicitly finished / approved deliverable exists
     if (
-      v === "Confirmed: help" ||
-      v === "help" ||
-      vLower.includes("codefuser help") ||
-      vLower.includes("design logo") ||
-      vLower.includes("not_required")
+      project.logoApproved === true ||
+      project.logoDelivered === true ||
+      vLower.startsWith("delivered:") ||
+      vLower.startsWith("completed:")
     ) {
       return "Complete";
     }
@@ -222,6 +221,7 @@ export function getOnboardingStepStatus(
       return "Waiting for Customer";
     }
 
+    // "help", "Confirmed: help", "link_pending", "upload_pending", or empty -> Waiting for Customer
     return "Waiting for Customer";
   }
 
@@ -232,13 +232,12 @@ export function getOnboardingStepStatus(
     const v = rawGallery.trim();
     const vLower = v.toLowerCase();
 
-    // CodeFuser Handles It -> Complete
+    // Check if explicitly finished / approved media exists
     if (
-      v === "Confirmed: help" ||
-      v === "help" ||
-      vLower.includes("stock") ||
-      vLower.includes("curated") ||
-      vLower.includes("not_required")
+      project.galleryApproved === true ||
+      project.galleryDelivered === true ||
+      vLower.startsWith("delivered:") ||
+      vLower.startsWith("completed:")
     ) {
       return "Complete";
     }
@@ -259,6 +258,7 @@ export function getOnboardingStepStatus(
       return "Waiting for Customer";
     }
 
+    // "help", "stock", "link_pending", "upload_pending", or empty -> Waiting for Customer
     return "Waiting for Customer";
   }
 
@@ -269,20 +269,18 @@ export function getOnboardingStepStatus(
     const v = rawCopy.trim();
     const vLower = v.toLowerCase();
 
-    // CodeFuser Handles It -> Complete
+    // Check if explicitly finished / approved copy exists
     if (
-      v === "Confirmed: help" ||
-      v === "help" ||
-      v === "no_help" ||
-      vLower.includes("codefuser write") ||
-      vLower.includes("copywriting") ||
-      vLower.includes("not_required")
+      project.contentApproved === true ||
+      project.contentDelivered === true ||
+      vLower.startsWith("delivered:") ||
+      vLower.startsWith("completed:")
     ) {
       return "Complete";
     }
 
     // Customer Provided Something -> Check if valid text or doc
-    if (v.startsWith("Provided:") || v.length > 0) {
+    if (v.startsWith("Provided:") || (v.length > 0 && v !== "help" && v !== "Confirmed: help" && v !== "no_help" && v !== "text_pending")) {
       const payloadVal = v.replace(/^Provided:\s*/i, "").trim();
       if (isValidServicesContent(payloadVal) || isValidFileOrImage(payloadVal)) {
         return "Needs Review";
@@ -290,6 +288,7 @@ export function getOnboardingStepStatus(
       return "Waiting for Customer";
     }
 
+    // "help", "Confirmed: help", "no_help", "text_pending", or empty -> Waiting for Customer
     return "Waiting for Customer";
   }
 
@@ -302,34 +301,27 @@ export function getOnboardingStepStatus(
 
     // Check if Domain is actually Connected / Verified -> Complete
     const isDomainConnected = Boolean(
-      project.domainConnected ||
-      project.dnsVerified ||
-      vLower.includes("connected") ||
-      vLower.includes("verified")
+      project.domainConnected === true ||
+      project.dnsVerified === true ||
+      vLower.startsWith("verified:") ||
+      vLower.startsWith("connected:") ||
+      (project.websiteStatus === "live" && project.customDomain)
     );
 
-    // CodeFuser Handles It -> Complete
-    if (
-      v === "Provided: not_required" ||
-      v === "not_required" ||
-      vLower.includes("subdomain") ||
-      v === "Confirmed: help" ||
-      v === "help" ||
-      vLower.includes("register domain") ||
-      vLower.includes("buy for me")
-    ) {
+    if (isDomainConnected) {
       return "Complete";
     }
 
     // Customer Provided Domain Name
-    if (v.startsWith("Provided:") || v.length > 0) {
+    if (v.startsWith("Provided:") || (v.length > 0 && v !== "help" && v !== "Confirmed: help" && v !== "not_required" && v !== "no" && v !== "domain_pending")) {
       const payloadVal = v.replace(/^Provided:\s*/i, "").trim();
       if (isValidDomainName(payloadVal) || isValidUrl(payloadVal)) {
-        return isDomainConnected ? "Complete" : "Needs Review";
+        return "Needs Review";
       }
       return "Waiting for Customer";
     }
 
+    // "help", "subdomain", "not_required", "domain_pending", "no", or empty -> Waiting for Customer
     return "Waiting for Customer";
   }
 

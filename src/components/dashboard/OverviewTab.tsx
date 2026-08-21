@@ -242,10 +242,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       icon: Sparkles,
       title: "2. Business Logo & Branding",
       itemStatus: getOnboardingStepStatus("2", project),
-      detail: project.hasLogo === "Confirmed: help"
-        ? "Custom CodeFuser brand design active."
+      detail: getOnboardingStepStatus("2", project) === "Complete"
+        ? "Official logo branding active."
+        : project.hasLogo === "Confirmed: help" || project.hasLogo === "help"
+        ? "CodeFuser logo design requested (pending team creation)."
         : getOnboardingStepStatus("2", project) === "Needs Review"
-        ? "Official logo branding uploaded & active."
+        ? "Official logo branding uploaded & under review."
         : "Upload your logo or shop signboard image.",
     },
     {
@@ -253,10 +255,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       icon: ImageIcon,
       title: "3. Photos of Your Work & Shop",
       itemStatus: getOnboardingStepStatus("3", project),
-      detail: project.galleryReady === "Confirmed: help"
-        ? "Curated high-resolution stock photo gallery."
+      detail: getOnboardingStepStatus("3", project) === "Complete"
+        ? "Photo gallery active."
+        : project.galleryReady === "Confirmed: help" || project.galleryReady === "help"
+        ? "CodeFuser curated stock photos requested (in queue)."
         : getOnboardingStepStatus("3", project) === "Needs Review"
-        ? "Store & work photo gallery uploaded & active."
+        ? "Store & work photo gallery uploaded & under review."
         : "Store photos, shop gallery, or stock images.",
     },
     {
@@ -264,8 +268,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       icon: FileText,
       title: "4. Services, Products & Price List",
       itemStatus: getOnboardingStepStatus("4", project),
-      detail: project.contentReady === "Confirmed: help"
-        ? "Professional copywriting & service menu active."
+      detail: getOnboardingStepStatus("4", project) === "Complete"
+        ? "Services & price list active."
+        : project.contentReady === "Confirmed: help" || project.contentReady === "help"
+        ? "CodeFuser professional copywriting requested (in queue)."
         : getOnboardingStepStatus("4", project) === "Needs Review"
         ? "Custom services and pricing catalog submitted."
         : "Services list, product offerings, and prices.",
@@ -275,8 +281,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       icon: Globe,
       title: "5. Official Website Address (Domain)",
       itemStatus: getOnboardingStepStatus("5", project),
-      detail: getOnboardingStepStatus("5", project) !== "Waiting for Customer"
+      detail: getOnboardingStepStatus("5", project) === "Complete"
         ? displayUrl
+        : getOnboardingStepStatus("5", project) === "Needs Review"
+        ? `Domain submitted: ${displayUrl} (connecting to servers)`
+        : project.hasDomain === "Confirmed: help" || project.hasDomain === "help"
+        ? "Domain registration assistance requested."
         : "Custom domain address connected to live servers.",
     },
   ];
