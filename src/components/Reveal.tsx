@@ -530,6 +530,11 @@ export const Oo: React.FC = () => {
               </Link>
             </li>
             <li>
+              <Link to="/blog" className="text-foreground/80 hover:text-foreground transition-colors">
+                Journal
+              </Link>
+            </li>
+            <li>
               <Link to="/contact" className="text-foreground/80 hover:text-foreground transition-colors">
                 Contact
               </Link>

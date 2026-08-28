@@ -22,6 +22,8 @@ const MissionControl = lazyWithRetry(() => import('./pages/MissionControl'), 'Mi
 const CustomerDashboard = lazyWithRetry(() => import('./pages/CustomerDashboard'), 'CustomerDashboard');
 const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'), 'LoginPage');
 const LogoPage = lazyWithRetry(() => import('./pages/LogoPage'), 'LogoPage');
+const BlogIndexPage = lazyWithRetry(() => import('./pages/BlogIndexPage'), 'BlogIndexPage');
+const UnfinishedWorkArticlePage = lazyWithRetry(() => import('./pages/UnfinishedWorkArticlePage'), 'UnfinishedWorkArticlePage');
 
 function PageLoader() {
   console.log(`[TIMING] ${performance.now().toFixed(2)}ms - PageLoader rendered`);
@@ -37,7 +39,22 @@ export default function App() {
 
   useEffect(() => {
     console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 1. App mounted`);
-    const validPaths: PagePath[] = ['/', '/story', '/process', '/portfolio', '/pricing', '/faq', '/contact', '/start-project', '/mission-control', '/dashboard', '/login', '/logo'];
+    const validPaths: PagePath[] = [
+      '/',
+      '/story',
+      '/process',
+      '/portfolio',
+      '/pricing',
+      '/faq',
+      '/contact',
+      '/start-project',
+      '/mission-control',
+      '/dashboard',
+      '/login',
+      '/logo',
+      '/blog',
+      '/blog/unfinished-work-productivity-paradox'
+    ];
     
     // Parse path and state on start
     const path = window.location.pathname as PagePath;
@@ -118,6 +135,8 @@ export default function App() {
       '/login': 'Login — CodeFuser Client Portal',
       '/mission-control': 'Mission Control — CodeFuser Admin',
       '/logo': 'Brand Assets — CodeFuser',
+      '/blog': 'CodeFuser Journal & Research — Work Systems, SEO & Automation',
+      '/blog/unfinished-work-productivity-paradox': 'The Productivity Paradox of Unfinished Work — CodeFuser',
     };
 
     const cleanPath = currentPath.split('?')[0];
@@ -171,6 +190,10 @@ export default function App() {
         return <LoginPage />;
       case '/logo':
         return <LogoPage />;
+      case '/blog':
+        return <BlogIndexPage />;
+      case '/blog/unfinished-work-productivity-paradox':
+        return <UnfinishedWorkArticlePage />;
       case '/':
       default:
         return <Home />;
