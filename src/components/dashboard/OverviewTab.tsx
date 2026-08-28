@@ -38,6 +38,7 @@ import { TabType } from "./ClientHeader";
 import { getOnboardingStepStatus, OnboardingStepStatus, AssetStepKey } from "../../lib/onboardingStatus";
 import { getAuthToken } from "../../utils/auth";
 import { getPreviewToken } from "../../utils/previewApi";
+import { JournalContentSummary } from "./JournalContentSummary";
 
 interface OverviewTabProps {
   project: ProjectRecord;
@@ -1693,7 +1694,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
           </section>
 
-          {/* 6. DIRECT WHATSAPP & SUPPORT ASSISTANCE */}
+          {/* 6. JOURNAL CONTENT SUMMARY */}
+          <JournalContentSummary />
+
+          {/* 7. DIRECT WHATSAPP & SUPPORT ASSISTANCE */}
           <section>
             <motion.div 
               whileHover={{ borderColor: "rgba(255,255,255,0.25)" }}

@@ -44,6 +44,7 @@ import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { CouponsAdminManager } from "../components/admin/CouponsAdminManager";
+import { JournalContentSummary } from "../components/dashboard/JournalContentSummary";
 import { getCanonicalStageIndex, CANONICAL_MILESTONES, getCanonicalStatusLabel } from "../utils/milestones";
 import { getOnboardingStepStatus, getOnboardingSummary } from "../lib/onboardingStatus";
 import { 
@@ -1264,6 +1265,9 @@ export const MissionControl: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* JOURNAL CONTENT SUMMARY */}
+            <JournalContentSummary />
           </div>
         )}
 

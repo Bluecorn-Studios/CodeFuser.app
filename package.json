@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx app.ts",
-    "build": "vite build && esbuild app.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "seo:generate": "tsx scripts/generate-sitemap.ts",
+    "seo:verify": "tsx scripts/verify-seo.ts",
+    "build": "tsx scripts/generate-sitemap.ts && tsx scripts/verify-seo.ts && vite build && esbuild app.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist app.js",

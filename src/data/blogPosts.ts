@@ -16,6 +16,7 @@ export interface BlogPost {
   canonicalUrl: string;
   author?: string;
   featured?: boolean;
+  status?: 'published' | 'draft';
   sources?: string[];
   keyTakeaway?: string;
   relatedArticles?: string[];
