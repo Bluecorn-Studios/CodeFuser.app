@@ -1137,6 +1137,34 @@ export default function UnfinishedWorkArticle() {
           </section>
         </article>
 
+        {/* Related Articles in CodeFuser Journal */}
+        <div className="mt-16 pt-8 border-t border-white/10">
+          <h3 className="font-display text-lg font-semibold text-[#F4F1EA] mb-6">
+            Related in CodeFuser Journal
+          </h3>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Link
+              to="/blog/incentive-trap-salary-commission-profit-share-equity"
+              className="p-5 rounded-xl border border-white/10 bg-[#0A0A0A] hover:border-white/20 transition-colors group block"
+            >
+              <span className="text-xs font-mono text-amber-400 block mb-2">Productivity & Leadership</span>
+              <h4 className="font-display font-semibold text-[#F4F1EA] group-hover:text-white text-sm sm:text-base leading-snug">
+                The Incentive Trap: Why Giving Your Best Employees More Money Can Still Make Them Think Like Employees
+              </h4>
+            </Link>
+
+            <Link
+              to="/blog/best-ai-apps-2026-ranked-by-real-world-use"
+              className="p-5 rounded-xl border border-white/10 bg-[#0A0A0A] hover:border-white/20 transition-colors group block"
+            >
+              <span className="text-xs font-mono text-amber-400 block mb-2">AI & Workplace Tools</span>
+              <h4 className="font-display font-semibold text-[#F4F1EA] group-hover:text-white text-sm sm:text-base leading-snug">
+                The 10 AI Apps That Actually Matter in 2026 — Ranked by What They Can Replace
+              </h4>
+            </Link>
+          </div>
+        </div>
+
         {/* Back to Blog & CTA */}
         <div className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
           <Link

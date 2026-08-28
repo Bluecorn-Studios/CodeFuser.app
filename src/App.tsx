@@ -24,6 +24,8 @@ const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'), 'LoginPage');
 const LogoPage = lazyWithRetry(() => import('./pages/LogoPage'), 'LogoPage');
 const BlogIndexPage = lazyWithRetry(() => import('./pages/BlogIndexPage'), 'BlogIndexPage');
 const UnfinishedWorkArticlePage = lazyWithRetry(() => import('./pages/UnfinishedWorkArticlePage'), 'UnfinishedWorkArticlePage');
+const IncentiveTrapArticlePage = lazyWithRetry(() => import('./pages/IncentiveTrapArticlePage'), 'IncentiveTrapArticlePage');
+const BestAIApps2026ArticlePage = lazyWithRetry(() => import('./pages/BestAIApps2026ArticlePage'), 'BestAIApps2026ArticlePage');
 
 function PageLoader() {
   console.log(`[TIMING] ${performance.now().toFixed(2)}ms - PageLoader rendered`);
@@ -53,7 +55,9 @@ export default function App() {
       '/login',
       '/logo',
       '/blog',
-      '/blog/unfinished-work-productivity-paradox'
+      '/blog/unfinished-work-productivity-paradox',
+      '/blog/incentive-trap-salary-commission-profit-share-equity',
+      '/blog/best-ai-apps-2026-ranked-by-real-world-use'
     ];
     
     // Parse path and state on start
@@ -137,6 +141,8 @@ export default function App() {
       '/logo': 'Brand Assets — CodeFuser',
       '/blog': 'CodeFuser Journal & Research — Work Systems, SEO & Automation',
       '/blog/unfinished-work-productivity-paradox': 'The Productivity Paradox of Unfinished Work — CodeFuser',
+      '/blog/incentive-trap-salary-commission-profit-share-equity': 'The Incentive Trap: Salary, Commission, Profit Share & Equity — CodeFuser',
+      '/blog/best-ai-apps-2026-ranked-by-real-world-use': 'The 10 AI Apps That Actually Matter in 2026 — CodeFuser',
     };
 
     const cleanPath = currentPath.split('?')[0];
@@ -194,6 +200,10 @@ export default function App() {
         return <BlogIndexPage />;
       case '/blog/unfinished-work-productivity-paradox':
         return <UnfinishedWorkArticlePage />;
+      case '/blog/incentive-trap-salary-commission-profit-share-equity':
+        return <IncentiveTrapArticlePage />;
+      case '/blog/best-ai-apps-2026-ranked-by-real-world-use':
+        return <BestAIApps2026ArticlePage />;
       case '/':
       default:
         return <Home />;
