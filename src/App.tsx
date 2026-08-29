@@ -10,6 +10,8 @@ import { RequireAuth } from './components/auth/RequireAuth';
 import { RequirePortalAccess } from './components/auth/RequirePortalAccess';
 import { lazyWithRetry } from './utils/lazyWithRetry';
 import { ensureAdSenseScriptLoaded } from './lib/adsenseLoader';
+import { BLOG_POSTS } from './data/blogPosts';
+import { getPostSeoTitle, getPostSeoDescription } from './utils/seoHelper';
 
 // Lazy load secondary pages with automatic chunk retry & auto-refresh on new deployments
 const Story = lazyWithRetry(() => import('./pages/Story'), 'Story');
@@ -53,6 +55,7 @@ const JapanMangaGlobalAudienceArticlePage = lazyWithRetry(() => import('./pages/
 const GameCosts70ArticlePage = lazyWithRetry(() => import('./pages/GameCosts70ArticlePage'), 'GameCosts70ArticlePage');
 const SoloDevJustPirateItArticlePage = lazyWithRetry(() => import('./pages/SoloDevJustPirateItArticlePage'), 'SoloDevJustPirateItArticlePage');
 const WhyDoPeopleBuyGamesArticlePage = lazyWithRetry(() => import('./pages/WhyDoPeopleBuyGamesArticlePage'), 'WhyDoPeopleBuyGamesArticlePage');
+const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage'), 'NotFoundPage');
 
 function PageLoader() {
   console.log(`[TIMING] ${performance.now().toFixed(2)}ms - PageLoader rendered`);
@@ -115,11 +118,7 @@ export default function App() {
     
     // Parse path and state on start
     const path = window.location.pathname as PagePath;
-    if (validPaths.includes(path)) {
-      setCurrentPath(path);
-    } else {
-      setCurrentPath('/');
-    }
+    setCurrentPath(path);
 
     // Scroll to section on home page if section hash is specified
     const handleUrlHashAndScroll = () => {
@@ -178,39 +177,198 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Dynamic Page Title & Canonical URL Management for SPA Navigation
-    const titles: Record<string, string> = {
-      '/': 'CodeFuser — Website Development & Digital Growth Agency',
-      '/story': 'CodeFuser Founder Story — Fusing Potential With Scale',
-      '/process': 'CodeFuser Process — Website Development & Digital Growth Roadmap',
-      '/pricing': 'CodeFuser Pricing — Transparent Website & Digital Growth Plans',
-      '/faq': 'CodeFuser FAQ — Websites, SEO & Automation Answers',
-      '/contact': 'Contact CodeFuser — Start Your Digital Growth Strategy',
-      '/portfolio': 'CodeFuser Portfolio — Website & Digital Growth Case Studies',
-      '/start-project': 'Start Your Project — CodeFuser Digital Growth Audit',
-      '/dashboard': 'Client Portal — CodeFuser',
-      '/login': 'Login — CodeFuser Client Portal',
-      '/mission-control': 'Mission Control — CodeFuser Admin',
-      '/logo': 'Brand Assets — CodeFuser',
-      '/blog': 'CodeFuser Journal & Research — Work Systems, SEO & Automation',
-      '/blog/unfinished-work-productivity-paradox': 'The Productivity Paradox of Unfinished Work — CodeFuser',
-      '/blog/incentive-trap-salary-commission-profit-share-equity': 'The Incentive Trap: Salary, Commission, Profit Share & Equity — CodeFuser',
-      '/blog/best-ai-apps-2026-ranked-by-real-world-use': 'The 10 AI Apps That Actually Matter in 2026 — CodeFuser',
+    const cleanPath = currentPath.split('?')[0];
+
+    // Static pages title and description map
+    const staticPageMeta: Record<string, { title: string; desc: string }> = {
+      '/': {
+        title: 'CodeFuser — Website Development & Digital Growth Agency',
+        desc: 'We build high-performance websites, web applications, and automated growth systems for scaling businesses. Strategy, design, code, and conversion.',
+      },
+      '/story': {
+        title: 'CodeFuser Founder Story — Fusing Potential With Scale',
+        desc: 'Learn the story behind CodeFuser: why we build custom digital infrastructure, our technical philosophy, and how we help businesses scale.',
+      },
+      '/process': {
+        title: 'CodeFuser Process — Website Development & Digital Growth Roadmap',
+        desc: 'Explore our 5-phase engineering and delivery framework: Architecture, Design Systems, Full-Stack Engineering, Quality Assurance, and Growth Optimization.',
+      },
+      '/pricing': {
+        title: 'CodeFuser Pricing — Transparent Website & Digital Growth Plans',
+        desc: 'Clear, milestone-based pricing for modern web development, headless platforms, and custom digital systems with zero hidden retainers.',
+      },
+      '/faq': {
+        title: 'CodeFuser FAQ — Websites, SEO & Automation Answers',
+        desc: 'Answers to frequently asked questions regarding development timelines, technical stacks, SEO architecture, pricing, and project deliverables.',
+      },
+      '/contact': {
+        title: 'Contact CodeFuser — Start Your Digital Growth Strategy',
+        desc: 'Get in touch with the CodeFuser engineering and strategy team to discuss your web application, website overhaul, or digital growth project.',
+      },
+      '/portfolio': {
+        title: 'CodeFuser Portfolio — Website & Digital Growth Case Studies',
+        desc: 'Case studies and engineering breakdowns of high-converting web applications, e-commerce storefronts, and automated workflows built by CodeFuser.',
+      },
+      '/start-project': {
+        title: 'Start Your Project — CodeFuser Digital Growth Audit',
+        desc: 'Submit your project specifications and technical requirements for a comprehensive engineering roadmap and feasibility assessment.',
+      },
+      '/blog': {
+        title: 'CodeFuser Journal & Research — Work Systems, SEO & Automation',
+        desc: 'In-depth essays, investigative reports, and research on software economics, digital ownership, AI systems, and modern technology culture.',
+      },
+      '/dashboard': {
+        title: 'Client Portal — CodeFuser',
+        desc: 'Secure client project dashboard and delivery portal.',
+      },
+      '/login': {
+        title: 'Login — CodeFuser Client Portal',
+        desc: 'Sign in to access your project dashboard, deliverables, and communication feed.',
+      },
+      '/mission-control': {
+        title: 'Mission Control — CodeFuser Admin',
+        desc: 'Internal administration and analytics control center.',
+      },
+      '/logo': {
+        title: 'Brand Assets — CodeFuser',
+        desc: 'Official brand assets, vector logos, and design identity guidelines.',
+      },
     };
 
-    const cleanPath = currentPath.split('?')[0];
-    const pageTitle = titles[cleanPath] || 'CodeFuser — Website Development & Digital Growth Agency';
+    // Check if this is a blog post
+    const blogMatch = cleanPath.startsWith('/blog/') ? cleanPath.replace('/blog/', '') : null;
+    const currentBlogPost = blogMatch ? BLOG_POSTS.find((p) => p.slug === blogMatch) : null;
+
+    let pageTitle = 'CodeFuser — Website Development & Digital Growth Agency';
+    let pageDesc = 'High-performance websites, custom web applications, and automated growth systems.';
+    let canonicalUrl = cleanPath === '/' ? 'https://codefuser.in/' : `https://codefuser.in${cleanPath}`;
+    let isPrivatePage = ['/dashboard', '/mission-control', '/login', '/logo', '/start-project'].includes(cleanPath);
+
+    if (currentBlogPost) {
+      pageTitle = getPostSeoTitle(currentBlogPost);
+      pageDesc = getPostSeoDescription(currentBlogPost);
+      canonicalUrl = currentBlogPost.canonicalUrl || `https://codefuser.in/blog/${currentBlogPost.slug}`;
+    } else if (staticPageMeta[cleanPath]) {
+      pageTitle = staticPageMeta[cleanPath].title;
+      pageDesc = staticPageMeta[cleanPath].desc;
+    } else if (cleanPath !== '/') {
+      // 404 Unrecognized route
+      pageTitle = '404 - Page Not Found | CodeFuser';
+      pageDesc = 'The page or article you are looking for does not exist on CodeFuser.';
+      canonicalUrl = 'https://codefuser.in/';
+      isPrivatePage = true; // Sets robots meta to noindex, nofollow
+    }
+
+    // 1. Update Document Title
     document.title = pageTitle;
 
-    // Update canonical link
+    // 2. Update Meta Description
+    let metaDesc = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.name = 'description';
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.content = pageDesc;
+
+    // 3. Update Canonical Tag
     let canonicalLink = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    const canonicalUrl = cleanPath === '/' ? 'https://codefuser.in/' : `https://codefuser.in${cleanPath}`;
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
       canonicalLink.setAttribute('rel', 'canonical');
       document.head.appendChild(canonicalLink);
     }
     canonicalLink.setAttribute('href', canonicalUrl);
+
+    // 4. Update Open Graph Meta Tags
+    const setMetaTag = (property: string, content: string) => {
+      let meta = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('property', property);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    setMetaTag('og:title', pageTitle);
+    setMetaTag('og:description', pageDesc);
+    setMetaTag('og:url', canonicalUrl);
+    setMetaTag('og:type', currentBlogPost ? 'article' : 'website');
+    setMetaTag('og:site_name', 'CodeFuser');
+
+    // 5. Update Twitter Meta Tags
+    const setTwitterTag = (name: string, content: string) => {
+      let meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', name);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    setTwitterTag('twitter:card', 'summary_large_image');
+    setTwitterTag('twitter:title', pageTitle);
+    setTwitterTag('twitter:description', pageDesc);
+
+    // 6. Security / Private Route Robots Control (noindex, nofollow for private routes)
+    let robotsMeta = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (isPrivatePage) {
+      if (!robotsMeta) {
+        robotsMeta = document.createElement('meta');
+        robotsMeta.name = 'robots';
+        document.head.appendChild(robotsMeta);
+      }
+      robotsMeta.content = 'noindex, nofollow';
+    } else {
+      if (robotsMeta) {
+        robotsMeta.content = 'index, follow';
+      }
+    }
+
+    // 7. Inject / Update JSON-LD Article Schema for Blog Posts
+    const schemaScriptId = 'dynamic-jsonld-schema';
+    let schemaScript = document.getElementById(schemaScriptId) as HTMLScriptElement | null;
+
+    if (currentBlogPost) {
+      if (!schemaScript) {
+        schemaScript = document.createElement('script');
+        schemaScript.id = schemaScriptId;
+        schemaScript.type = 'application/ld+json';
+        document.head.appendChild(schemaScript);
+      }
+      schemaScript.text = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        'headline': currentBlogPost.title,
+        'description': getPostSeoDescription(currentBlogPost),
+        'author': {
+          '@type': 'Organization',
+          'name': currentBlogPost.author || 'CodeFuser Tech & Media Research',
+          'url': 'https://codefuser.in'
+        },
+        'publisher': {
+          '@type': 'Organization',
+          'name': 'CodeFuser',
+          'url': 'https://codefuser.in',
+          'logo': {
+            '@type': 'ImageObject',
+            'url': 'https://codefuser.in/logo.svg'
+          }
+        },
+        'datePublished': currentBlogPost.publishedDate ? '2026-08-28' : '2026-08-28',
+        'dateModified': currentBlogPost.lastUpdatedDate ? '2026-08-28' : '2026-08-28',
+        'mainEntityOfPage': {
+          '@type': 'WebPage',
+          '@id': canonicalUrl
+        },
+        'articleSection': currentBlogPost.category,
+        'keywords': [currentBlogPost.primaryTopic, ...(currentBlogPost.secondaryTopics || [])].join(', ')
+      });
+    } else if (schemaScript) {
+      schemaScript.remove();
+    }
 
     // Initialize Google AdSense for eligible public Journal pages (if configured)
     ensureAdSenseScriptLoaded(cleanPath);
@@ -313,8 +471,9 @@ export default function App() {
       case '/blog/why-do-people-buy-games-instead-of-pirating':
         return <WhyDoPeopleBuyGamesArticlePage />;
       case '/':
-      default:
         return <Home />;
+      default:
+        return <NotFoundPage onNavigate={navigate} />;
     }
   };
 

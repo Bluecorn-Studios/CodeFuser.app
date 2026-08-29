@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { BLOG_POSTS, BlogPost } from '../src/data/blogPosts';
+import { getPostSeoTitle, getPostSeoDescription, SEO_CONSTRAINTS } from '../src/utils/seoHelper';
 
 const BASE_URL = 'https://codefuser.in';
 
-interface VerificationFailure {
+export interface VerificationFailure {
   articleTitle?: string;
   articleId?: string;
   problem: string;
@@ -12,8 +13,28 @@ interface VerificationFailure {
   found: string;
 }
 
-export function runSeoVerification(): { passed: boolean; failures: VerificationFailure[]; adsenseStatus: string } {
+export interface SeoAuditRow {
+  index: number;
+  id: string;
+  slug: string;
+  headlineH1: string;
+  seoTitle: string;
+  seoTitleLength: number;
+  seoDesc: string;
+  seoDescLength: number;
+  titleStatus: 'OPTIMAL' | 'TOO_SHORT' | 'TOO_LONG';
+  descStatus: 'OPTIMAL' | 'TOO_SHORT' | 'TOO_LONG';
+  overallStatus: 'PASS' | 'WARN' | 'FAIL';
+}
+
+export function runSeoVerification(): {
+  passed: boolean;
+  failures: VerificationFailure[];
+  adsenseStatus: string;
+  auditRows: SeoAuditRow[];
+} {
   const failures: VerificationFailure[] = [];
+  const auditRows: SeoAuditRow[] = [];
 
   // Read public/sitemap.xml
   const sitemapPath = path.resolve(process.cwd(), 'public/sitemap.xml');
@@ -23,7 +44,7 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
       expected: 'public/sitemap.xml to exist on disk',
       found: 'File does not exist',
     });
-    return { passed: false, failures, adsenseStatus: 'NOT CONFIGURED' };
+    return { passed: false, failures, adsenseStatus: 'NOT CONFIGURED', auditRows: [] };
   }
 
   const sitemapContent = fs.readFileSync(sitemapPath, 'utf-8');
@@ -102,7 +123,12 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
 
   // Check 12: Duplicate article slugs in BLOG_POSTS
   const seenSlugs = new Set<string>();
+  const seenSeoTitles = new Map<string, string>();
+  const seenSeoDescs = new Map<string, string>();
+
+  let idx = 0;
   for (const post of BLOG_POSTS) {
+    idx++;
     if (seenSlugs.has(post.slug)) {
       failures.push({
         articleTitle: post.title,
@@ -113,15 +139,81 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
       });
     }
     seenSlugs.add(post.slug);
-  }
 
-  // Audit each article in BLOG_POSTS
-  for (const post of BLOG_POSTS) {
     const isPublished = post.status !== 'draft';
     const expectedCanonical = `${BASE_URL}/blog/${post.slug}`;
     const expectedAppRoute = `/blog/${post.slug}`;
 
-    // Check 11: Mandatory metadata fields
+    // Compute active SEO tags using centralized resolver
+    const activeSeoTitle = getPostSeoTitle(post);
+    const activeSeoDesc = getPostSeoDescription(post);
+
+    const titleLen = activeSeoTitle.length;
+    const descLen = activeSeoDesc.length;
+
+    const titleStatus: 'OPTIMAL' | 'TOO_SHORT' | 'TOO_LONG' =
+      titleLen < SEO_CONSTRAINTS.TITLE_MIN_LENGTH
+        ? 'TOO_SHORT'
+        : titleLen > SEO_CONSTRAINTS.TITLE_MAX_LENGTH
+        ? 'TOO_LONG'
+        : 'OPTIMAL';
+
+    const descStatus: 'OPTIMAL' | 'TOO_SHORT' | 'TOO_LONG' =
+      descLen < SEO_CONSTRAINTS.DESC_MIN_LENGTH
+        ? 'TOO_SHORT'
+        : descLen > SEO_CONSTRAINTS.DESC_MAX_LENGTH
+        ? 'TOO_LONG'
+        : 'OPTIMAL';
+
+    // Title uniqueness check
+    if (seenSeoTitles.has(activeSeoTitle)) {
+      failures.push({
+        articleTitle: post.title,
+        articleId: post.id,
+        problem: 'Duplicate SEO Title detected',
+        expected: 'Each article to have a unique SEO title',
+        found: `Duplicates title of "${seenSeoTitles.get(activeSeoTitle)}" ("${activeSeoTitle}")`,
+      });
+    } else {
+      seenSeoTitles.set(activeSeoTitle, post.title);
+    }
+
+    // Description uniqueness check
+    if (seenSeoDescs.has(activeSeoDesc)) {
+      failures.push({
+        articleTitle: post.title,
+        articleId: post.id,
+        problem: 'Duplicate SEO Description detected',
+        expected: 'Each article to have a unique meta description',
+        found: `Duplicates description of "${seenSeoDescs.get(activeSeoDesc)}"`,
+      });
+    } else {
+      seenSeoDescs.set(activeSeoDesc, post.title);
+    }
+
+    // Title length constraint verification
+    if (titleLen < SEO_CONSTRAINTS.TITLE_MIN_LENGTH || titleLen > SEO_CONSTRAINTS.TITLE_MAX_LENGTH) {
+      failures.push({
+        articleTitle: post.title,
+        articleId: post.id,
+        problem: `SEO Title length out of range (${titleLen} chars)`,
+        expected: `Between ${SEO_CONSTRAINTS.TITLE_MIN_LENGTH} and ${SEO_CONSTRAINTS.TITLE_MAX_LENGTH} characters`,
+        found: `"${activeSeoTitle}" (${titleLen} chars)`,
+      });
+    }
+
+    // Description length constraint verification
+    if (descLen < SEO_CONSTRAINTS.DESC_MIN_LENGTH || descLen > SEO_CONSTRAINTS.DESC_MAX_LENGTH) {
+      failures.push({
+        articleTitle: post.title,
+        articleId: post.id,
+        problem: `SEO Meta Description length out of range (${descLen} chars)`,
+        expected: `Between ${SEO_CONSTRAINTS.DESC_MIN_LENGTH} and ${SEO_CONSTRAINTS.DESC_MAX_LENGTH} characters`,
+        found: `"${activeSeoDesc}" (${descLen} chars)`,
+      });
+    }
+
+    // Check mandatory metadata fields
     const missingFields: string[] = [];
     if (!post.id) missingFields.push('id');
     if (!post.slug) missingFields.push('slug');
@@ -140,12 +232,12 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
         articleTitle: post.title || 'Untitled',
         articleId: post.id || 'unknown',
         problem: 'Required article metadata is missing',
-        expected: 'All mandatory fields populated (id, slug, title, metaDescription, category, primaryTopic, articleType, contentLevel, publishedDate, readingTime, canonicalUrl)',
+        expected: 'All mandatory fields populated',
         found: `Missing fields: [${missingFields.join(', ')}]`,
       });
     }
 
-    // Check 4: Article canonical does not match expected production URL
+    // Check canonical mismatch
     if (post.canonicalUrl !== expectedCanonical) {
       failures.push({
         articleTitle: post.title,
@@ -157,7 +249,7 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
     }
 
     if (isPublished) {
-      // Check 1: Published article missing from sitemap
+      // Check: Published article missing from sitemap
       if (!locMatches.includes(expectedCanonical)) {
         failures.push({
           articleTitle: post.title,
@@ -168,7 +260,7 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
         });
       }
 
-      // Check 6: Published article has valid route in App.tsx
+      // Check: Published article has valid route in App.tsx
       if (!appContent.includes(expectedAppRoute)) {
         failures.push({
           articleTitle: post.title,
@@ -179,7 +271,7 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
         });
       }
     } else {
-      // Check 2: Draft article appears in sitemap
+      // Check: Draft article appears in sitemap
       if (locMatches.includes(expectedCanonical)) {
         failures.push({
           articleTitle: post.title,
@@ -191,7 +283,7 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
       }
     }
 
-    // Check related articles references (Phase 5: Internal Discovery & no broken links)
+    // Check related articles references
     if (post.relatedArticles && post.relatedArticles.length > 0) {
       for (const relatedSlug of post.relatedArticles) {
         const targetPost = BLOG_POSTS.find((p) => p.slug === relatedSlug);
@@ -206,6 +298,20 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
         }
       }
     }
+
+    auditRows.push({
+      index: idx,
+      id: post.id,
+      slug: post.slug,
+      headlineH1: post.title,
+      seoTitle: activeSeoTitle,
+      seoTitleLength: titleLen,
+      seoDesc: activeSeoDesc,
+      seoDescLength: descLen,
+      titleStatus,
+      descStatus,
+      overallStatus: titleStatus === 'OPTIMAL' && descStatus === 'OPTIMAL' ? 'PASS' : 'WARN',
+    });
   }
 
   // Check ads.txt presence
@@ -218,7 +324,7 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
     });
   }
 
-  // Check AdSense Configuration & Environment Safety
+  // Check AdSense Configuration
   const rawPublisherId = process.env.VITE_ADSENSE_PUBLISHER_ID || '';
   const isAdSenseConfigured = Boolean(
     rawPublisherId &&
@@ -231,17 +337,15 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
     const isEnabled = process.env.VITE_ADSENSE_ENABLED === 'true';
     adsenseStatus = isEnabled ? 'ENABLED' : 'CONFIGURED';
 
-    // Verify format
     const cleanedId = rawPublisherId.replace(/^(ca-)?pub-/, '');
     if (!/^\d{16}$/.test(cleanedId)) {
       failures.push({
         problem: 'Invalid AdSense Publisher ID format',
-        expected: '16-digit numeric publisher ID (e.g., pub-1234567890123456 or ca-pub-1234567890123456)',
+        expected: '16-digit numeric publisher ID',
         found: rawPublisherId,
       });
     }
 
-    // Verify ads.txt contains authorized digital seller entry
     const adsTxtContent = fs.existsSync(adsTxtPath) ? fs.readFileSync(adsTxtPath, 'utf-8') : '';
     const expectedAdsTxtEntry = `google.com, pub-${cleanedId}, DIRECT, f08c47fec0942fa0`;
     if (!adsTxtContent.includes(`pub-${cleanedId}`)) {
@@ -257,29 +361,42 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
     passed: failures.length === 0,
     failures,
     adsenseStatus,
+    auditRows,
   };
 }
 
 function run() {
-  console.log('🔍 Running automated SEO & Sitemap verification...');
+  console.log('🔍 Running automated SEO, Metadata & Sitemap verification...');
   const result = runSeoVerification();
+
+  console.log(`\n========================================================================================`);
+  console.log(`📊 CODEFUSER CENTRALIZED BLOG SEO AUDIT (29 ARTICLES)`);
+  console.log(`========================================================================================`);
+  console.table(
+    result.auditRows.map((r) => ({
+      '#': r.index,
+      'Article Slug': r.slug.length > 32 ? r.slug.slice(0, 29) + '...' : r.slug,
+      'SEO Title': r.seoTitle.length > 45 ? r.seoTitle.slice(0, 42) + '...' : r.seoTitle,
+      'Title Chars': r.seoTitleLength,
+      'Title State': r.titleStatus,
+      'Desc Chars': r.seoDescLength,
+      'Desc State': r.descStatus,
+      'Status': r.overallStatus,
+    }))
+  );
 
   if (!result.passed) {
     console.error('\n========================================');
-    console.error('❌ SEO BUILD FAILED');
+    console.error('❌ SEO VERIFICATION FAILED');
     console.error('========================================\n');
 
     for (const f of result.failures) {
       if (f.articleTitle) {
-        console.error(`Article:`);
-        console.error(`  ${f.articleTitle} (${f.articleId || 'no-id'})`);
+        console.error(`Article: ${f.articleTitle} (${f.articleId || 'no-id'})`);
       }
-      console.error(`Problem:`);
-      console.error(`  ${f.problem}`);
-      console.error(`Expected:`);
-      console.error(`  ${f.expected}`);
-      console.error(`Found:`);
-      console.error(`  ${f.found}`);
+      console.error(`Problem: ${f.problem}`);
+      console.error(`Expected: ${f.expected}`);
+      console.error(`Found: ${f.found}`);
       console.error('----------------------------------------');
     }
 
@@ -287,7 +404,7 @@ function run() {
     process.exit(1);
   }
 
-  console.log(`✅ SEO Verification PASSED (All sitemap, canonical, route, robots, and registry rules verified).`);
+  console.log(`\n✅ SEO Verification PASSED (All 29 articles satisfy length, uniqueness, canonical, routing & robots requirements).`);
   console.log(`ℹ️ ADSENSE STATUS: ${result.adsenseStatus}`);
 }
 
