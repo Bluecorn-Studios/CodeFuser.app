@@ -1,0 +1,2 @@
+# CodeFuser (https://codefuser.in) Google AdSense Authorized Digital Sellers (ads.txt)
+google.com, pub-1806141877239613, DIRECT, f08c47fec0942fa0

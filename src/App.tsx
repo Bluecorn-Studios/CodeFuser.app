@@ -9,6 +9,7 @@ import { ProjectProvider } from './context/ProjectContext';
 import { RequireAuth } from './components/auth/RequireAuth';
 import { RequirePortalAccess } from './components/auth/RequirePortalAccess';
 import { lazyWithRetry } from './utils/lazyWithRetry';
+import { ensureAdSenseScriptLoaded } from './lib/adsenseLoader';
 
 // Lazy load secondary pages with automatic chunk retry & auto-refresh on new deployments
 const Story = lazyWithRetry(() => import('./pages/Story'), 'Story');
@@ -26,6 +27,32 @@ const BlogIndexPage = lazyWithRetry(() => import('./pages/BlogIndexPage'), 'Blog
 const UnfinishedWorkArticlePage = lazyWithRetry(() => import('./pages/UnfinishedWorkArticlePage'), 'UnfinishedWorkArticlePage');
 const IncentiveTrapArticlePage = lazyWithRetry(() => import('./pages/IncentiveTrapArticlePage'), 'IncentiveTrapArticlePage');
 const BestAIApps2026ArticlePage = lazyWithRetry(() => import('./pages/BestAIApps2026ArticlePage'), 'BestAIApps2026ArticlePage');
+const TeamWaterArticlePage = lazyWithRetry(() => import('./pages/TeamWaterArticlePage'), 'TeamWaterArticlePage');
+const ChatgptVsGeminiArticlePage = lazyWithRetry(() => import('./pages/ChatgptVsGeminiArticlePage'), 'ChatgptVsGeminiArticlePage');
+const StreamingPiracyArticlePage = lazyWithRetry(() => import('./pages/StreamingPiracyArticlePage'), 'StreamingPiracyArticlePage');
+const PiracyPsychologyArticlePage = lazyWithRetry(() => import('./pages/PiracyPsychologyArticlePage'), 'PiracyPsychologyArticlePage');
+const PiracyEconomicsArticlePage = lazyWithRetry(() => import('./pages/PiracyEconomicsArticlePage'), 'PiracyEconomicsArticlePage');
+const DigitalOwnershipArticlePage = lazyWithRetry(() => import('./pages/DigitalOwnershipArticlePage'), 'DigitalOwnershipArticlePage');
+const InternetArgumentsArticlePage = lazyWithRetry(() => import('./pages/InternetArgumentsArticlePage'), 'InternetArgumentsArticlePage');
+const IllegalProductUXArticlePage = lazyWithRetry(() => import('./pages/IllegalProductUXArticlePage'), 'IllegalProductUXArticlePage');
+const ShadowCompetitionArticlePage = lazyWithRetry(() => import('./pages/ShadowCompetitionArticlePage'), 'ShadowCompetitionArticlePage');
+const JapanesePiracyCultureArticlePage = lazyWithRetry(() => import('./pages/JapanesePiracyCultureArticlePage'), 'JapanesePiracyCultureArticlePage');
+const PirateTakedownArticlePage = lazyWithRetry(() => import('./pages/PirateTakedownArticlePage'), 'PirateTakedownArticlePage');
+const IndiePiratesArticlePage = lazyWithRetry(() => import('./pages/IndiePiratesArticlePage'), 'IndiePiratesArticlePage');
+const AntiPiracyMarketingArticlePage = lazyWithRetry(() => import('./pages/AntiPiracyMarketingArticlePage'), 'AntiPiracyMarketingArticlePage');
+const PreordersGamingArticlePage = lazyWithRetry(() => import('./pages/PreordersGamingArticlePage'), 'PreordersGamingArticlePage');
+const LeaksVsPiracyArticlePage = lazyWithRetry(() => import('./pages/LeaksVsPiracyArticlePage'), 'LeaksVsPiracyArticlePage');
+const ClaudePiracyScreenshotArticlePage = lazyWithRetry(() => import('./pages/ClaudePiracyScreenshotArticlePage'), 'ClaudePiracyScreenshotArticlePage');
+const IfNobodySellsItArticlePage = lazyWithRetry(() => import('./pages/IfNobodySellsItArticlePage'), 'IfNobodySellsItArticlePage');
+const AiVsPiracyEthicsArticlePage = lazyWithRetry(() => import('./pages/AiVsPiracyEthicsArticlePage'), 'AiVsPiracyEthicsArticlePage');
+const WhatDidYouTakeArticlePage = lazyWithRetry(() => import('./pages/WhatDidYouTakeArticlePage'), 'WhatDidYouTakeArticlePage');
+const AntiPiracyAdMemeArticlePage = lazyWithRetry(() => import('./pages/AntiPiracyAdMemeArticlePage'), 'AntiPiracyAdMemeArticlePage');
+const YouPaidForGameArticlePage = lazyWithRetry(() => import('./pages/YouPaidForGameArticlePage'), 'YouPaidForGameArticlePage');
+const MangaLostSaleCalculationArticlePage = lazyWithRetry(() => import('./pages/MangaLostSaleCalculationArticlePage'), 'MangaLostSaleCalculationArticlePage');
+const JapanMangaGlobalAudienceArticlePage = lazyWithRetry(() => import('./pages/JapanMangaGlobalAudienceArticlePage'), 'JapanMangaGlobalAudienceArticlePage');
+const GameCosts70ArticlePage = lazyWithRetry(() => import('./pages/GameCosts70ArticlePage'), 'GameCosts70ArticlePage');
+const SoloDevJustPirateItArticlePage = lazyWithRetry(() => import('./pages/SoloDevJustPirateItArticlePage'), 'SoloDevJustPirateItArticlePage');
+const WhyDoPeopleBuyGamesArticlePage = lazyWithRetry(() => import('./pages/WhyDoPeopleBuyGamesArticlePage'), 'WhyDoPeopleBuyGamesArticlePage');
 
 function PageLoader() {
   console.log(`[TIMING] ${performance.now().toFixed(2)}ms - PageLoader rendered`);
@@ -57,7 +84,33 @@ export default function App() {
       '/blog',
       '/blog/unfinished-work-productivity-paradox',
       '/blog/incentive-trap-salary-commission-profit-share-equity',
-      '/blog/best-ai-apps-2026-ranked-by-real-world-use'
+      '/blog/best-ai-apps-2026-ranked-by-real-world-use',
+      '/blog/teamwater-40-million-question-how-charity-impact-should-be-measured',
+      '/blog/chatgpt-vs-gemini-user-reviews-what-star-ratings-hide',
+      '/blog/did-streaming-services-rebuild-the-piracy-problem',
+      '/blog/piracy-isnt-just-about-free-psychology-morality-and-justification',
+      '/blog/if-one-million-people-pirate-a-70-game-did-developer-lose-70-million',
+      '/blog/you-paid-for-it-why-can-they-still-take-it-away',
+      '/blog/why-internet-arguments-rarely-change-anyones-mind',
+      '/blog/when-the-illegal-product-has-the-better-user-experience',
+      '/blog/what-happens-when-piracy-becomes-the-competition',
+      '/blog/do-japanese-people-really-hate-piracy-more-than-everyone-else',
+      '/blog/why-is-taking-down-a-pirate-website-so-much-harder-than-it-looks',
+      '/blog/he-couldnt-stop-pirates-so-he-made-them-part-of-the-game',
+      '/blog/when-anti-piracy-becomes-marketing-can-a-joke-actually-sell-a-game',
+      '/blog/are-pre-orders-really-killing-gaming-or-are-gamers-arguing-about-the-wrong-thing',
+      '/blog/why-piracy-communities-fear-leaks-more-than-piracy',
+      '/blog/claude-refused-piracy-setup-then-built-it-from-a-screenshot',
+      '/blog/if-nobody-sells-it-who-are-you-stealing-from',
+      '/blog/you-hate-ai-for-taking-content-what-about-piracy',
+      '/blog/you-didnt-steal-the-game-so-what-did-you-take',
+      '/blog/the-anti-piracy-ad-that-accidentally-became-piracy-material',
+      '/blog/you-paid-for-the-game-why-cant-you-play-it-anymore',
+      '/blog/they-said-manga-piracy-cost-billions-but-how-do-you-calculate-a-lost-sale',
+      '/blog/japan-built-the-manga-the-internet-built-the-global-audience',
+      '/blog/the-game-costs-70-the-problem-is-that-70-doesnt-mean-the-same-thing-to-everyone',
+      '/blog/the-solo-dev-said-just-pirate-it-then-everyone-started-buying-the-game',
+      '/blog/why-do-people-buy-games-instead-of-pirating'
     ];
     
     // Parse path and state on start
@@ -158,6 +211,9 @@ export default function App() {
       document.head.appendChild(canonicalLink);
     }
     canonicalLink.setAttribute('href', canonicalUrl);
+
+    // Initialize Google AdSense for eligible public Journal pages (if configured)
+    ensureAdSenseScriptLoaded(cleanPath);
   }, [currentPath]);
 
   const navigate = (to: PagePath) => {
@@ -204,6 +260,58 @@ export default function App() {
         return <IncentiveTrapArticlePage />;
       case '/blog/best-ai-apps-2026-ranked-by-real-world-use':
         return <BestAIApps2026ArticlePage />;
+      case '/blog/teamwater-40-million-question-how-charity-impact-should-be-measured':
+        return <TeamWaterArticlePage />;
+      case '/blog/chatgpt-vs-gemini-user-reviews-what-star-ratings-hide':
+        return <ChatgptVsGeminiArticlePage />;
+      case '/blog/did-streaming-services-rebuild-the-piracy-problem':
+        return <StreamingPiracyArticlePage />;
+      case '/blog/piracy-isnt-just-about-free-psychology-morality-and-justification':
+        return <PiracyPsychologyArticlePage />;
+      case '/blog/if-one-million-people-pirate-a-70-game-did-developer-lose-70-million':
+        return <PiracyEconomicsArticlePage />;
+      case '/blog/you-paid-for-it-why-can-they-still-take-it-away':
+        return <DigitalOwnershipArticlePage />;
+      case '/blog/why-internet-arguments-rarely-change-anyones-mind':
+        return <InternetArgumentsArticlePage />;
+      case '/blog/when-the-illegal-product-has-the-better-user-experience':
+        return <IllegalProductUXArticlePage />;
+      case '/blog/what-happens-when-piracy-becomes-the-competition':
+        return <ShadowCompetitionArticlePage />;
+      case '/blog/do-japanese-people-really-hate-piracy-more-than-everyone-else':
+        return <JapanesePiracyCultureArticlePage />;
+      case '/blog/why-is-taking-down-a-pirate-website-so-much-harder-than-it-looks':
+        return <PirateTakedownArticlePage />;
+      case '/blog/he-couldnt-stop-pirates-so-he-made-them-part-of-the-game':
+        return <IndiePiratesArticlePage />;
+      case '/blog/when-anti-piracy-becomes-marketing-can-a-joke-actually-sell-a-game':
+        return <AntiPiracyMarketingArticlePage />;
+      case '/blog/are-pre-orders-really-killing-gaming-or-are-gamers-arguing-about-the-wrong-thing':
+        return <PreordersGamingArticlePage />;
+      case '/blog/why-piracy-communities-fear-leaks-more-than-piracy':
+        return <LeaksVsPiracyArticlePage />;
+      case '/blog/claude-refused-piracy-setup-then-built-it-from-a-screenshot':
+        return <ClaudePiracyScreenshotArticlePage />;
+      case '/blog/if-nobody-sells-it-who-are-you-stealing-from':
+        return <IfNobodySellsItArticlePage />;
+      case '/blog/you-hate-ai-for-taking-content-what-about-piracy':
+        return <AiVsPiracyEthicsArticlePage />;
+      case '/blog/you-didnt-steal-the-game-so-what-did-you-take':
+        return <WhatDidYouTakeArticlePage />;
+      case '/blog/the-anti-piracy-ad-that-accidentally-became-piracy-material':
+        return <AntiPiracyAdMemeArticlePage />;
+      case '/blog/you-paid-for-the-game-why-cant-you-play-it-anymore':
+        return <YouPaidForGameArticlePage />;
+      case '/blog/they-said-manga-piracy-cost-billions-but-how-do-you-calculate-a-lost-sale':
+        return <MangaLostSaleCalculationArticlePage />;
+      case '/blog/japan-built-the-manga-the-internet-built-the-global-audience':
+        return <JapanMangaGlobalAudienceArticlePage />;
+      case '/blog/the-game-costs-70-the-problem-is-that-70-doesnt-mean-the-same-thing-to-everyone':
+        return <GameCosts70ArticlePage />;
+      case '/blog/the-solo-dev-said-just-pirate-it-then-everyone-started-buying-the-game':
+        return <SoloDevJustPirateItArticlePage />;
+      case '/blog/why-do-people-buy-games-instead-of-pirating':
+        return <WhyDoPeopleBuyGamesArticlePage />;
       case '/':
       default:
         return <Home />;

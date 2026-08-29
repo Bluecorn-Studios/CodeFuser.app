@@ -6032,6 +6032,28 @@ app.post("/api/content/uniqueness-check", (req: any, res: any) => {
   }
 });
 
+// 6. Direct Authorized Digital Sellers (ads.txt) endpoint
+app.get("/ads.txt", (req: any, res: any) => {
+  const adsTxtPath = path.resolve(process.cwd(), "public/ads.txt");
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  
+  if (process.env.VITE_ADSENSE_PUBLISHER_ID && !process.env.VITE_ADSENSE_PUBLISHER_ID.includes("XXXX")) {
+    const cleanedId = process.env.VITE_ADSENSE_PUBLISHER_ID.replace(/^(ca-)?pub-/, "").trim();
+    return res.send(
+      `# CodeFuser (https://codefuser.in) Google AdSense Authorized Digital Sellers (ads.txt)\ngoogle.com, pub-${cleanedId}, DIRECT, f08c47fec0942fa0\n`
+    );
+  }
+  
+  if (require("fs").existsSync(adsTxtPath)) {
+    return res.sendFile(adsTxtPath);
+  }
+  
+  return res.send(
+    `# CodeFuser (https://codefuser.in) Google AdSense Authorized Digital Sellers (ads.txt)\n# Pending Production Configuration\n`
+  );
+});
+
 // Global Error Handling Middleware (must be registered after all route handlers)
 app.use((err: any, req: any, res: any, next: any) => {
   const reqId = req.reqId || "N/A";

@@ -45,12 +45,16 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
     // Auto-reload once if it's a version mismatch/chunk error
     if (isChunkError) {
-      const reloadedKey = "error-boundary-chunk-reloaded";
-      const hasReloaded = sessionStorage.getItem(reloadedKey);
-      if (!hasReloaded) {
-        sessionStorage.setItem(reloadedKey, "true");
-        console.log("[ErrorBoundary] Auto-reloading to fetch newest application bundle...");
-        this.handleReload();
+      try {
+        const reloadedKey = "error-boundary-chunk-reloaded";
+        const hasReloaded = sessionStorage.getItem(reloadedKey);
+        if (!hasReloaded) {
+          sessionStorage.setItem(reloadedKey, "true");
+          console.log("[ErrorBoundary] Auto-reloading to fetch newest application bundle...");
+          this.handleReload();
+        }
+      } catch {
+        // Ignore storage access errors
       }
     }
   }

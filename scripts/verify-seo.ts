@@ -12,7 +12,7 @@ interface VerificationFailure {
   found: string;
 }
 
-export function runSeoVerification(): { passed: boolean; failures: VerificationFailure[] } {
+export function runSeoVerification(): { passed: boolean; failures: VerificationFailure[]; adsenseStatus: string } {
   const failures: VerificationFailure[] = [];
 
   // Read public/sitemap.xml
@@ -23,7 +23,7 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
       expected: 'public/sitemap.xml to exist on disk',
       found: 'File does not exist',
     });
-    return { passed: false, failures };
+    return { passed: false, failures, adsenseStatus: 'NOT CONFIGURED' };
   }
 
   const sitemapContent = fs.readFileSync(sitemapPath, 'utf-8');
@@ -208,9 +208,55 @@ export function runSeoVerification(): { passed: boolean; failures: VerificationF
     }
   }
 
+  // Check ads.txt presence
+  const adsTxtPath = path.resolve(process.cwd(), 'public/ads.txt');
+  if (!fs.existsSync(adsTxtPath)) {
+    failures.push({
+      problem: 'Missing ads.txt file',
+      expected: 'public/ads.txt to exist in public root',
+      found: 'File does not exist',
+    });
+  }
+
+  // Check AdSense Configuration & Environment Safety
+  const rawPublisherId = process.env.VITE_ADSENSE_PUBLISHER_ID || '';
+  const isAdSenseConfigured = Boolean(
+    rawPublisherId &&
+    rawPublisherId.trim() !== '' &&
+    !rawPublisherId.includes('XXXX')
+  );
+
+  let adsenseStatus = 'NOT CONFIGURED';
+  if (isAdSenseConfigured) {
+    const isEnabled = process.env.VITE_ADSENSE_ENABLED === 'true';
+    adsenseStatus = isEnabled ? 'ENABLED' : 'CONFIGURED';
+
+    // Verify format
+    const cleanedId = rawPublisherId.replace(/^(ca-)?pub-/, '');
+    if (!/^\d{16}$/.test(cleanedId)) {
+      failures.push({
+        problem: 'Invalid AdSense Publisher ID format',
+        expected: '16-digit numeric publisher ID (e.g., pub-1234567890123456 or ca-pub-1234567890123456)',
+        found: rawPublisherId,
+      });
+    }
+
+    // Verify ads.txt contains authorized digital seller entry
+    const adsTxtContent = fs.existsSync(adsTxtPath) ? fs.readFileSync(adsTxtPath, 'utf-8') : '';
+    const expectedAdsTxtEntry = `google.com, pub-${cleanedId}, DIRECT, f08c47fec0942fa0`;
+    if (!adsTxtContent.includes(`pub-${cleanedId}`)) {
+      failures.push({
+        problem: 'ads.txt missing configured publisher ID entry',
+        expected: `Entry matching: "${expectedAdsTxtEntry}" in public/ads.txt`,
+        found: 'Configured publisher ID not present in public/ads.txt',
+      });
+    }
+  }
+
   return {
     passed: failures.length === 0,
     failures,
+    adsenseStatus,
   };
 }
 
@@ -241,7 +287,8 @@ function run() {
     process.exit(1);
   }
 
-  console.log('✅ SEO Verification PASSED (All sitemap, canonical, route, robots, and registry rules verified).');
+  console.log(`✅ SEO Verification PASSED (All sitemap, canonical, route, robots, and registry rules verified).`);
+  console.log(`ℹ️ ADSENSE STATUS: ${result.adsenseStatus}`);
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {

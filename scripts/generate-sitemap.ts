@@ -109,6 +109,33 @@ export function generateSitemap(): string {
   return xmlLines.join('\n');
 }
 
+export function syncAdsTxt(): void {
+  const adsTxtPath = path.resolve(process.cwd(), 'public/ads.txt');
+  const rawPublisherId = process.env.VITE_ADSENSE_PUBLISHER_ID || '';
+  
+  if (rawPublisherId && rawPublisherId.trim() !== '' && !rawPublisherId.includes('XXXX')) {
+    const cleanedId = rawPublisherId.replace(/^(ca-)?pub-/, '').trim();
+    const content = [
+      '# CodeFuser (https://codefuser.in) Google AdSense Authorized Digital Sellers (ads.txt)',
+      `google.com, pub-${cleanedId}, DIRECT, f08c47fec0942fa0`,
+      '',
+    ].join('\n');
+    fs.writeFileSync(adsTxtPath, content, 'utf-8');
+    console.log(`✅ Synced public/ads.txt with Publisher ID: pub-${cleanedId.slice(-4)}`);
+  } else if (!fs.existsSync(adsTxtPath)) {
+    const defaultContent = [
+      '# CodeFuser (https://codefuser.in) Google AdSense Authorized Digital Sellers (ads.txt)',
+      '# Google AdSense standard ads.txt entry format:',
+      '# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0',
+      '#',
+      '# Note: Real Publisher ID will be automatically inserted here upon production configuration.',
+      '',
+    ].join('\n');
+    fs.writeFileSync(adsTxtPath, defaultContent, 'utf-8');
+    console.log('✅ Generated baseline public/ads.txt');
+  }
+}
+
 function run() {
   try {
     console.log('🔄 Generating public/sitemap.xml from master blog registry...');
@@ -117,6 +144,9 @@ function run() {
 
     fs.writeFileSync(outputPath, sitemapContent, 'utf-8');
     console.log(`✅ Successfully generated ${outputPath}`);
+
+    // Sync ads.txt
+    syncAdsTxt();
   } catch (error) {
     console.error('❌ Sitemap Generation Failed:', error);
     process.exit(1);
