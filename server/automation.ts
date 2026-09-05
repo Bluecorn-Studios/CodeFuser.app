@@ -452,7 +452,8 @@ export async function runPeriodicAutomationScan(requestId: string = "scan-auto")
     // Fetch all active projects
     const { data: projects, error } = await supabase
       .from("projects")
-      .select("*");
+      .select("*")
+      .neq("id", "c0090000-0000-0000-0000-000000000001");
 
     if (error || !projects) {
       throw new Error(`Failed to retrieve project directory for scan: ${error?.message}`);
@@ -463,6 +464,7 @@ export async function runPeriodicAutomationScan(requestId: string = "scan-auto")
 
     for (const item of projects) {
       const projectId = item.id;
+      if (projectId === "c0090000-0000-0000-0000-000000000001") continue;
       const clientName = item.client_name || "";
       const businessName = item.business_name || "";
       const email = item.email || "";

@@ -37,6 +37,9 @@ export interface AdSenseConfig {
   authorizedAdRoutes: string[];
 }
 
+export const DEFAULT_ADSENSE_PUBLISHER_ID = 'ca-pub-1806141877239613';
+export const DEFAULT_ADSENSE_IN_ARTICLE_SLOT = '6868897302';
+
 // Universal env accessor (Vite import.meta.env on client, process.env in SSR/Node scripts)
 const getEnvVar = (key: string): string => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key] !== undefined) {
@@ -48,17 +51,20 @@ const getEnvVar = (key: string): string => {
   return '';
 };
 
-const rawPublisherId = getEnvVar('VITE_ADSENSE_PUBLISHER_ID');
+const rawPublisherId = getEnvVar('VITE_ADSENSE_PUBLISHER_ID') || DEFAULT_ADSENSE_PUBLISHER_ID;
 const rawEnabled = getEnvVar('VITE_ADSENSE_ENABLED');
 const rawAutoAds = getEnvVar('VITE_ADSENSE_AUTO_ADS');
+const rawInArticleSlot = getEnvVar('VITE_ADSENSE_IN_ARTICLE_SLOT') || DEFAULT_ADSENSE_IN_ARTICLE_SLOT;
 
-export const ADSENSE_CONFIG: AdSenseConfig = {
-  // Read from Vite environment variable (or empty string if not configured yet)
+export const ADSENSE_CONFIG: AdSenseConfig & { inArticleSlotId: string } = {
+  // Read from Vite environment variable (or default verified publisher ID)
   publisherId: rawPublisherId,
+  inArticleSlotId: rawInArticleSlot,
   
-  // Master toggle - strictly false if no publisher ID or if explicitly disabled
-  enabled: (rawEnabled.toLowerCase() === 'true') &&
-           Boolean(rawPublisherId && !rawPublisherId.includes('XXXX')),
+  // Master toggle - enabled by default when a valid publisher ID is present unless explicitly set to false
+  enabled: rawEnabled !== ''
+    ? rawEnabled.toLowerCase() === 'true'
+    : Boolean(rawPublisherId && !rawPublisherId.includes('XXXX')),
 
   autoAdsEnabled: rawAutoAds !== ''
     ? rawAutoAds.toLowerCase() === 'true'

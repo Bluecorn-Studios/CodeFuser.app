@@ -57,6 +57,41 @@ const SoloDevJustPirateItArticlePage = lazyWithRetry(() => import('./pages/SoloD
 const WhyDoPeopleBuyGamesArticlePage = lazyWithRetry(() => import('./pages/WhyDoPeopleBuyGamesArticlePage'), 'WhyDoPeopleBuyGamesArticlePage');
 const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage'), 'NotFoundPage');
 
+import { BlogArticleLayout } from './components/blog/BlogArticleLayout';
+
+// Map of all 29 article slug routes to their corresponding lazy-loaded page components
+const ARTICLE_PAGE_COMPONENTS: Record<string, React.ComponentType<any>> = {
+  'unfinished-work-productivity-paradox': UnfinishedWorkArticlePage,
+  'incentive-trap-salary-commission-profit-share-equity': IncentiveTrapArticlePage,
+  'best-ai-apps-2026-ranked-by-real-world-use': BestAIApps2026ArticlePage,
+  'teamwater-40-million-question-how-charity-impact-should-be-measured': TeamWaterArticlePage,
+  'chatgpt-vs-gemini-user-reviews-what-star-ratings-hide': ChatgptVsGeminiArticlePage,
+  'did-streaming-services-rebuild-the-piracy-problem': StreamingPiracyArticlePage,
+  'piracy-isnt-just-about-free-psychology-morality-and-justification': PiracyPsychologyArticlePage,
+  'if-one-million-people-pirate-a-70-game-did-developer-lose-70-million': PiracyEconomicsArticlePage,
+  'you-paid-for-it-why-can-they-still-take-it-away': DigitalOwnershipArticlePage,
+  'why-internet-arguments-rarely-change-anyones-mind': InternetArgumentsArticlePage,
+  'when-the-illegal-product-has-the-better-user-experience': IllegalProductUXArticlePage,
+  'what-happens-when-piracy-becomes-the-competition': ShadowCompetitionArticlePage,
+  'do-japanese-people-really-hate-piracy-more-than-everyone-else': JapanesePiracyCultureArticlePage,
+  'why-is-taking-down-a-pirate-website-so-much-harder-than-it-looks': PirateTakedownArticlePage,
+  'he-couldnt-stop-pirates-so-he-made-them-part-of-the-game': IndiePiratesArticlePage,
+  'when-anti-piracy-becomes-marketing-can-a-joke-actually-sell-a-game': AntiPiracyMarketingArticlePage,
+  'are-pre-orders-really-killing-gaming-or-are-gamers-arguing-about-the-wrong-thing': PreordersGamingArticlePage,
+  'why-piracy-communities-fear-leaks-more-than-piracy': LeaksVsPiracyArticlePage,
+  'claude-refused-piracy-setup-then-built-it-from-a-screenshot': ClaudePiracyScreenshotArticlePage,
+  'if-nobody-sells-it-who-are-you-stealing-from': IfNobodySellsItArticlePage,
+  'you-hate-ai-for-taking-content-what-about-piracy': AiVsPiracyEthicsArticlePage,
+  'you-didnt-steal-the-game-so-what-did-you-take': WhatDidYouTakeArticlePage,
+  'the-anti-piracy-ad-that-accidentally-became-piracy-material': AntiPiracyAdMemeArticlePage,
+  'you-paid-for-the-game-why-cant-you-play-it-anymore': YouPaidForGameArticlePage,
+  'they-said-manga-piracy-cost-billions-but-how-do-you-calculate-a-lost-sale': MangaLostSaleCalculationArticlePage,
+  'japan-built-the-manga-the-internet-built-the-global-audience': JapanMangaGlobalAudienceArticlePage,
+  'the-game-costs-70-the-problem-is-that-70-doesnt-mean-the-same-thing-to-everyone': GameCosts70ArticlePage,
+  'the-solo-dev-said-just-pirate-it-then-everyone-started-buying-the-game': SoloDevJustPirateItArticlePage,
+  'why-do-people-buy-games-instead-of-pirating': WhyDoPeopleBuyGamesArticlePage,
+};
+
 function PageLoader() {
   console.log(`[TIMING] ${performance.now().toFixed(2)}ms - PageLoader rendered`);
   return (
@@ -66,8 +101,24 @@ function PageLoader() {
   );
 }
 
+const normalizePath = (rawPath: string): PagePath => {
+  if (!rawPath) return '/';
+  let cleaned = rawPath.split('?')[0].split('#')[0];
+  if (cleaned.length > 1 && cleaned.endsWith('/')) {
+    cleaned = cleaned.slice(0, -1);
+  }
+  return (cleaned || '/') as PagePath;
+};
+
+const getInitialPath = (): PagePath => {
+  if (typeof window !== 'undefined' && window.location) {
+    return normalizePath(window.location.pathname);
+  }
+  return '/';
+};
+
 export default function App() {
-  const [currentPath, setCurrentPath] = useState<PagePath>('/');
+  const [currentPath, setCurrentPath] = useState<PagePath>(getInitialPath);
 
   useEffect(() => {
     console.log(`[TIMING] ${performance.now().toFixed(2)}ms - 1. App mounted`);
@@ -117,8 +168,8 @@ export default function App() {
     ];
     
     // Parse path and state on start
-    const path = window.location.pathname as PagePath;
-    setCurrentPath(path);
+    const initialPath = normalizePath(window.location.pathname);
+    setCurrentPath(initialPath);
 
     // Scroll to section on home page if section hash is specified
     const handleUrlHashAndScroll = () => {
@@ -159,12 +210,8 @@ export default function App() {
 
     // Listen to browser PopState navigations
     const handlePopState = () => {
-      const activePath = window.location.pathname as PagePath;
-      if (validPaths.includes(activePath)) {
-        setCurrentPath(activePath);
-      } else {
-        setCurrentPath('/');
-      }
+      const activePath = normalizePath(window.location.pathname);
+      setCurrentPath(activePath);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -374,13 +421,30 @@ export default function App() {
     ensureAdSenseScriptLoaded(cleanPath);
   }, [currentPath]);
 
-  const navigate = (to: PagePath) => {
-    window.history.pushState(null, '', to);
-    setCurrentPath(to);
+  const navigate = (to: string) => {
+    const normalized = normalizePath(to);
+    window.history.pushState(null, '', normalized);
+    setCurrentPath(normalized);
   };
 
   const renderPage = () => {
-    const cleanPath = currentPath.split('?')[0] as PagePath;
+    const cleanPath = normalizePath(currentPath);
+
+    // Shared routing for all 29 Journal articles through BlogArticleLayout
+    if (cleanPath.startsWith('/blog/') && cleanPath !== '/blog') {
+      const slug = cleanPath.replace('/blog/', '');
+      const post = BLOG_POSTS.find((p) => p.slug === slug);
+      const Component = ARTICLE_PAGE_COMPONENTS[slug];
+      if (Component && post) {
+        return (
+          <BlogArticleLayout post={post}>
+            <Component onNavigate={navigate} />
+          </BlogArticleLayout>
+        );
+      }
+      return <NotFoundPage onNavigate={navigate} />;
+    }
+
     switch (cleanPath) {
       case '/story':
         return <Story />;
@@ -412,64 +476,6 @@ export default function App() {
         return <LogoPage />;
       case '/blog':
         return <BlogIndexPage />;
-      case '/blog/unfinished-work-productivity-paradox':
-        return <UnfinishedWorkArticlePage />;
-      case '/blog/incentive-trap-salary-commission-profit-share-equity':
-        return <IncentiveTrapArticlePage />;
-      case '/blog/best-ai-apps-2026-ranked-by-real-world-use':
-        return <BestAIApps2026ArticlePage />;
-      case '/blog/teamwater-40-million-question-how-charity-impact-should-be-measured':
-        return <TeamWaterArticlePage />;
-      case '/blog/chatgpt-vs-gemini-user-reviews-what-star-ratings-hide':
-        return <ChatgptVsGeminiArticlePage />;
-      case '/blog/did-streaming-services-rebuild-the-piracy-problem':
-        return <StreamingPiracyArticlePage />;
-      case '/blog/piracy-isnt-just-about-free-psychology-morality-and-justification':
-        return <PiracyPsychologyArticlePage />;
-      case '/blog/if-one-million-people-pirate-a-70-game-did-developer-lose-70-million':
-        return <PiracyEconomicsArticlePage />;
-      case '/blog/you-paid-for-it-why-can-they-still-take-it-away':
-        return <DigitalOwnershipArticlePage />;
-      case '/blog/why-internet-arguments-rarely-change-anyones-mind':
-        return <InternetArgumentsArticlePage />;
-      case '/blog/when-the-illegal-product-has-the-better-user-experience':
-        return <IllegalProductUXArticlePage />;
-      case '/blog/what-happens-when-piracy-becomes-the-competition':
-        return <ShadowCompetitionArticlePage />;
-      case '/blog/do-japanese-people-really-hate-piracy-more-than-everyone-else':
-        return <JapanesePiracyCultureArticlePage />;
-      case '/blog/why-is-taking-down-a-pirate-website-so-much-harder-than-it-looks':
-        return <PirateTakedownArticlePage />;
-      case '/blog/he-couldnt-stop-pirates-so-he-made-them-part-of-the-game':
-        return <IndiePiratesArticlePage />;
-      case '/blog/when-anti-piracy-becomes-marketing-can-a-joke-actually-sell-a-game':
-        return <AntiPiracyMarketingArticlePage />;
-      case '/blog/are-pre-orders-really-killing-gaming-or-are-gamers-arguing-about-the-wrong-thing':
-        return <PreordersGamingArticlePage />;
-      case '/blog/why-piracy-communities-fear-leaks-more-than-piracy':
-        return <LeaksVsPiracyArticlePage />;
-      case '/blog/claude-refused-piracy-setup-then-built-it-from-a-screenshot':
-        return <ClaudePiracyScreenshotArticlePage />;
-      case '/blog/if-nobody-sells-it-who-are-you-stealing-from':
-        return <IfNobodySellsItArticlePage />;
-      case '/blog/you-hate-ai-for-taking-content-what-about-piracy':
-        return <AiVsPiracyEthicsArticlePage />;
-      case '/blog/you-didnt-steal-the-game-so-what-did-you-take':
-        return <WhatDidYouTakeArticlePage />;
-      case '/blog/the-anti-piracy-ad-that-accidentally-became-piracy-material':
-        return <AntiPiracyAdMemeArticlePage />;
-      case '/blog/you-paid-for-the-game-why-cant-you-play-it-anymore':
-        return <YouPaidForGameArticlePage />;
-      case '/blog/they-said-manga-piracy-cost-billions-but-how-do-you-calculate-a-lost-sale':
-        return <MangaLostSaleCalculationArticlePage />;
-      case '/blog/japan-built-the-manga-the-internet-built-the-global-audience':
-        return <JapanMangaGlobalAudienceArticlePage />;
-      case '/blog/the-game-costs-70-the-problem-is-that-70-doesnt-mean-the-same-thing-to-everyone':
-        return <GameCosts70ArticlePage />;
-      case '/blog/the-solo-dev-said-just-pirate-it-then-everyone-started-buying-the-game':
-        return <SoloDevJustPirateItArticlePage />;
-      case '/blog/why-do-people-buy-games-instead-of-pirating':
-        return <WhyDoPeopleBuyGamesArticlePage />;
       case '/':
         return <Home />;
       default:

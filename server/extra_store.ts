@@ -59,6 +59,13 @@ export function writeStore(data: Record<string, ExtraProjectData>) {
 }
 
 export async function getExtraData(projectId: string): Promise<ExtraProjectData> {
+  if (projectId === "c0090000-0000-0000-0000-000000000001") {
+    return {
+      projectId,
+      quote: null,
+      assets: []
+    };
+  }
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("projects")
@@ -153,6 +160,9 @@ export async function updateQuote(
   projectId: string,
   quote: Omit<OfficialQuoteRecord, "status" | "expiryDate" | "timestamp"> | null
 ): Promise<ExtraProjectData> {
+  if (projectId === "c0090000-0000-0000-0000-000000000001") {
+    throw new Error("Cannot update quote for system coupon store record.");
+  }
   const supabase = getSupabase();
   let dbQuote: any = {};
 
@@ -200,6 +210,9 @@ export async function addAssetFile(
   projectId: string,
   file: Omit<AssetFileRecord, "id" | "timestamp">
 ): Promise<ExtraProjectData> {
+  if (projectId === "c0090000-0000-0000-0000-000000000001") {
+    throw new Error("Cannot add asset for system coupon store record.");
+  }
   const supabase = getSupabase();
 
   // Retrieve current assets array

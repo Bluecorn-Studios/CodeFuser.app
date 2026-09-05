@@ -1,6 +1,7 @@
 import { getSupabase } from "./supabase.js";
 import { getProjectById, updateProject, logAuditEvent } from "./db.js";
 import { sendHostingLifecycleNotification } from "./hosting_notifications.js";
+import { SYSTEM_COUPONS_ROW_ID } from "./coupons.js";
 import fs from "fs";
 import path from "path";
 
@@ -216,7 +217,12 @@ function getLocalHostingStore(): {
   try {
     if (fs.existsSync(HOSTING_STORE_FILE)) {
       const raw = fs.readFileSync(HOSTING_STORE_FILE, "utf-8");
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.subscriptions) {
+        delete parsed.subscriptions[SYSTEM_COUPONS_ROW_ID];
+        delete parsed.subscriptions["c0090000-0000-0000-0000-000000000001"];
+      }
+      return parsed;
     }
   } catch (err) {
     console.error("[Hosting Store] Error reading local hosting store file:", err);
@@ -231,6 +237,10 @@ function saveLocalHostingStore(store: {
   processedWebhooks: string[];
 }) {
   try {
+    if (store && store.subscriptions) {
+      delete store.subscriptions[SYSTEM_COUPONS_ROW_ID];
+      delete store.subscriptions["c0090000-0000-0000-0000-000000000001"];
+    }
     const dir = path.dirname(HOSTING_STORE_FILE);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -267,6 +277,10 @@ export function markWebhookProcessed(eventId: string) {
  * Get or Create Hosting Subscription for a Project
  */
 export async function getHostingSubscription(projectId: string, existingProject?: any): Promise<HostingSubscriptionRecord> {
+  if (projectId === SYSTEM_COUPONS_ROW_ID || projectId === "c0090000-0000-0000-0000-000000000001") {
+    throw new Error(`[Hosting Error] System coupon store record (${projectId}) is not a customer project and cannot have a hosting subscription.`);
+  }
+
   const localStore = getLocalHostingStore();
 
   // If existing subscription exists, return snapshot unchanged
@@ -408,6 +422,10 @@ export async function updateHostingSubscription(
   projectId: string,
   updates: Partial<HostingSubscriptionRecord>
 ): Promise<HostingSubscriptionRecord> {
+  if (projectId === SYSTEM_COUPONS_ROW_ID || projectId === "c0090000-0000-0000-0000-000000000001") {
+    throw new Error(`[Hosting Error] Cannot update hosting subscription for system coupon store record (${projectId}).`);
+  }
+
   const current = await getHostingSubscription(projectId);
   const updated: HostingSubscriptionRecord = {
     ...current,
@@ -548,16 +566,21 @@ export function updateDomainRecord(projectId: string, updates: Partial<DomainRec
  */
 export async function getAllHostingSubscriptions(): Promise<HostingSubscriptionRecord[]> {
   const localStore = getLocalHostingStore();
+  delete localStore.subscriptions[SYSTEM_COUPONS_ROW_ID];
+  delete localStore.subscriptions["c0090000-0000-0000-0000-000000000001"];
   const subMap: Record<string, HostingSubscriptionRecord> = { ...localStore.subscriptions };
 
   try {
     const supabase = getSupabase();
-    const { data: projects } = await supabase.from("projects").select("*");
+    const { data: projects } = await supabase
+      .from("projects")
+      .select("*")
+      .neq("id", SYSTEM_COUPONS_ROW_ID);
     if (projects && Array.isArray(projects)) {
       for (const p of projects) {
-        if (p?.id) {
+        if (p?.id && p.id !== SYSTEM_COUPONS_ROW_ID && p.id !== "c0090000-0000-0000-0000-000000000001") {
           try {
-            const sub = await getHostingSubscription(p.id);
+            const sub = await getHostingSubscription(p.id, p);
             subMap[p.id] = sub;
           } catch (e) {
             console.warn(`[Hosting Store] Could not resolve hosting subscription for project ${p.id}:`, e);
@@ -569,6 +592,8 @@ export async function getAllHostingSubscriptions(): Promise<HostingSubscriptionR
     console.warn("[Hosting Store] Unable to query Supabase projects for subscription scan, fallback to store:", err);
   }
 
+  delete subMap[SYSTEM_COUPONS_ROW_ID];
+  delete subMap["c0090000-0000-0000-0000-000000000001"];
   return Object.values(subMap);
 }
 

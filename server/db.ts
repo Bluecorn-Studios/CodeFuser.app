@@ -3,6 +3,7 @@ import { withRetry } from "./retry.js";
 import { getSupabase } from "./supabase.js";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 
 const AUDIT_TRAIL_FILE = path.join(process.cwd(), "server", "fuser_audit_trail.json");
 
@@ -168,9 +169,29 @@ export interface ProjectRecord {
   };
 }
 
-export async function addProject(proj: Partial<ProjectRecord>, reqId: string = "N/A"): Promise<ProjectRecord> {
+export function toUuid(str: string): string {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(str)) {
+    return str;
+  }
+  const hash = crypto.createHash("sha256").update(str).digest("hex");
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
+export async function addProject(proj: Partial<ProjectRecord> & { idempotencyKey?: string }, reqId: string = "N/A"): Promise<ProjectRecord> {
   const supabase = getSupabase();
   console.log("Saving project directly to Supabase table 'projects'...");
+
+  // Support explicit ID or idempotencyKey mapped to UUID
+  const targetId = proj.id || (proj.idempotencyKey ? toUuid(proj.idempotencyKey) : undefined);
+
+  if (targetId) {
+    const existing = await getProjectById(targetId);
+    if (existing) {
+      console.log(`[addProject] Found existing project matching ID/idempotencyKey (${targetId}). Updating existing record instead of duplicate insert.`);
+      return await updateProject(existing.id, proj, reqId);
+    }
+  }
 
   const onboardingObj = proj.onboarding || {
     industry: proj.industry || "",
@@ -184,6 +205,10 @@ export async function addProject(proj: Partial<ProjectRecord>, reqId: string = "
     businessDetails: proj.businessDetails || "",
     address: proj.address || ""
   };
+
+  if (proj.idempotencyKey) {
+    (onboardingObj as any).idempotencyKey = proj.idempotencyKey;
+  }
 
   const paymentObj = proj.payment || {
     provider: proj.paymentProvider || "",
@@ -213,26 +238,50 @@ export async function addProject(proj: Partial<ProjectRecord>, reqId: string = "
     assets: proj.assets || []
   };
 
+  if (targetId) {
+    payload.id = targetId;
+  }
+
   console.log("[addProject] Inserting project payload with quote:", payload.quote);
-  console.log({
-    ownership_choice: payload.ownership_choice
-  });
-  console.log({
-    status: payload.status
-  });
+  console.log({ ownership_choice: payload.ownership_choice });
+  console.log({ status: payload.status });
 
   if (proj.userId) {
     payload.user_id = proj.userId;
   }
 
-  const response = await supabase
-    .from("projects")
-    .insert([payload])
-    .select();
+  try {
+    const response = await supabase
+      .from("projects")
+      .insert([payload])
+      .select();
 
-  console.dir(response, { depth: null });
+    if (response.error) {
+      console.error("[addProject] Supabase insert error:", response.error);
+      // Handle primary key or unique constraint conflict (e.g. 23505) due to concurrent requests
+      if (response.error.code === "23505" || String(response.error.message || "").toLowerCase().includes("duplicate key")) {
+        const fetchId = targetId || payload.id;
+        if (fetchId) {
+          console.log(`[addProject] Caught duplicate key constraint on ${fetchId}. Fetching existing record and updating...`);
+          const existing = await getProjectById(fetchId);
+          if (existing) {
+            return await updateProject(existing.id, proj, reqId);
+          }
+        }
+      }
+      throw new Error(`Failed to create project: ${response.error.message}`);
+    }
 
-  return response as any;
+    if (!response.data || response.data.length === 0) {
+      throw new Error("Failed to insert project: No data returned");
+    }
+
+    console.dir(response.data[0], { depth: null });
+    return mapProjectRow(response.data[0]);
+  } catch (err: any) {
+    console.error("[addProject] Exception during project insertion:", err);
+    throw err;
+  }
 }
 
 export function mapProjectRow(item: any): ProjectRecord {
@@ -345,6 +394,9 @@ export async function getProjects(reqId: string = "N/A", filter?: { userId?: str
 }
 
 export async function updateProject(id: string, updates: Partial<ProjectRecord>, reqId: string = "N/A"): Promise<ProjectRecord> {
+  if (id === "c0090000-0000-0000-0000-000000000001") {
+    throw new Error("[DB Protection] Cannot update system coupon store record via updateProject.");
+  }
   const supabase = getSupabase();
   console.log(`Updating project ${id} in Supabase...`);
   
@@ -520,6 +572,9 @@ export async function updateProject(id: string, updates: Partial<ProjectRecord>,
 }
 
 export async function getProjectById(id: string): Promise<ProjectRecord | null> {
+  if (id === "c0090000-0000-0000-0000-000000000001") {
+    return null;
+  }
   const supabase = getSupabase();
   try {
     const { data, error } = await supabase

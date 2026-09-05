@@ -3,7 +3,9 @@ import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import compression from "compression";
-import { addProject, getProjects, updateProject, getProjectById, logAuditEvent, getUserProfile, createUserProfile, updateUserProfileRole, getAllUserProfiles, ProjectRecord, normalizeOwnershipChoice, getChangeRequests, createChangeRequest, updateChangeRequest } from "./server/db.js";
+import { BLOG_POSTS } from "./src/data/blogPosts";
+import { getPostSeoTitle, getPostSeoDescription } from "./src/utils/seoHelper";
+import { addProject, getProjects, updateProject, getProjectById, logAuditEvent, getUserProfile, createUserProfile, updateUserProfileRole, getAllUserProfiles, ProjectRecord, normalizeOwnershipChoice, getChangeRequests, createChangeRequest, updateChangeRequest, toUuid, mapProjectRow } from "./server/db.js";
 import { getSupabase, logRuntimeEnv } from "./server/supabase.js";
 import { getExtraData, updateQuote, addAssetFile } from "./server/extra_store.js";
 import { getReviewByProjectId, saveReview, updateReviewPublishStatus, getAllReviewsForAdmin, getPublicPublishedReviews } from "./server/reviews.js";
@@ -863,11 +865,115 @@ app.post("/api/projects/validate-step1", projectsRateLimiter, async (req: any, r
   }
 });
 
+const inFlightProjectCreations = new Map<string, Promise<any>>();
+
+export async function executeIdempotentProjectOperation(key: string | undefined, fn: () => Promise<any>): Promise<any> {
+  if (!key) return await fn();
+  const existingPromise = inFlightProjectCreations.get(key);
+  if (existingPromise) {
+    console.log(`[Idempotency] Intercepted concurrent project operation for key "${key}". Awaiting in-flight execution...`);
+    return await existingPromise;
+  }
+
+  const promise = (async () => {
+    try {
+      return await fn();
+    } finally {
+      inFlightProjectCreations.delete(key);
+    }
+  })();
+
+  inFlightProjectCreations.set(key, promise);
+  return await promise;
+}
+
+export async function findExistingProjectForCreation({
+  projectId,
+  idempotencyKey,
+  draftSessionId,
+  isNewProject,
+  userId,
+  email
+}: {
+  projectId?: string;
+  idempotencyKey?: string;
+  draftSessionId?: string;
+  isNewProject?: boolean;
+  userId?: string;
+  email?: string;
+}): Promise<any> {
+  const supabase = getSupabase();
+
+  if (isNewProject) {
+    return null;
+  }
+
+  // 1. Direct key lookup (projectId, idempotencyKey, or draftSessionId)
+  const directKey = projectId || idempotencyKey || draftSessionId;
+  if (directKey) {
+    const targetUuid = toUuid(directKey);
+    const byId = await getProjectById(targetUuid);
+    if (byId) return byId;
+
+    // Check directly in Supabase by ID
+    const { data: keyMatch } = await supabase
+      .from("projects")
+      .select("*")
+      .or(`id.eq.${targetUuid}`)
+      .maybeSingle();
+    if (keyMatch) return mapProjectRow(keyMatch);
+
+    // Explicit creation key boundary:
+    // When an explicit creation key (draftSessionId, idempotencyKey, or projectId) is provided
+    // but not found in the database, this key explicitly identifies a NEW creation attempt.
+    // Do NOT fall back to searching by email/userId, which would incorrectly merge independent projects.
+    return null;
+  }
+
+  // 2. ONLY when NO explicit creation key was provided at all, check for recent unkeyed drafts
+  const cleanEmail = email ? String(email).trim().toLowerCase() : "";
+
+  if (userId) {
+    const { data: userProjects } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (userProjects && userProjects.length > 0) {
+      const latest = userProjects[0];
+      const ageMs = Date.now() - new Date(latest.created_at || latest.createdAt || 0).getTime();
+      if ((ageMs < 300000 || latest.status === "draft") && latest.status !== "paid") {
+        return mapProjectRow(latest);
+      }
+    }
+  }
+
+  if (cleanEmail) {
+    const { data: emailProjects } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("email", cleanEmail)
+      .order("created_at", { ascending: false });
+    if (emailProjects && emailProjects.length > 0) {
+      const latest = emailProjects[0];
+      const ageMs = Date.now() - new Date(latest.created_at || latest.createdAt || 0).getTime();
+      if ((ageMs < 300000 || latest.status === "draft") && latest.status !== "paid") {
+        return mapProjectRow(latest);
+      }
+    }
+  }
+
+  return null;
+}
+
 // API: Automatically save draft project state to Supabase at any step
 app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) => {
   try {
     const {
       projectId,
+      idempotencyKey,
+      draftSessionId,
+      isNewProject,
       userId,
       ownerName,
       clientName,
@@ -976,138 +1082,124 @@ app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) 
       return res.json({ success: true, project: previewRecord });
     }
 
-    let existingProject: any = null;
+    const fallbackBucket = Math.floor(Date.now() / 300000); // 5-minute deduplication bucket
+    const effectiveKey = projectId || idempotencyKey || draftSessionId || (cleanEmail && cleanWhatsapp ? `draft_${cleanEmail}_${cleanWhatsapp}_${fallbackBucket}` : undefined);
 
-    // 1. Check by explicit projectId
-    if (projectId) {
-      existingProject = await getProjectById(projectId);
-    }
-
-    // 2. If no project found by id and NOT explicitly starting a new project, search by targetUserId or email/whatsapp
-    if (!existingProject && !req.body.isNewProject && targetUserId) {
-      const { data: userProjects } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("user_id", targetUserId)
-        .order("created_at", { ascending: false });
-      if (userProjects && userProjects.length > 0) {
-        existingProject = userProjects[0];
-      }
-    }
-
-    if (!existingProject && !req.body.isNewProject && cleanEmail) {
-      const { data: emailProjects } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("email", cleanEmail)
-        .order("created_at", { ascending: false });
-      if (emailProjects && emailProjects.length > 0) {
-        existingProject = emailProjects[0];
-      }
-    }
-
-    const existingQuote = existingProject?.quote || {};
-
-    // Freeze AI Recommendations logic: preserve existing cards if provided or stored
-    const mergedCards = recommendationCards || existingQuote.recommendationCards || null;
-    const mergedAiSummary = aiSummary || existingQuote.aiSummary || null;
-    const generatedTimestamp = existingQuote.generatedTimestamp || (mergedCards ? new Date().toISOString() : null);
-
-    const updatedQuote = {
-      ...existingQuote,
-      currentStep: activeStep,
-      onboardingStage: onboardingStage || existingQuote.onboardingStage || "form",
-      completedSteps: completedSteps || existingQuote.completedSteps || [1],
-      recommendationCards: mergedCards,
-      aiSummary: mergedAiSummary,
-      selectedCardId: selectedCardId || existingQuote.selectedCardId || "current",
-      selectedPaymentTerm: selectedPaymentTerm || existingQuote.selectedPaymentTerm || "milestone",
-      frozenPrice: mergedCards?.find((c: any) => c.id === (selectedCardId || "current"))?.price || existingQuote.frozenPrice || null,
-      aiVersion: existingQuote.aiVersion || "1.0",
-      generatedTimestamp: generatedTimestamp,
-      upsell: upsell || existingQuote.upsell || null,
-      localPhone: localPhone || existingQuote.localPhone || "",
-      selectedCountryCode: selectedCountryCode || existingQuote.selectedCountryCode || "",
-      aiPrompt: aiPrompt ?? existingQuote.aiPrompt ?? ""
-    };
-
-    if (existingProject) {
-      // Update existing project in Supabase
-      const existingOnboarding = existingProject.onboarding || {};
-      const updates: any = {
-        clientName: activeClientName || existingProject.clientName,
-        businessName: activeBusinessName || existingProject.businessName,
-        email: cleanEmail || existingProject.email,
-        whatsapp: cleanWhatsapp || existingProject.whatsapp,
-        selectedPackage: activePackage || existingProject.selectedPackage,
-        ownershipChoice: activeOwnership || existingProject.ownershipChoice,
-        industry: industry ?? existingOnboarding.industry ?? existingProject.industry,
-        customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry,
-        goal: goal ?? existingOnboarding.goal ?? existingProject.goal,
-        customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal,
-        hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain,
-        hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo,
-        contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady,
-        onboarding: {
-          industry: industry ?? existingOnboarding.industry ?? existingProject.industry ?? "",
-          customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry ?? "",
-          goal: goal ?? existingOnboarding.goal ?? existingProject.goal ?? "",
-          customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal ?? "",
-          hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain ?? "",
-          hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo ?? "",
-          contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady ?? ""
-        },
-        quote: updatedQuote,
-      };
-
-      if (targetUserId && (!existingProject.userId || existingProject.userId !== targetUserId)) {
-        updates.userId = targetUserId;
-      }
-      if (assets) {
-        updates.assets = assets;
-      }
-
-      const updated = await updateProject(existingProject.id, updates, req.reqId);
-      return res.json({ success: true, project: updated });
-    } else {
-      // Create new draft project in Supabase
-      const onboardingObj = {
-        industry: industry || "",
-        customIndustry: customIndustry || "",
-        goal: goal || "",
-        customGoal: customGoal || "",
-        hasDomain: hasDomain || "",
-        hasLogo: hasLogo || "",
-        contentReady: contentReady || ""
-      };
-      const newRecord: Partial<ProjectRecord> = {
-        clientName: activeClientName,
-        businessName: activeBusinessName,
-        email: cleanEmail,
-        whatsapp: cleanWhatsapp,
-        selectedPackage: activePackage,
-        ownershipChoice: activeOwnership,
-        industry: industry || "",
-        customIndustry: customIndustry || "",
-        goal: goal || "",
-        customGoal: customGoal || "",
-        hasDomain: hasDomain || "",
-        hasLogo: hasLogo || "",
-        contentReady: contentReady || "",
-        onboarding: onboardingObj,
-        timestamp: new Date().toISOString(),
-        status: "draft",
+    return await executeIdempotentProjectOperation(effectiveKey, async () => {
+      let existingProject = await findExistingProjectForCreation({
+        projectId,
+        idempotencyKey,
+        draftSessionId,
+        isNewProject,
         userId: targetUserId,
-        paymentStatus: "unpaid",
-        portalAccess: false,
-        quote: updatedQuote,
-        assets: assets || [],
-        aiPrompt: aiPrompt || ""
+        email: cleanEmail
+      });
+
+      const existingQuote = existingProject?.quote || {};
+
+      // Freeze AI Recommendations logic: preserve existing cards if provided or stored
+      const mergedCards = recommendationCards || existingQuote.recommendationCards || null;
+      const mergedAiSummary = aiSummary || existingQuote.aiSummary || null;
+      const generatedTimestamp = existingQuote.generatedTimestamp || (mergedCards ? new Date().toISOString() : null);
+
+      const updatedQuote = {
+        ...existingQuote,
+        currentStep: activeStep,
+        onboardingStage: onboardingStage || existingQuote.onboardingStage || "form",
+        completedSteps: completedSteps || existingQuote.completedSteps || [1],
+        recommendationCards: mergedCards,
+        aiSummary: mergedAiSummary,
+        selectedCardId: selectedCardId || existingQuote.selectedCardId || "current",
+        selectedPaymentTerm: selectedPaymentTerm || existingQuote.selectedPaymentTerm || "milestone",
+        frozenPrice: mergedCards?.find((c: any) => c.id === (selectedCardId || "current"))?.price || existingQuote.frozenPrice || null,
+        aiVersion: existingQuote.aiVersion || "1.0",
+        generatedTimestamp: generatedTimestamp,
+        upsell: upsell || existingQuote.upsell || null,
+        localPhone: localPhone || existingQuote.localPhone || "",
+        selectedCountryCode: selectedCountryCode || existingQuote.selectedCountryCode || "",
+        aiPrompt: aiPrompt ?? existingQuote.aiPrompt ?? ""
       };
 
-      const added = await addProject(newRecord, req.reqId);
-      return res.json({ success: true, project: added });
-    }
+      if (existingProject) {
+        // Update existing project in Supabase
+        const existingOnboarding = existingProject.onboarding || {};
+        const updates: any = {
+          clientName: activeClientName || existingProject.clientName,
+          businessName: activeBusinessName || existingProject.businessName,
+          email: cleanEmail || existingProject.email,
+          whatsapp: cleanWhatsapp || existingProject.whatsapp,
+          selectedPackage: activePackage || existingProject.selectedPackage,
+          ownershipChoice: activeOwnership || existingProject.ownershipChoice,
+          industry: industry ?? existingOnboarding.industry ?? existingProject.industry,
+          customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry,
+          goal: goal ?? existingOnboarding.goal ?? existingProject.goal,
+          customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal,
+          hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain,
+          hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo,
+          contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady,
+          onboarding: {
+            industry: industry ?? existingOnboarding.industry ?? existingProject.industry ?? "",
+            customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry ?? "",
+            goal: goal ?? existingOnboarding.goal ?? existingProject.goal ?? "",
+            customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal ?? "",
+            hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain ?? "",
+            hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo ?? "",
+            contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady ?? ""
+          },
+          quote: updatedQuote,
+        };
+
+        if (targetUserId && (!existingProject.userId || existingProject.userId !== targetUserId)) {
+          updates.userId = targetUserId;
+        }
+        if (assets) {
+          updates.assets = assets;
+        }
+
+        const updated = await updateProject(existingProject.id, updates, req.reqId);
+        return res.json({ success: true, project: updated });
+      } else {
+        // Create new draft project in Supabase
+        const onboardingObj = {
+          industry: industry || "",
+          customIndustry: customIndustry || "",
+          goal: goal || "",
+          customGoal: customGoal || "",
+          hasDomain: hasDomain || "",
+          hasLogo: hasLogo || "",
+          contentReady: contentReady || ""
+        };
+        const newRecord: Partial<ProjectRecord> & { idempotencyKey?: string } = {
+          clientName: activeClientName,
+          businessName: activeBusinessName,
+          email: cleanEmail,
+          whatsapp: cleanWhatsapp,
+          selectedPackage: activePackage,
+          ownershipChoice: activeOwnership,
+          industry: industry || "",
+          customIndustry: customIndustry || "",
+          goal: goal || "",
+          customGoal: customGoal || "",
+          hasDomain: hasDomain || "",
+          hasLogo: hasLogo || "",
+          contentReady: contentReady || "",
+          onboarding: onboardingObj,
+          timestamp: new Date().toISOString(),
+          status: "draft",
+          userId: targetUserId,
+          paymentStatus: "unpaid",
+          portalAccess: false,
+          quote: updatedQuote,
+          assets: assets || [],
+          aiPrompt: aiPrompt || "",
+          id: effectiveKey ? toUuid(effectiveKey) : undefined,
+          idempotencyKey: effectiveKey
+        };
+
+        const added = await addProject(newRecord, req.reqId);
+        return res.json({ success: true, project: added });
+      }
+    });
   } catch (err: any) {
     console.dir(err, { depth: null });
     console.log(JSON.stringify(err, null, 2));
@@ -1216,7 +1308,7 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
       }
     }
 
-    const { projectId, isNewProject } = req.body;
+    const { projectId, idempotencyKey, draftSessionId, isNewProject } = req.body;
     const cleanEmail = String(email || "").trim().toLowerCase();
 
     if (req.isPreview || (projectId && isProjectIdPreview(projectId))) {
@@ -1251,147 +1343,130 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
       });
     }
 
-    const supabase = getSupabase();
+    const fallbackBucket = Math.floor(Date.now() / 300000); // 5-minute deduplication bucket
+    const effectiveKey = projectId || idempotencyKey || draftSessionId || (cleanEmail && whatsapp ? `submit_${cleanEmail}_${whatsapp}_${fallbackBucket}` : undefined);
 
-    let existingProject: any = null;
+    return await executeIdempotentProjectOperation(effectiveKey, async () => {
+      let existingProject = await findExistingProjectForCreation({
+        projectId,
+        idempotencyKey,
+        draftSessionId,
+        isNewProject,
+        userId: resolvedUserId,
+        email: cleanEmail
+      });
 
-    // 1. Check by explicit projectId
-    if (projectId) {
-      existingProject = await getProjectById(projectId);
-    }
+      checkAbort(req);
 
-    // 2. If no project found by id and NOT explicitly starting a new project, search by resolvedUserId or email
-    if (!existingProject && !isNewProject && resolvedUserId) {
-      const { data: userProjects } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("user_id", resolvedUserId)
-        .order("created_at", { ascending: false });
-      if (userProjects && userProjects.length > 0) {
-        existingProject = userProjects[0];
+      if (existingProject) {
+        console.log(`Updating existing project draft (${existingProject.id}) on submit...`);
+        const existingOnboarding = existingProject.onboarding || {};
+        const updates: any = {
+          clientName: ownerName || existingProject.clientName,
+          businessName: businessName || existingProject.businessName,
+          email: cleanEmail || existingProject.email,
+          whatsapp: whatsapp || existingProject.whatsapp,
+          selectedPackage: packageId || existingProject.selectedPackage,
+          ownershipChoice: normalizeOwnershipChoice(ownership || ownershipChoice || existingProject.ownershipChoice),
+          industry: industry ?? existingOnboarding.industry ?? existingProject.industry,
+          customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry,
+          goal: goal ?? existingOnboarding.goal ?? existingProject.goal,
+          customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal,
+          hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain,
+          hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo,
+          contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady,
+          onboarding: {
+            industry: industry ?? existingOnboarding.industry ?? existingProject.industry ?? "",
+            customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry ?? "",
+            goal: goal ?? existingOnboarding.goal ?? existingProject.goal ?? "",
+            customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal ?? "",
+            hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain ?? "",
+            hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo ?? "",
+            contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady ?? ""
+          },
+          status: existingProject.status === "draft" ? "Assets Pending" : existingProject.status
+        };
+
+        if (resolvedUserId && (!existingProject.userId || existingProject.userId !== resolvedUserId)) {
+          updates.userId = resolvedUserId;
+        }
+        if (aiPrompt) {
+          updates.aiPrompt = aiPrompt;
+        }
+
+        const savedProject = await updateProject(existingProject.id, updates, req.reqId);
+
+        addFounderNotification({
+          type: "new_project",
+          projectId: savedProject.id,
+          projectName: savedProject.businessName || savedProject.clientName || "New Client",
+          title: "New project",
+          message: `${savedProject.businessName || savedProject.clientName || "New Client"} submitted a project.`,
+          actionLabel: "Review project",
+          severity: "important"
+        });
+
+        await logAuditEvent({
+          projectId: savedProject.id,
+          eventType: "Project Submitted",
+          requestId: req.reqId,
+          actor: "Client",
+          status: "Success",
+          notes: `Project draft updated and submitted for ${savedProject.businessName} (package: ${savedProject.selectedPackage})`
+        });
+
+        // Dispatch Internal Admin Alert
+        triggerAdminNotification(
+          "New Project Filed",
+          `A new system project spec has been registered for ${savedProject.businessName} by ${savedProject.clientName}.`,
+          {
+            "Project ID": savedProject.id,
+            "Client Name": savedProject.clientName,
+            "Business Name": savedProject.businessName,
+            "Selected Tier": savedProject.selectedPackage,
+            "Industry": savedProject.industry || "Not Specified",
+            "Email": savedProject.email,
+            "WhatsApp": savedProject.whatsapp
+          },
+          req.reqId
+        );
+
+        // Send Project Created Email Notification asynchronously
+        const devUrl = process.env.DEV_APP_URL || "http://localhost:3000";
+        const portalUrl = `${devUrl}/login`;
+        const emailHtml = getProjectCreatedTemplate(
+          savedProject.clientName,
+          savedProject.businessName,
+          savedProject.selectedPackage,
+          portalUrl
+        );
+        sendEmailAsync(savedProject.email, `Welcome to CodeFuser - ${savedProject.businessName} Project Filed`, emailHtml);
+
+        return res.json({ success: true, message: "Project submitted successfully", data: savedProject });
       }
-    }
 
-    if (!existingProject && !isNewProject && cleanEmail) {
-      const { data: emailProjects } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("email", cleanEmail)
-        .order("created_at", { ascending: false });
-      if (emailProjects && emailProjects.length > 0) {
-        existingProject = emailProjects[0];
-      }
-    }
-
-    checkAbort(req);
-
-    if (existingProject) {
-      console.log(`Updating existing project draft (${existingProject.id}) on submit...`);
-      const existingOnboarding = existingProject.onboarding || {};
-      const updates: any = {
-        clientName: ownerName || existingProject.clientName,
-        businessName: businessName || existingProject.businessName,
-        email: cleanEmail || existingProject.email,
-        whatsapp: whatsapp || existingProject.whatsapp,
-        selectedPackage: packageId || existingProject.selectedPackage,
-        ownershipChoice: normalizeOwnershipChoice(ownership || ownershipChoice || existingProject.ownershipChoice),
-        industry: industry ?? existingOnboarding.industry ?? existingProject.industry,
-        customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry,
-        goal: goal ?? existingOnboarding.goal ?? existingProject.goal,
-        customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal,
-        hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain,
-        hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo,
-        contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady,
-        onboarding: {
-          industry: industry ?? existingOnboarding.industry ?? existingProject.industry ?? "",
-          customIndustry: customIndustry ?? existingOnboarding.customIndustry ?? existingProject.customIndustry ?? "",
-          goal: goal ?? existingOnboarding.goal ?? existingProject.goal ?? "",
-          customGoal: customGoal ?? existingOnboarding.customGoal ?? existingProject.customGoal ?? "",
-          hasDomain: hasDomain ?? existingOnboarding.hasDomain ?? existingProject.hasDomain ?? "",
-          hasLogo: hasLogo ?? existingOnboarding.hasLogo ?? existingProject.hasLogo ?? "",
-          contentReady: contentReady ?? existingOnboarding.contentReady ?? existingProject.contentReady ?? ""
-        },
-        status: existingProject.status === "draft" ? "Assets Pending" : existingProject.status
+      const payload = {
+        clientName: ownerName,
+        businessName,
+        email,
+        whatsapp,
+        selectedPackage: packageId,
+        ownershipChoice: normalizeOwnershipChoice(ownership || ownershipChoice),
+        industry: industry || "",
+        customIndustry: customIndustry || "",
+        goal: goal || "",
+        customGoal: customGoal || "",
+        hasDomain: hasDomain || "",
+        hasLogo: hasLogo || "",
+        contentReady: contentReady || "",
+        userId: resolvedUserId,
+        aiPrompt: aiPrompt || "",
+        id: effectiveKey ? toUuid(effectiveKey) : undefined,
+        idempotencyKey: effectiveKey
       };
 
-      if (resolvedUserId && (!existingProject.userId || existingProject.userId !== resolvedUserId)) {
-        updates.userId = resolvedUserId;
-      }
-      if (aiPrompt) {
-        updates.aiPrompt = aiPrompt;
-      }
-
-      const savedProject = await updateProject(existingProject.id, updates, req.reqId);
-
-      addFounderNotification({
-        type: "new_project",
-        projectId: savedProject.id,
-        projectName: savedProject.businessName || savedProject.clientName || "New Client",
-        title: "New project",
-        message: `${savedProject.businessName || savedProject.clientName || "New Client"} submitted a project.`,
-        actionLabel: "Review project",
-        severity: "important"
-      });
-
-      await logAuditEvent({
-        projectId: savedProject.id,
-        eventType: "Project Submitted",
-        requestId: req.reqId,
-        actor: "Client",
-        status: "Success",
-        notes: `Project draft updated and submitted for ${savedProject.businessName} (package: ${savedProject.selectedPackage})`
-      });
-
-      // Dispatch Internal Admin Alert
-      triggerAdminNotification(
-        "New Project Filed",
-        `A new system project spec has been registered for ${savedProject.businessName} by ${savedProject.clientName}.`,
-        {
-          "Project ID": savedProject.id,
-          "Client Name": savedProject.clientName,
-          "Business Name": savedProject.businessName,
-          "Selected Tier": savedProject.selectedPackage,
-          "Industry": savedProject.industry || "Not Specified",
-          "Email": savedProject.email,
-          "WhatsApp": savedProject.whatsapp
-        },
-        req.reqId
-      );
-
-      // Send Project Created Email Notification asynchronously
-      const devUrl = process.env.DEV_APP_URL || "http://localhost:3000";
-      const portalUrl = `${devUrl}/login`;
-      const emailHtml = getProjectCreatedTemplate(
-        savedProject.clientName,
-        savedProject.businessName,
-        savedProject.selectedPackage,
-        portalUrl
-      );
-      sendEmailAsync(savedProject.email, `Welcome to CodeFuser - ${savedProject.businessName} Project Filed`, emailHtml);
-
-      return res.json({ success: true, message: "Project submitted successfully", data: savedProject });
-    }
-
-    const payload = {
-      clientName: ownerName,
-      businessName,
-      email,
-      whatsapp,
-      selectedPackage: packageId,
-      ownershipChoice: normalizeOwnershipChoice(ownership || ownershipChoice),
-      industry: industry || "",
-      customIndustry: customIndustry || "",
-      goal: goal || "",
-      customGoal: customGoal || "",
-      hasDomain: hasDomain || "",
-      hasLogo: hasLogo || "",
-      contentReady: contentReady || "",
-      userId: resolvedUserId,
-      aiPrompt: aiPrompt || ""
-    };
-
-    console.log("Compiling and initializing new project in CodeFuser Core architecture style...");
-    const savedProject = await addProject(payload, req.reqId);
+      console.log("Compiling and initializing new project in CodeFuser Core architecture style...");
+      const savedProject = await addProject(payload, req.reqId);
 
     addFounderNotification({
       type: "new_project",
@@ -1446,6 +1521,7 @@ app.post("/api/projects", projectsRateLimiter, validateBody(createProjectSchema)
       success: true,
       data: savedProject,
       message: "Project compiled and registered successfully under Core flow."
+    });
     });
   } catch (error: any) {
     if (res.headersSent) return;
@@ -6045,7 +6121,7 @@ app.get("/ads.txt", (req: any, res: any) => {
     );
   }
   
-  if (require("fs").existsSync(adsTxtPath)) {
+  if (fs.existsSync(adsTxtPath)) {
     return res.sendFile(adsTxtPath);
   }
   
@@ -6088,6 +6164,191 @@ process.on("unhandledRejection", (reason: any) => {
   logger.error("SYSTEM CRITICAL: Unhandled Promise Rejection detected", reason instanceof Error ? reason : new Error(String(reason)));
 });
 
+const STATIC_PAGE_META: Record<string, { title: string; desc: string }> = {
+  '/': {
+    title: 'CodeFuser — Website Development & Digital Growth Agency',
+    desc: 'High-performance websites, custom web applications, and automated growth systems.',
+  },
+  '/blog': {
+    title: 'CodeFuser Journal — Tech, AI & Digital Economics Research',
+    desc: 'Deep-dive investigative analysis on technology economics, software piracy, digital ownership, AI workflow tools, and modern productivity.',
+  },
+  '/story': {
+    title: 'Our Story & Philosophy — CodeFuser',
+    desc: 'How CodeFuser was built on local-business clarity, performance engineering, and software craftsmanship.',
+  },
+  '/process': {
+    title: 'Our 9-Stage Development Process — CodeFuser',
+    desc: 'Transparent, stage-by-stage engineering roadmap from concept to live deployment.',
+  },
+  '/portfolio': {
+    title: 'Client Work & Case Studies — CodeFuser',
+    desc: 'Explore real-world web applications, digital growth engines, and custom automation built for our clients.',
+  },
+  '/pricing': {
+    title: 'Transparent Project Pricing — CodeFuser',
+    desc: 'Clear, predictable pricing tiers for web development, custom software, and digital growth systems.',
+  },
+  '/faq': {
+    title: 'Frequently Asked Questions — CodeFuser',
+    desc: 'Answers to common questions about our web development services, timelines, pricing, and maintenance.',
+  },
+  '/contact': {
+    title: 'Contact CodeFuser — Start Your Web Project',
+    desc: 'Get in touch with CodeFuser to discuss your website, custom software, or business automation needs.',
+  },
+  '/login': {
+    title: 'Login — CodeFuser Client Portal',
+    desc: 'Sign in to access your project dashboard, deliverables, and communication feed.',
+  },
+  '/mission-control': {
+    title: 'Mission Control — CodeFuser Admin',
+    desc: 'Internal administration and analytics control center.',
+  },
+  '/logo': {
+    title: 'Brand Assets — CodeFuser',
+    desc: 'Official brand assets, vector logos, and design identity guidelines.',
+  },
+};
+
+function renderSeoHtml(templateHtml: string, reqPath: string): { html: string; status: number } {
+  let cleanPath = reqPath.split('?')[0].split('#')[0];
+  if (cleanPath.length > 1 && cleanPath.endsWith('/')) {
+    cleanPath = cleanPath.slice(0, -1);
+  }
+  if (!cleanPath) cleanPath = '/';
+
+  const blogMatch = cleanPath.startsWith('/blog/') ? cleanPath.replace('/blog/', '') : null;
+  const currentBlogPost = blogMatch ? BLOG_POSTS.find((p) => p.slug === blogMatch) : null;
+
+  let pageTitle = 'CodeFuser — Website Development & Digital Growth Agency';
+  let pageDesc = 'High-performance websites, custom web applications, and automated growth systems.';
+  let canonicalUrl = cleanPath === '/' ? 'https://codefuser.in/' : `https://codefuser.in${cleanPath}`;
+  let isPrivatePage = ['/dashboard', '/mission-control', '/login', '/logo', '/start-project'].includes(cleanPath);
+  let status = 200;
+
+  if (currentBlogPost) {
+    pageTitle = getPostSeoTitle(currentBlogPost);
+    pageDesc = getPostSeoDescription(currentBlogPost);
+    canonicalUrl = currentBlogPost.canonicalUrl || `https://codefuser.in/blog/${currentBlogPost.slug}`;
+  } else if (STATIC_PAGE_META[cleanPath]) {
+    pageTitle = STATIC_PAGE_META[cleanPath].title;
+    pageDesc = STATIC_PAGE_META[cleanPath].desc;
+  } else if (cleanPath !== '/') {
+    // 404 Unrecognized route
+    pageTitle = '404 - Page Not Found | CodeFuser';
+    pageDesc = 'The page or article you are looking for does not exist on CodeFuser.';
+    canonicalUrl = 'https://codefuser.in/';
+    isPrivatePage = true;
+    status = 404;
+  }
+
+  const escapeHtml = (str: string) =>
+    str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  let html = templateHtml;
+
+  // 1. Title
+  html = html.replace(/<title>.*?<\/title>/i, `<title>${escapeHtml(pageTitle)}</title>`);
+
+  // 2. Meta description
+  if (/<meta\s+name="description"\s+content=".*?"\s*\/?>/i.test(html)) {
+    html = html.replace(
+      /<meta\s+name="description"\s+content=".*?"\s*\/?>/i,
+      `<meta name="description" content="${escapeHtml(pageDesc)}" />`
+    );
+  } else {
+    html = html.replace('</head>', `  <meta name="description" content="${escapeHtml(pageDesc)}" />\n</head>`);
+  }
+
+  // 3. Canonical Link
+  if (/<link\s+rel="canonical"\s+href=".*?"\s*\/?>/i.test(html)) {
+    html = html.replace(
+      /<link\s+rel="canonical"\s+href=".*?"\s*\/?>/i,
+      `<link rel="canonical" href="${escapeHtml(canonicalUrl)}" />`
+    );
+  } else {
+    html = html.replace('</head>', `  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />\n</head>`);
+  }
+
+  // 4. Open Graph Meta Tags
+  const updateOrInjectOg = (prop: string, content: string) => {
+    const regex = new RegExp(`<meta\\s+property="${prop}"\\s+content=".*?"\\s*\\/?>`, 'i');
+    if (regex.test(html)) {
+      html = html.replace(regex, `<meta property="${prop}" content="${escapeHtml(content)}" />`);
+    } else {
+      html = html.replace('</head>', `  <meta property="${prop}" content="${escapeHtml(content)}" />\n</head>`);
+    }
+  };
+
+  updateOrInjectOg('og:title', pageTitle);
+  updateOrInjectOg('og:description', pageDesc);
+  updateOrInjectOg('og:url', canonicalUrl);
+  updateOrInjectOg('og:type', currentBlogPost ? 'article' : 'website');
+
+  // 5. Twitter Meta Tags
+  const updateOrInjectTwitter = (name: string, content: string) => {
+    const regex = new RegExp(`<meta\\s+name="${name}"\\s+content=".*?"\\s*\\/?>`, 'i');
+    if (regex.test(html)) {
+      html = html.replace(regex, `<meta name="${name}" content="${escapeHtml(content)}" />`);
+    } else {
+      html = html.replace('</head>', `  <meta name="${name}" content="${escapeHtml(content)}" />\n</head>`);
+    }
+  };
+
+  updateOrInjectTwitter('twitter:title', pageTitle);
+  updateOrInjectTwitter('twitter:description', pageDesc);
+
+  // 6. Robots Meta
+  const robotsContent = isPrivatePage
+    ? 'noindex, nofollow'
+    : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+
+  if (/<meta\s+name="robots"\s+content=".*?"\s*\/?>/i.test(html)) {
+    html = html.replace(/<meta\s+name="robots"\s+content=".*?"\s*\/?>/i, `<meta name="robots" content="${robotsContent}" />`);
+  } else {
+    html = html.replace('</head>', `  <meta name="robots" content="${robotsContent}" />\n</head>`);
+  }
+
+  // 7. Article JSON-LD Schema
+  if (currentBlogPost) {
+    const articleSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      'headline': currentBlogPost.title,
+      'description': currentBlogPost.metaDescription,
+      'author': {
+        '@type': 'Organization',
+        'name': currentBlogPost.author || 'CodeFuser Analysis',
+        'url': 'https://codefuser.in',
+      },
+      'publisher': {
+        '@type': 'Organization',
+        'name': 'CodeFuser',
+        'logo': {
+          '@type': 'ImageObject',
+          'url': 'https://codefuser.in/logo.svg',
+        },
+      },
+      'datePublished': '2026-08-28',
+      'mainEntityOfPage': {
+        '@type': 'WebPage',
+        '@id': canonicalUrl,
+      },
+    };
+
+    const schemaTag = `\n  <script type="application/ld+json" id="server-json-ld">\n${JSON.stringify(articleSchema, null, 2)}\n  </script>\n`;
+    html = html.replace('</head>', `${schemaTag}</head>`);
+  }
+
+  return { html, status };
+}
+
 // Server bootstrap with Vite integration
 async function startServer() {
   try {
@@ -6095,6 +6356,49 @@ async function startServer() {
   } catch (couponInitErr) {
     logger.error("Failed to initialize coupons store from durable database:", couponInitErr);
   }
+
+  // Global SEO HTML Rendering Middleware for page routes (Dev & Production)
+  app.use(async (req, res, next) => {
+    if (
+      req.path.startsWith('/api/') ||
+      req.path.startsWith('/assets/') ||
+      /\.(js|css|png|jpg|jpeg|gif|svg|ico|json|xml|txt|map|woff|woff2|ttf|eot)$/i.test(req.path)
+    ) {
+      return next();
+    }
+
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return next();
+    }
+
+    const acceptsHtml = req.headers.accept ? req.headers.accept.includes('text/html') || req.headers.accept.includes('*/*') : true;
+    if (!acceptsHtml) {
+      return next();
+    }
+
+    const distPath = path.join(process.cwd(), 'dist');
+    const distIndexPath = path.join(distPath, 'index.html');
+    const rootIndexPath = path.join(process.cwd(), 'index.html');
+    const targetIndexPath = (process.env.NODE_ENV === 'production' && fs.existsSync(distIndexPath))
+      ? distIndexPath
+      : (fs.existsSync(rootIndexPath) ? rootIndexPath : distIndexPath);
+
+    if (fs.existsSync(targetIndexPath)) {
+      try {
+        const rawHtml = fs.readFileSync(targetIndexPath, 'utf-8');
+        const { html, status } = renderSeoHtml(rawHtml, req.path);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.status(status).send(html);
+      } catch (err) {
+        logger.error('Error rendering SEO HTML:', err);
+      }
+    }
+
+    next();
+  });
 
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
@@ -6106,6 +6410,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath, {
+      redirect: false,
       setHeaders: (res, filePath) => {
         if (filePath.endsWith('index.html') || filePath.endsWith('sw.js')) {
           res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
@@ -6120,7 +6425,23 @@ async function startServer() {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.sendFile(path.join(distPath, 'index.html'));
+
+      if (req.path.startsWith('/api/') || req.path.startsWith('/assets/') || /\.(js|css|png|jpg|jpeg|gif|svg|ico|json|xml|txt|map|woff|woff2|ttf|eot)$/i.test(req.path)) {
+        return res.status(404).send('Not Found');
+      }
+
+      const indexPath = path.join(distPath, 'index.html');
+      const fallbackIndexPath = path.join(process.cwd(), 'index.html');
+      const targetIndexPath = fs.existsSync(indexPath) ? indexPath : fallbackIndexPath;
+
+      if (fs.existsSync(targetIndexPath)) {
+        const rawHtml = fs.readFileSync(targetIndexPath, 'utf-8');
+        const { html, status } = renderSeoHtml(rawHtml, req.path);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.status(status).send(html);
+      }
+
+      res.sendFile(indexPath);
     });
   }
 

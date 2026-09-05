@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { parseFeature, splitFeaturesForCards, cleanFeatureText, cleanHeadline, cleanRationale } from '../lib/featureUtils';
 import { 
@@ -567,6 +567,26 @@ export const StartProjectPage: React.FC = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitInFlightRef = useRef(false);
+  const [draftSessionId, setDraftSessionId] = useState<string>(() => {
+    let stored = safeLocalStorage.getItem('fuser_draft_session_id');
+    if (!stored) {
+      stored = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `ds_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      safeLocalStorage.setItem('fuser_draft_session_id', stored);
+    }
+    return stored;
+  });
+
+  useEffect(() => {
+    if (isNewProjectMode) {
+      const newDraftId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `ds_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      safeLocalStorage.setItem('fuser_draft_session_id', newDraftId);
+      safeLocalStorage.removeItem('fuser_client_project_id');
+      setDraftSessionId(newDraftId);
+      setCreatedProjectId(null);
+    }
+  }, [isNewProjectMode]);
+
   const [isSubmitted, setIsSubmitted] = useState(() => {
     return Boolean(initialDraft?.isSubmitted || (initialDraft?.onboardingStage && initialDraft.onboardingStage !== 'form'));
   });
@@ -1110,11 +1130,14 @@ export const StartProjectPage: React.FC = () => {
   const saveDraftToSupabase = useCallback(async (extraData?: any) => {
     if (step1Notice) return;
     if (step === 1 && onboardingStage === 'form') return;
+    if (isSubmitting || submitInFlightRef.current) return;
 
     try {
       const authUser = getAuthUser();
       const payload = {
-        projectId: createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || undefined,
+        projectId: createdProjectId || safeLocalStorage.getItem('fuser_client_project_id') || draftSessionId,
+        idempotencyKey: draftSessionId,
+        draftSessionId: draftSessionId,
         isNewProject: isNewProjectMode,
         userId: authUser?.id || undefined,
         ownerName: formData.ownerName,
@@ -1573,7 +1596,10 @@ export const StartProjectPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return; // Prevent duplicate request clicks
+    if (isSubmitting || submitInFlightRef.current) {
+      console.log("[Submission Guard] Blocked duplicate submission trigger in flight.");
+      return;
+    }
 
     // Validate required contact details dynamically
     const errors = validationErrors;
@@ -1584,6 +1610,7 @@ export const StartProjectPage: React.FC = () => {
       return;
     }
 
+    submitInFlightRef.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -1607,7 +1634,9 @@ export const StartProjectPage: React.FC = () => {
         contentReady: formData.contentReady || "",
         aiPrompt: formData.aiPrompt || "",
         userId: authUser?.id || "",
-        projectId: existingProjId,
+        projectId: existingProjId || draftSessionId,
+        idempotencyKey: draftSessionId,
+        draftSessionId: draftSessionId,
         isNewProject: isNewProjectMode
       };
 
@@ -1741,6 +1770,7 @@ export const StartProjectPage: React.FC = () => {
       console.error("Submission failed:", err);
       // Friendly retry message, and never lose the client's entered data.
       setSubmitError(err.message || "Failed to establish database transmission. Please check your network and retry.");
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
       setOnboardingStage('form');
     }

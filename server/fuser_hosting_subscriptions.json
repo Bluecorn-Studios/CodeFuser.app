@@ -22,8 +22,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:04.501Z",
-      "updatedAt": "2026-08-28T22:13:12.258Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:20.656Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "8ca8af26-f45b-4e7f-85db-248f9b392205": {
       "id": "sub_host_8ca8af26-f45b-4e7f-85db-248f9b392205",
@@ -47,8 +47,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:04.634Z",
-      "updatedAt": "2026-08-28T22:13:12.640Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:21.155Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "19a08fb2-48f9-49c2-921c-986847c30cb4": {
       "id": "sub_host_19a08fb2-48f9-49c2-921c-986847c30cb4",
@@ -72,8 +72,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:04.953Z",
-      "updatedAt": "2026-08-28T22:13:12.938Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:21.611Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "46760630-d352-40e2-b3ed-6673a67af0c0": {
       "id": "sub_host_46760630-d352-40e2-b3ed-6673a67af0c0",
@@ -97,8 +97,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:05.080Z",
-      "updatedAt": "2026-08-28T22:13:13.252Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:22.040Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "ec5fdf0a-ae04-405f-bf22-9a7901151c78": {
       "id": "sub_host_ec5fdf0a-ae04-405f-bf22-9a7901151c78",
@@ -122,8 +122,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:05.210Z",
-      "updatedAt": "2026-08-28T22:13:13.601Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:22.556Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "98d2db7a-7549-455f-837b-34058e910330": {
       "id": "sub_host_98d2db7a-7549-455f-837b-34058e910330",
@@ -147,8 +147,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:05.401Z",
-      "updatedAt": "2026-08-28T22:13:13.920Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:23.001Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "185356a0-17b9-4ba7-ada9-4dd4201285ef": {
       "id": "sub_host_185356a0-17b9-4ba7-ada9-4dd4201285ef",
@@ -172,8 +172,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:05.551Z",
-      "updatedAt": "2026-08-28T22:13:14.272Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:23.557Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "648a2438-4a57-43ed-99f1-90033063ff9a": {
       "id": "sub_host_648a2438-4a57-43ed-99f1-90033063ff9a",
@@ -197,8 +197,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:05.690Z",
-      "updatedAt": "2026-08-28T22:13:14.591Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:24.005Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "94a09c01-4f28-4434-ae5a-d42a14a13fc3": {
       "id": "sub_host_94a09c01-4f28-4434-ae5a-d42a14a13fc3",
@@ -222,8 +222,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:05.830Z",
-      "updatedAt": "2026-08-28T22:13:14.945Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:24.455Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "d3e13520-a757-49e0-b745-698491eb19d2": {
       "id": "sub_host_d3e13520-a757-49e0-b745-698491eb19d2",
@@ -247,8 +247,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:05.958Z",
-      "updatedAt": "2026-08-28T22:13:15.259Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:24.957Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "c8b25b23-b222-4a2a-8f83-181ce3f12214": {
       "id": "sub_host_c8b25b23-b222-4a2a-8f83-181ce3f12214",
@@ -272,8 +272,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:06.086Z",
-      "updatedAt": "2026-08-28T22:13:15.609Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:25.456Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "94cdbf7f-da54-485f-b49c-04e0e0231dd2": {
       "id": "sub_host_94cdbf7f-da54-485f-b49c-04e0e0231dd2",
@@ -297,8 +297,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "PLAN_CONFIGURATION_MISMATCH",
       "createdAt": "2026-08-10T11:40:06.222Z",
-      "updatedAt": "2026-08-28T22:13:15.916Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z",
+      "updatedAt": "2026-09-05T13:38:25.956Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z",
       "sentNotifications": {
         "test_dup_charged_1786365064176": "2026-08-10T12:31:04.433Z",
         "test_dup_pending_1786365064966": "2026-08-10T12:31:05.226Z",
@@ -384,8 +384,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:06.352Z",
-      "updatedAt": "2026-08-28T22:13:16.264Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:26.389Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "3e0f8212-a336-4d8d-9aaf-eebbfb0e3022": {
       "id": "sub_host_3e0f8212-a336-4d8d-9aaf-eebbfb0e3022",
@@ -409,8 +409,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:06.480Z",
-      "updatedAt": "2026-08-28T22:13:16.551Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:26.916Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "96bee85b-32a1-4ce1-ae7c-aa61a94eb38f": {
       "id": "sub_host_96bee85b-32a1-4ce1-ae7c-aa61a94eb38f",
@@ -434,8 +434,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:06.607Z",
-      "updatedAt": "2026-08-28T22:13:16.839Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:27.409Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "f88e8c21-7768-4d53-b2fe-8ad69e946f5d": {
       "id": "sub_host_f88e8c21-7768-4d53-b2fe-8ad69e946f5d",
@@ -459,8 +459,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:06.732Z",
-      "updatedAt": "2026-08-28T22:13:17.199Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:27.868Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "50ae66ca-26f3-479b-b4d3-8c56d9141b5e": {
       "id": "sub_host_50ae66ca-26f3-479b-b4d3-8c56d9141b5e",
@@ -484,8 +484,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:06.857Z",
-      "updatedAt": "2026-08-28T22:13:17.534Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:28.387Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "97083b79-c6a5-40bb-81eb-a84bf204e4b4": {
       "id": "sub_host_97083b79-c6a5-40bb-81eb-a84bf204e4b4",
@@ -509,8 +509,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:06.987Z",
-      "updatedAt": "2026-08-28T22:13:17.827Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:28.827Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "d6554183-8165-4e3b-b9b4-9bb010294fd1": {
       "id": "sub_host_d6554183-8165-4e3b-b9b4-9bb010294fd1",
@@ -534,8 +534,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:07.110Z",
-      "updatedAt": "2026-08-28T22:13:18.156Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:29.288Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "5dd5ea5c-a9e0-423e-9c54-9e0148dd452e": {
       "id": "sub_host_5dd5ea5c-a9e0-423e-9c54-9e0148dd452e",
@@ -559,8 +559,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:07.235Z",
-      "updatedAt": "2026-08-28T22:13:18.498Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:29.719Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "52ac0abc-68d1-482b-b0f1-c6dee889db72": {
       "id": "sub_host_52ac0abc-68d1-482b-b0f1-c6dee889db72",
@@ -584,8 +584,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:07.369Z",
-      "updatedAt": "2026-08-28T22:13:18.819Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:30.199Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "d44d29d1-0ed3-4419-892c-0ee6055c42bd": {
       "id": "sub_host_d44d29d1-0ed3-4419-892c-0ee6055c42bd",
@@ -609,8 +609,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:07.693Z",
-      "updatedAt": "2026-08-28T22:13:19.173Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:30.671Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "1f641b68-7c0d-45a9-9f88-dae73e828c06": {
       "id": "sub_host_1f641b68-7c0d-45a9-9f88-dae73e828c06",
@@ -634,8 +634,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T11:40:07.824Z",
-      "updatedAt": "2026-08-28T22:13:19.536Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:31.104Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "test_proj_1": {
       "id": "sub_test_1",
@@ -652,13 +652,14 @@
       "freeTrialStart": "2026-08-01T00:00:00Z",
       "freeTrialEnd": "2026-09-01T00:00:00Z",
       "nextBillingDate": "2026-09-01T00:00:00Z",
-      "status": "FREE_TRIAL_ACTIVE",
+      "status": "GRACE_PERIOD",
       "autopayStatus": "inactive",
       "mandateStatus": "none",
       "failedPaymentCount": 0,
       "createdAt": "2026-08-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:19.864Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:31.584Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z",
+      "gracePeriodEndsAt": "2026-09-08T02:54:23.615Z"
     },
     "test_proj_2": {
       "id": "sub_test_2",
@@ -680,8 +681,8 @@
       "mandateStatus": "none",
       "failedPaymentCount": 0,
       "createdAt": "2026-05-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:20.162Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z",
+      "updatedAt": "2026-09-05T13:38:32.113Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z",
       "gracePeriodEndsAt": "2026-08-17T17:21:39.015Z",
       "suspendedAt": "2026-08-28T19:44:06.145Z"
     },
@@ -706,8 +707,8 @@
       "mandateStatus": "none",
       "failedPaymentCount": 0,
       "createdAt": "2026-05-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:20.519Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z",
+      "updatedAt": "2026-09-05T13:38:32.610Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z",
       "suspendedAt": "2026-08-28T19:44:06.145Z"
     },
     "test_proj_4": {
@@ -731,8 +732,8 @@
       "mandateStatus": "none",
       "failedPaymentCount": 0,
       "createdAt": "2026-04-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:20.844Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z",
+      "updatedAt": "2026-09-05T13:38:33.068Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z",
       "suspendedAt": "2026-08-10T17:21:39.015Z"
     },
     "test_proj_5": {
@@ -756,8 +757,8 @@
       "mandateStatus": "none",
       "failedPaymentCount": 1,
       "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:21.190Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:33.511Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "test_proj_6": {
       "id": "sub_test_6",
@@ -779,8 +780,8 @@
       "mandateStatus": "activated",
       "failedPaymentCount": 0,
       "createdAt": "2026-05-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:21.529Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:33.993Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "test_proj_7": {
       "id": "sub_test_7",
@@ -803,8 +804,8 @@
       "mandateStatus": "revoked",
       "failedPaymentCount": 0,
       "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:21.868Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:34.446Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "test_proj_8": {
       "id": "sub_test_8",
@@ -826,8 +827,8 @@
       "mandateStatus": "none",
       "failedPaymentCount": 0,
       "createdAt": "2026-05-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:22.227Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:34.916Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "test_proj_9": {
       "id": "sub_test_9",
@@ -849,8 +850,8 @@
       "mandateStatus": "activated",
       "failedPaymentCount": 0,
       "createdAt": "2026-04-01T00:00:00Z",
-      "updatedAt": "2026-08-28T22:13:22.561Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:35.408Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "02aae43d-c1f2-4243-b507-b588b0c1d3e2": {
       "id": "sub_host_02aae43d-c1f2-4243-b507-b588b0c1d3e2",
@@ -874,8 +875,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:11:04.287Z",
-      "updatedAt": "2026-08-28T22:13:22.922Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:35.813Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "9b164ffe-4600-4a4a-ae1a-9040120b9614": {
       "id": "sub_host_9b164ffe-4600-4a4a-ae1a-9040120b9614",
@@ -899,8 +900,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:11:04.403Z",
-      "updatedAt": "2026-08-28T22:13:23.272Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:36.367Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "proj_test_override_1inr_project": {
       "id": "sub_host_proj_test_override_1inr_project",
@@ -924,9 +925,9 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:11:37.687Z",
-      "updatedAt": "2026-08-28T22:13:23.610Z",
+      "updatedAt": "2026-09-05T13:38:36.842Z",
       "razorpaySubscriptionId": "sub_test_override_1inr",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z",
       "lastPaymentId": "pay_test_g_1786382035909",
       "lastPaymentDate": "2026-08-10T17:13:56.144Z",
       "lastPaymentAmount": 1,
@@ -954,8 +955,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:11:45.003Z",
-      "updatedAt": "2026-08-28T22:13:23.951Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:37.326Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "3eb19070-9531-4795-9f5b-c4bc59c0f8a0": {
       "id": "sub_host_3eb19070-9531-4795-9f5b-c4bc59c0f8a0",
@@ -979,8 +980,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:11:45.370Z",
-      "updatedAt": "2026-08-28T22:13:24.268Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:37.781Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "proj_regular_customer_project": {
       "id": "sub_host_proj_regular_customer_project",
@@ -1004,12 +1005,12 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:12:11.712Z",
-      "updatedAt": "2026-08-28T22:13:24.619Z",
+      "updatedAt": "2026-09-05T13:38:38.206Z",
       "lastPaymentId": "pay_test_h_1786382036568",
       "lastPaymentDate": "2026-08-10T17:13:56.800Z",
       "lastPaymentAmount": 499,
       "gracePeriodEndsAt": null,
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "a6224be6-7103-45fd-8e17-ec44c5e573a3": {
       "id": "sub_host_a6224be6-7103-45fd-8e17-ec44c5e573a3",
@@ -1033,8 +1034,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:12:18.703Z",
-      "updatedAt": "2026-08-28T22:13:24.900Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:38.638Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "1c861617-3662-4ab3-acde-2af2197fb992": {
       "id": "sub_host_1c861617-3662-4ab3-acde-2af2197fb992",
@@ -1058,7 +1059,7 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "PLAN_CONFIGURATION_MISMATCH",
       "createdAt": "2026-08-10T17:12:18.820Z",
-      "updatedAt": "2026-08-28T22:13:25.203Z",
+      "updatedAt": "2026-09-05T13:38:39.103Z",
       "sentNotifications": {
         "autopay_activated_1c861617-3662-4ab3-acde-2af2197fb992_sub_bound_audit_1786381940105": "2026-08-10T17:12:21.349Z",
         "grace_period_1c861617-3662-4ab3-acde-2af2197fb992_2026-08-17": "2026-08-10T17:12:23.955Z",
@@ -1080,7 +1081,7 @@
       "lastPaymentDate": "2026-08-10T17:13:11.857Z",
       "lastPaymentAmount": 499,
       "gracePeriodEndsAt": null,
-      "lastScannedAt": "2026-08-28T22:13:11.653Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z",
       "cancelledAt": "2026-08-10T17:13:04.249Z"
     },
     "non_existent_project_xyz": {
@@ -1105,9 +1106,9 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:12:25.446Z",
-      "updatedAt": "2026-08-28T22:13:25.487Z",
+      "updatedAt": "2026-09-05T13:38:39.559Z",
       "razorpaySubscriptionId": "sub_unknown_999",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "280b4575-4c23-4165-a6fd-4c39639a4c6f": {
       "id": "sub_host_280b4575-4c23-4165-a6fd-4c39639a4c6f",
@@ -1131,8 +1132,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-10T17:15:06.342Z",
-      "updatedAt": "2026-08-28T22:13:25.847Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:39.993Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "5f6a20ec-b912-4321-83ab-201693f0d6a5": {
       "id": "sub_host_5f6a20ec-b912-4321-83ab-201693f0d6a5",
@@ -1156,8 +1157,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "PLAN_CONFIGURATION_MISMATCH",
       "createdAt": "2026-08-10T17:15:07.342Z",
-      "updatedAt": "2026-08-28T22:13:26.180Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z",
+      "updatedAt": "2026-09-05T13:38:40.444Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z",
       "sentNotifications": {
         "autopay_activated_5f6a20ec-b912-4321-83ab-201693f0d6a5_sub_bound_audit_1786382422330": "2026-08-10T17:20:23.431Z",
         "payment_success_5f6a20ec-b912-4321-83ab-201693f0d6a5_HST-82423980": "2026-08-10T17:20:24.762Z",
@@ -1182,32 +1183,6 @@
       "gracePeriodEndsAt": null,
       "cancelledAt": "2026-08-10T17:20:25.964Z"
     },
-    "c0090000-0000-0000-0000-000000000001": {
-      "id": "sub_host_c0090000-0000-0000-0000-000000000001",
-      "projectId": "c0090000-0000-0000-0000-000000000001",
-      "customerId": "coupons@codefuser.com",
-      "packageId": "foundation",
-      "planId": "codefuser_hosting_foundation",
-      "planName": "CodeFuser Hosting (Ignite)",
-      "monthlyAmount": 499,
-      "currency": "INR",
-      "freeHostingMonths": 1,
-      "domainFreeYears": 0,
-      "domainRenewalPrice": 999,
-      "freeTrialStart": "2026-08-28T19:43:55.058Z",
-      "freeTrialEnd": "2026-09-28T19:43:55.058Z",
-      "nextBillingDate": "2026-09-28T19:43:55.058Z",
-      "status": "FREE_TRIAL_ACTIVE",
-      "razorpayPlanId": "plan_TO36xiGvVpMiVc",
-      "autopayStatus": "inactive",
-      "mandateStatus": "none",
-      "lastPaymentAmount": 0,
-      "failedPaymentCount": 0,
-      "reconciliationStatus": "OK",
-      "createdAt": "2026-08-28T19:43:55.058Z",
-      "updatedAt": "2026-08-28T22:13:26.462Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
-    },
     "e18892d9-49a4-4ad6-8056-587a2f7a3adc": {
       "id": "sub_host_e18892d9-49a4-4ad6-8056-587a2f7a3adc",
       "projectId": "e18892d9-49a4-4ad6-8056-587a2f7a3adc",
@@ -1231,8 +1206,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-28T21:24:35.386Z",
-      "updatedAt": "2026-08-28T22:13:26.813Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:40.913Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     },
     "62a3ad42-a456-4844-978a-82e215a9fd72": {
       "id": "sub_host_62a3ad42-a456-4844-978a-82e215a9fd72",
@@ -1257,8 +1232,8 @@
       "failedPaymentCount": 0,
       "reconciliationStatus": "OK",
       "createdAt": "2026-08-28T21:24:35.675Z",
-      "updatedAt": "2026-08-28T22:13:27.113Z",
-      "lastScannedAt": "2026-08-28T22:13:11.653Z"
+      "updatedAt": "2026-09-05T13:38:41.558Z",
+      "lastScannedAt": "2026-09-05T13:38:20.096Z"
     }
   },
   "invoices": {
@@ -3166,24 +3141,6 @@
         "createdAt": "2026-08-10T17:15:07.342Z"
       }
     ],
-    "c0090000-0000-0000-0000-000000000001": [
-      {
-        "id": "INV-HOST-PROMO-000001",
-        "subscriptionId": "sub_host_c0090000-0000-0000-0000-000000000001",
-        "projectId": "c0090000-0000-0000-0000-000000000001",
-        "receiptNumber": "HST-PROMO-246386",
-        "billingPeriodStart": "2026-08-28T19:43:55.058Z",
-        "billingPeriodEnd": "2026-09-28T19:43:55.058Z",
-        "amount": 499,
-        "discount": 499,
-        "finalAmount": 0,
-        "status": "PAID",
-        "transactionId": "PROMO_FREE_PERIOD",
-        "paymentDate": "2026-08-28T19:43:55.058Z",
-        "nextBillingDate": "2026-09-28T19:43:55.058Z",
-        "createdAt": "2026-08-28T19:43:55.058Z"
-      }
-    ],
     "e18892d9-49a4-4ad6-8056-587a2f7a3adc": [
       {
         "id": "INV-HOST-PROMO-7a3adc",
@@ -3218,6 +3175,23 @@
         "paymentDate": "2026-08-28T21:24:35.675Z",
         "nextBillingDate": "2026-10-28T21:24:35.675Z",
         "createdAt": "2026-08-28T21:24:35.675Z"
+      }
+    ],
+    "test_proj_1": [
+      {
+        "id": "INV-HOST-272122",
+        "subscriptionId": "sub_test_1",
+        "projectId": "test_proj_1",
+        "receiptNumber": "HST-272122",
+        "billingPeriodStart": "2026-09-01T00:00:00Z",
+        "billingPeriodEnd": "2026-10-01T00:00:00.000Z",
+        "amount": 499,
+        "discount": 0,
+        "finalAmount": 499,
+        "status": "PENDING",
+        "paymentDate": "2026-09-01T02:54:32.122Z",
+        "nextBillingDate": "2026-10-01T00:00:00.000Z",
+        "createdAt": "2026-09-01T02:54:32.122Z"
       }
     ]
   },

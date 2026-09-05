@@ -345,7 +345,8 @@ export async function getAllReviewsForAdmin(): Promise<ReviewRecord[]> {
     // 2. Read from projects table
     const { data: projList, error: projErr } = await supabase
       .from("projects")
-      .select("id, client_name, business_name, onboarding, created_at");
+      .select("id, client_name, business_name, onboarding, created_at")
+      .neq("id", "c0090000-0000-0000-0000-000000000001");
 
     if (!projErr && Array.isArray(projList)) {
       for (const proj of projList) {

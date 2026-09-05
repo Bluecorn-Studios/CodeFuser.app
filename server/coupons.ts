@@ -38,91 +38,22 @@ export interface CouponRedemptionRecord {
 export interface CouponsStore {
   coupons: CouponRecord[];
   redemptions: CouponRedemptionRecord[];
-  seedInitialized?: boolean;
-  seededAt?: string;
 }
 
 export const SYSTEM_COUPONS_ROW_ID = "c0090000-0000-0000-0000-000000000001";
-
-export const INITIAL_STARTER_COUPONS: CouponRecord[] = [
-  {
-    id: "coupon_fusion_free_1",
-    name: "Fusion Founding Build",
-    code: "FUSIONFREE",
-    discountType: "free_build",
-    discountValue: 100,
-    eligiblePlans: ["fusion", "growth"],
-    hostingRule: "charge_normally",
-    hostingPromoMode: "do_not_apply",
-    freeHostingPromoRule: "do_not_apply",
-    hostingPriceMode: "use_plan_default",
-    fixedHostingPrice: null,
-    redemptionLimit: 10,
-    maxUsesPerCustomer: 1,
-    customerEligibility: "new_only",
-    status: "ACTIVE",
-    currentRedemptions: 0,
-    afterLimitBehavior: "stop",
-    createdAt: "2026-08-19T07:50:50.978Z",
-    updatedAt: "2026-08-19T07:50:50.978Z"
-  },
-  {
-    id: "coupon_founding_50_1",
-    name: "Founding 50",
-    code: "FOUNDING50",
-    discountType: "percentage",
-    discountValue: 50,
-    eligiblePlans: ["ignite", "starter", "fusion", "growth"],
-    hostingRule: "charge_normally",
-    hostingPromoMode: "use_plan_default",
-    freeHostingPromoRule: "apply",
-    hostingPriceMode: "use_plan_default",
-    fixedHostingPrice: null,
-    redemptionLimit: 10,
-    maxUsesPerCustomer: 1,
-    customerEligibility: "new_only",
-    status: "ACTIVE",
-    currentRedemptions: 0,
-    afterLimitBehavior: "stop",
-    createdAt: "2026-08-19T07:50:50.978Z",
-    updatedAt: "2026-08-19T07:50:50.978Z"
-  },
-  {
-    id: "coupon_full_waiver_1",
-    name: "Full Platform Waiver",
-    code: "FULLWAIVER",
-    discountType: "free_build",
-    discountValue: 100,
-    eligiblePlans: ["ignite", "starter", "fusion", "growth", "catalyst", "dominance"],
-    hostingRule: "waive_hosting",
-    hostingPromoMode: "use_plan_default",
-    freeHostingPromoRule: "apply",
-    hostingPriceMode: "use_plan_default",
-    fixedHostingPrice: null,
-    redemptionLimit: 10,
-    maxUsesPerCustomer: 1,
-    customerEligibility: "new_only",
-    status: "ACTIVE",
-    currentRedemptions: 0,
-    afterLimitBehavior: "stop",
-    createdAt: "2026-08-19T07:50:50.978Z",
-    updatedAt: "2026-08-19T07:50:50.978Z"
-  }
-];
 
 let memoryStore: CouponsStore | null = null;
 let initPromise: Promise<CouponsStore> | null = null;
 
 /**
  * Initializes and synchronizes coupon store from durable Supabase storage.
- * Enforces one-time idempotent seeding.
- * Once seedInitialized is true:
- * - NEVER recreate deleted coupons
- * - NEVER merge starter coupons back in
- * - Load exactly what is stored in the authoritative database
+ * Authoritative single source of truth:
+ * - NEVER creates or injects starter/mock/demo coupons.
+ * - If the database contains 0 coupons, the authoritative store is [] (empty array).
+ * - Loads exactly what is stored in the database.
  */
 export async function initCouponsStore(): Promise<CouponsStore> {
-  if (memoryStore && memoryStore.seedInitialized) {
+  if (memoryStore) {
     return memoryStore;
   }
   if (initPromise) {
@@ -140,32 +71,24 @@ export async function initCouponsStore(): Promise<CouponsStore> {
         .eq("id", SYSTEM_COUPONS_ROW_ID)
         .maybeSingle();
 
-      if (sysRecord && sysRecord.onboarding && sysRecord.onboarding.seedInitialized === true) {
-        // AUTHORITATIVE: Database has already been seeded.
-        // NEVER recreate deleted starter coupons. Load EXACTLY what is stored in the database.
-        const storeCoupons: CouponRecord[] = Array.isArray(sysRecord.onboarding.coupons) ? sysRecord.onboarding.coupons : [];
-        const storeRedemptions: CouponRedemptionRecord[] = Array.isArray(sysRecord.onboarding.redemptions) ? sysRecord.onboarding.redemptions : [];
+      if (sysRecord) {
+        // Authoritative load: Load EXACTLY what is stored in the database.
+        const storeCoupons: CouponRecord[] = Array.isArray(sysRecord.onboarding?.coupons) ? sysRecord.onboarding.coupons : [];
+        const storeRedemptions: CouponRedemptionRecord[] = Array.isArray(sysRecord.onboarding?.redemptions) ? sysRecord.onboarding.redemptions : [];
 
         memoryStore = {
           coupons: storeCoupons,
-          redemptions: storeRedemptions,
-          seedInitialized: true,
-          seededAt: sysRecord.onboarding.seededAt || new Date().toISOString()
+          redemptions: storeRedemptions
         };
         console.log(`[Coupons Store] Loaded ${storeCoupons.length} coupons from Supabase durable storage.`);
         return memoryStore;
       }
 
-      // 2. First-time initialization in Supabase (runs ONLY once when database is uninitialized)
-      console.log("[Coupons Store] First-time initialization in Supabase durable storage...");
-      const initialCoupons: CouponRecord[] = [...INITIAL_STARTER_COUPONS];
-      console.log("[Coupons Store] Seeded initial starter offers into Supabase (FUSIONFREE, FOUNDING50, FULLWAIVER).");
-
+      // 2. Initialize empty system store record if it does not exist yet (NO default/starter coupons)
+      console.log("[Coupons Store] Creating clean empty system coupon store in Supabase...");
       const newStore: CouponsStore = {
-        coupons: initialCoupons,
-        redemptions: [],
-        seedInitialized: true,
-        seededAt: new Date().toISOString()
+        coupons: [],
+        redemptions: []
       };
 
       await supabase.from("projects").upsert({
@@ -179,10 +102,8 @@ export async function initCouponsStore(): Promise<CouponsStore> {
         status: "draft",
         onboarding: {
           isSystemCouponsStore: true,
-          seedInitialized: true,
-          seededAt: newStore.seededAt,
-          coupons: newStore.coupons,
-          redemptions: newStore.redemptions
+          coupons: [],
+          redemptions: []
         }
       });
 
@@ -208,9 +129,8 @@ export async function initCouponsStore(): Promise<CouponsStore> {
  */
 export async function saveCouponsToSupabase(store: CouponsStore): Promise<void> {
   memoryStore = {
-    ...store,
-    seedInitialized: true,
-    seededAt: store.seededAt || new Date().toISOString()
+    coupons: store.coupons || [],
+    redemptions: store.redemptions || []
   };
 
   try {
@@ -228,8 +148,6 @@ export async function saveCouponsToSupabase(store: CouponsStore): Promise<void> 
       status: "draft",
       onboarding: {
         isSystemCouponsStore: true,
-        seedInitialized: true,
-        seededAt: memoryStore.seededAt,
         coupons: memoryStore.coupons,
         redemptions: memoryStore.redemptions
       }
@@ -256,8 +174,7 @@ export function getCouponsStore(): CouponsStore {
 
   return {
     coupons: [],
-    redemptions: [],
-    seedInitialized: false
+    redemptions: []
   };
 }
 
