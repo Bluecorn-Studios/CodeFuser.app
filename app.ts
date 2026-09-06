@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -240,9 +241,9 @@ async function requireAuth(req: any, res: any, next: any) {
   if (res.headersSent || req.timedOut || req.clientDisconnected) return;
   try {
     const adminPassword = req.headers["x-admin-password"];
-    const actualPassword = process.env.ADMIN_PASSWORD || "CodeFuserAdmin2026!";
+    const actualPassword = process.env.ADMIN_PASSWORD;
 
-    if (adminPassword && safeCompare(adminPassword, actualPassword)) {
+    if (actualPassword && adminPassword && safeCompare(adminPassword, actualPassword)) {
       req.isAdmin = true;
       req.user = {
         id: "admin-bypass",
@@ -3051,7 +3052,8 @@ app.post("/api/projects/:id/review", requestTimeout(10000, "Submit Project Revie
 app.get("/api/admin/reviews", requestTimeout(10000, "Get Admin Reviews"), async (req: any, res) => {
   try {
     const adminPassword = req.headers["x-admin-password"];
-    const isMasterAdmin = adminPassword === (process.env.ADMIN_PASSWORD || "CodeFuserAdmin2026!");
+    const actualPassword = process.env.ADMIN_PASSWORD;
+    const isMasterAdmin = !!actualPassword && !!adminPassword && safeCompare(adminPassword, actualPassword);
     const isUserAdmin = req.user?.role === "admin" || req.user?.role === "super_admin";
 
     if (!isMasterAdmin && !isUserAdmin) {
@@ -3076,7 +3078,8 @@ app.patch("/api/admin/reviews/:id/publish", requestTimeout(10000, "Update Review
     const { published } = req.body;
 
     const adminPassword = req.headers["x-admin-password"];
-    const isMasterAdmin = adminPassword === (process.env.ADMIN_PASSWORD || "CodeFuserAdmin2026!");
+    const actualPassword = process.env.ADMIN_PASSWORD;
+    const isMasterAdmin = !!actualPassword && !!adminPassword && safeCompare(adminPassword, actualPassword);
     const isUserAdmin = req.user?.role === "admin" || req.user?.role === "super_admin";
 
     if (!isMasterAdmin && !isUserAdmin) {
@@ -3113,8 +3116,11 @@ app.get("/api/reviews/public", requestTimeout(10000, "Get Public Published Revie
       reviews: publishedReviews
     });
   } catch (err: any) {
-    logger.error("Failed to fetch public reviews:", err);
-    return res.status(500).json({ success: false, error: err.message || "Failed to fetch reviews." });
+    logger.error("Failed to fetch public reviews due to database or server error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch reviews due to a database or server configuration error."
+    });
   }
 });
 
@@ -5006,16 +5012,30 @@ app.post("/api/projects/:id/upload", requestTimeout(25000, "Asset Upload"), vali
   }
 });
 
+// API: Safe Environment Diagnostic (Server-side metadata only, zero secrets exposed)
+app.get("/api/env-diagnostics", (_req, res) => {
+  return res.json({
+    adminPasswordPresent: !!process.env.ADMIN_PASSWORD,
+    supabaseUrlPresent: !!process.env.SUPABASE_URL,
+    serviceRolePresent: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    anonKeyPresent: !!process.env.SUPABASE_ANON_KEY,
+    nodeEnv: process.env.NODE_ENV || "development",
+    isVercel: !!process.env.VERCEL,
+    vercelEnv: process.env.VERCEL_ENV || null,
+    platform: process.env.VERCEL ? "vercel" : "cloud_run_container"
+  });
+});
+
 // API: Verify Admin Password
 app.post("/api/admin/verify", adminRateLimiter, validateBody(adminVerifySchema), (req, res) => {
   try {
     const { password } = req.body;
     const actualPassword = process.env.ADMIN_PASSWORD;
-    
+
     if (!actualPassword) {
-      return res.status(500).json({ 
-        success: false, 
-        error: "System Configuration Error: The administrative access key is not configured in the host environment." 
+      return res.status(500).json({
+        success: false,
+        error: "System Configuration Error: The administrative access key is not configured in the host environment."
       });
     }
 

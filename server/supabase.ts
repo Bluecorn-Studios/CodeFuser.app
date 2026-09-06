@@ -2,12 +2,13 @@ import { createClient } from "@supabase/supabase-js";
 
 export function logRuntimeEnv() {
   const usingServiceRole = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const hasUrl = !!process.env.SUPABASE_URL;
+  const hasAnonKey = !!process.env.SUPABASE_ANON_KEY;
 
   console.log({
     usingServiceRole,
-    keyPrefix: usingServiceRole
-      ? process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 8)
-      : process.env.SUPABASE_ANON_KEY?.slice(0, 8),
+    hasUrl,
+    hasAnonKey
   });
 }
 

@@ -322,53 +322,53 @@ export async function updateReviewPublishStatus(reviewId: string, published: boo
 export async function getAllReviewsForAdmin(): Promise<ReviewRecord[]> {
   const reviewsMap = new Map<string, ReviewRecord>();
 
+  // 1. Obtain Supabase client (throws if SUPABASE_URL / key missing)
+  const supabase = getSupabase();
+
+  // 2. Read from public.reviews table
   try {
-    const supabase = getSupabase();
+    const { data: revList, error: revErr } = await supabase
+      .from("reviews")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    // 1. Read from public.reviews table
-    try {
-      const { data: revList, error: revErr } = await supabase
-        .from("reviews")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!revErr && Array.isArray(revList)) {
-        for (const item of revList) {
-          const norm = normalizeReviewRecord(item);
-          reviewsMap.set(norm.id, norm);
-        }
-      }
-    } catch (e) {
-      // Ignore if table not present
-    }
-
-    // 2. Read from projects table
-    const { data: projList, error: projErr } = await supabase
-      .from("projects")
-      .select("id, client_name, business_name, onboarding, created_at")
-      .neq("id", "c0090000-0000-0000-0000-000000000001");
-
-    if (!projErr && Array.isArray(projList)) {
-      for (const proj of projList) {
-        if (proj.onboarding?.review) {
-          const rev = proj.onboarding.review;
-          const norm = normalizeReviewRecord({
-            ...rev,
-            customerName: rev.customerName || proj.client_name,
-            businessName: rev.businessName || proj.business_name
-          });
-          reviewsMap.set(norm.id, norm);
-        }
+    if (!revErr && Array.isArray(revList)) {
+      for (const item of revList) {
+        const norm = normalizeReviewRecord(item);
+        reviewsMap.set(norm.id, norm);
       }
     }
+  } catch (e) {
+    // Ignore optional table error if table not created yet
+  }
 
-    // Update cache
-    for (const rev of reviewsMap.values()) {
-      memoryCache.set(rev.id, rev);
+  // 3. Read from projects table
+  const { data: projList, error: projErr } = await supabase
+    .from("projects")
+    .select("id, client_name, business_name, onboarding, created_at")
+    .neq("id", "c0090000-0000-0000-0000-000000000001");
+
+  if (projErr) {
+    throw new Error(`Database query failed while fetching reviews: ${projErr.message || "Unknown error"}`);
+  }
+
+  if (Array.isArray(projList)) {
+    for (const proj of projList) {
+      if (proj.onboarding?.review) {
+        const rev = proj.onboarding.review;
+        const norm = normalizeReviewRecord({
+          ...rev,
+          customerName: rev.customerName || proj.client_name,
+          businessName: rev.businessName || proj.business_name
+        });
+        reviewsMap.set(norm.id, norm);
+      }
     }
-  } catch (err) {
-    console.error("[Reviews Store] Failed to load reviews from Supabase:", err);
-    throw new Error("Unable to load reviews from database.");
+  }
+
+  // Update cache
+  for (const rev of reviewsMap.values()) {
+    memoryCache.set(rev.id, rev);
   }
 
   return Array.from(reviewsMap.values()).sort(
