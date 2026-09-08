@@ -1,18 +1,8 @@
 import "dotenv/config";
-import { createRequire } from "module";
+import serverModule from "../dist/server.cjs";
 
-const require = createRequire(import.meta.url);
+const app = (serverModule as any).default || serverModule;
 
-let appHandler: any;
+export default app;
 
-try {
-  const server = require("../dist/server.cjs");
-  appHandler = server.default || server;
-} catch (err) {
-  console.error("Failed to load dist/server.cjs:", err);
-  const serverModule = require("../app");
-  appHandler = serverModule.default || serverModule;
-}
-
-export default appHandler;
 
