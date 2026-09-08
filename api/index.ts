@@ -1,4 +1,5 @@
 import "dotenv/config";
+// @ts-ignore
 import serverModule from "../dist/server.cjs";
 
 const app = (serverModule as any).default || serverModule;

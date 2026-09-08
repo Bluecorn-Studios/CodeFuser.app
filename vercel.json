@@ -2,17 +2,13 @@
   "version": 2,
   "functions": {
     "api/**/*.ts": {
-      "includeFiles": "dist/server.cjs"
+      "includeFiles": "{dist/**,index.html}"
     }
   },
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/((?!assets/|fonts/|favicon|apple-touch-icon|site\\.webmanifest|logo|sitemap|robots|.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|json|xml|txt|map|woff|woff2|ttf|eot)$).*)",
       "destination": "/api"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
     }
   ]
 }
