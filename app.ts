@@ -6369,6 +6369,44 @@ function renderSeoHtml(templateHtml: string, reqPath: string): { html: string; s
   return { html, status };
 }
 
+// Fallback SEO HTML Page Renderer for SPA Page Routes (Works in Express & Vercel Serverless)
+app.get('*', (req, res) => {
+  if (
+    req.path.startsWith('/api/') ||
+    req.path.startsWith('/assets/') ||
+    req.path.startsWith('/fonts/') ||
+    req.path.startsWith('/src/') ||
+    req.path.startsWith('/node_modules/') ||
+    req.path.startsWith('/@') ||
+    /\.(js|jsx|ts|tsx|css|scss|png|jpg|jpeg|gif|svg|ico|json|xml|txt|map|woff|woff2|ttf|eot)$/i.test(req.path)
+  ) {
+    return res.status(404).send('Not Found');
+  }
+
+  const distPath = path.join(process.cwd(), 'dist');
+  const distIndexPath = path.join(distPath, 'index.html');
+  const rootIndexPath = path.join(process.cwd(), 'index.html');
+  const targetIndexPath = fs.existsSync(distIndexPath)
+    ? distIndexPath
+    : (fs.existsSync(rootIndexPath) ? rootIndexPath : distIndexPath);
+
+  if (fs.existsSync(targetIndexPath)) {
+    try {
+      const rawHtml = fs.readFileSync(targetIndexPath, 'utf-8');
+      const { html, status } = renderSeoHtml(rawHtml, req.path);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.status(status).send(html);
+    } catch (err) {
+      logger.error('Error rendering SEO HTML:', err);
+    }
+  }
+
+  res.status(404).send('Not Found');
+});
+
 // Server bootstrap with Vite integration
 async function startServer() {
   try {
@@ -6376,49 +6414,6 @@ async function startServer() {
   } catch (couponInitErr) {
     logger.error("Failed to initialize coupons store from durable database:", couponInitErr);
   }
-
-  // Global SEO HTML Rendering Middleware for page routes (Dev & Production)
-  app.use(async (req, res, next) => {
-    if (
-      req.path.startsWith('/api/') ||
-      req.path.startsWith('/assets/') ||
-      /\.(js|css|png|jpg|jpeg|gif|svg|ico|json|xml|txt|map|woff|woff2|ttf|eot)$/i.test(req.path)
-    ) {
-      return next();
-    }
-
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      return next();
-    }
-
-    const acceptsHtml = req.headers.accept ? req.headers.accept.includes('text/html') || req.headers.accept.includes('*/*') : true;
-    if (!acceptsHtml) {
-      return next();
-    }
-
-    const distPath = path.join(process.cwd(), 'dist');
-    const distIndexPath = path.join(distPath, 'index.html');
-    const rootIndexPath = path.join(process.cwd(), 'index.html');
-    const targetIndexPath = (process.env.NODE_ENV === 'production' && fs.existsSync(distIndexPath))
-      ? distIndexPath
-      : (fs.existsSync(rootIndexPath) ? rootIndexPath : distIndexPath);
-
-    if (fs.existsSync(targetIndexPath)) {
-      try {
-        const rawHtml = fs.readFileSync(targetIndexPath, 'utf-8');
-        const { html, status } = renderSeoHtml(rawHtml, req.path);
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.status(status).send(html);
-      } catch (err) {
-        logger.error('Error rendering SEO HTML:', err);
-      }
-    }
-
-    next();
-  });
 
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
@@ -6441,28 +6436,6 @@ async function startServer() {
         }
       }
     }));
-    app.get('*', (req, res) => {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-
-      if (req.path.startsWith('/api/') || req.path.startsWith('/assets/') || /\.(js|css|png|jpg|jpeg|gif|svg|ico|json|xml|txt|map|woff|woff2|ttf|eot)$/i.test(req.path)) {
-        return res.status(404).send('Not Found');
-      }
-
-      const indexPath = path.join(distPath, 'index.html');
-      const fallbackIndexPath = path.join(process.cwd(), 'index.html');
-      const targetIndexPath = fs.existsSync(indexPath) ? indexPath : fallbackIndexPath;
-
-      if (fs.existsSync(targetIndexPath)) {
-        const rawHtml = fs.readFileSync(targetIndexPath, 'utf-8');
-        const { html, status } = renderSeoHtml(rawHtml, req.path);
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.status(status).send(html);
-      }
-
-      res.sendFile(indexPath);
-    });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
@@ -6477,3 +6450,4 @@ if (!process.env.VERCEL && !process.env.TESTING) {
 }
 
 export default app;
+
