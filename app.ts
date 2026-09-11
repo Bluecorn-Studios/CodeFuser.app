@@ -968,7 +968,7 @@ export async function findExistingProjectForCreation({
 }
 
 // API: Automatically save draft project state to Supabase at any step
-app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) => {
+app.post("/api/projects/save-draft", requestTimeout(15000, "Save Draft"), projectsRateLimiter, async (req: any, res) => {
   try {
     const {
       projectId,
@@ -1202,9 +1202,10 @@ app.post("/api/projects/save-draft", projectsRateLimiter, async (req: any, res) 
       }
     });
   } catch (err: any) {
-    console.dir(err, { depth: null });
-    console.log(JSON.stringify(err, null, 2));
-    return res.status(500).json(err);
+    logger.error("Error saving project draft:", { reqId: req.reqId, error: err?.message || String(err) });
+    if (!res.headersSent) {
+      return res.status(err?.statusCode || 500).json({ success: false, error: err?.message || "Failed to save project draft." });
+    }
   }
 });
 

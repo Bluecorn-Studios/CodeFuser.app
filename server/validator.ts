@@ -326,7 +326,14 @@ export const createProjectSchema: Schema = {
   isNewProject: { type: "boolean", required: false },
   countryCode: { type: "string", required: false, max: 20, allowEmpty: true },
   localPhone: { type: "string", required: false, max: 50, allowEmpty: true },
-  selectedPlanId: { type: "string", required: false, max: 50, allowEmpty: true }
+  selectedPlanId: { type: "string", required: false, max: 50, allowEmpty: true },
+  idempotencyKey: { type: "string", required: false, max: 150, allowEmpty: true },
+  draftSessionId: { type: "string", required: false, max: 150, allowEmpty: true },
+  clientName: { type: "string", required: false, max: 200, allowEmpty: true },
+  selectedPackage: { type: "string", required: false, max: 50, allowEmpty: true },
+  galleryReady: { type: "string", required: false, max: 2000000, allowEmpty: true },
+  businessDetails: { type: "string", required: false, max: 50000, allowEmpty: true },
+  address: { type: "string", required: false, max: 2000, allowEmpty: true }
 };
 
 // 2. GET /api/projects (Query params)
